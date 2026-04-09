@@ -45,6 +45,15 @@ import ./make-test-python.nix (
         imports = [ (testlib.fcConfig { id = 1; }) ];
         networking.domain = "fcio.net";
         virtualisation.memorySize = 3072;
+        # The fc-nixos resource-group firewall only allows source IPs listed in
+        # encAddresses. Without this, the gateway's connections to :8000 are
+        # refused by iptables (refused connection logged on ethsrv).
+        flyingcircus.encAddresses = [
+          {
+            name = "gateway";
+            ip = gatewayIp;
+          }
+        ];
 
         flyingcircus.roles.ai-model-server.enable = true;
         flyingcircus.roles.ai-model-server.skvaider-inference.hf_token = "";
