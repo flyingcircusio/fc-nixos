@@ -32,7 +32,7 @@ import ./make-test-python.nix (
       '';
   in
   {
-    name = "ai-model-server";
+    name = "skvaider";
 
     nodes.model =
       {
@@ -123,34 +123,47 @@ import ./make-test-python.nix (
       gateway.wait_for_unit("multi-user.target")
 
       with subtest("network connectivity"):
-        gateway.succeed("ping -c1 ${modelServerIp}")
-        model.succeed("ping -c1 ${gatewayIp}")
+          gateway.succeed("ping -c1 ${modelServerIp}")
+          model.succeed("ping -c1 ${gatewayIp}")
 
       with subtest("gateway discovers model server"):
-        gateway.wait_for_unit("skvaider-config.service")
-        gateway.wait_for_file("/var/lib/skvaider/config.toml")
-        gateway.succeed("grep '${modelServerIp}:8000' /var/lib/skvaider/config.toml")
+          gateway.wait_for_unit("skvaider-config.service")
+          gateway.wait_for_file("/var/lib/skvaider/config.toml")
+          gateway.succeed("grep '${modelServerIp}:8000' /var/lib/skvaider/config.toml")
+          gateway.succeed(
+              "${pkgs.lib.getExe' pkgs.fc.skvaider "check-skvaider-config"} /var/lib/skvaider/config.toml"
+          )
 
       with subtest("skvaider-inference starts and serves"):
-        model.wait_for_unit("skvaider-inference.service")
-        model.wait_for_open_port(8000)
+          model.wait_for_unit("skvaider-inference.service")
+          model.wait_for_open_port(8000)
 
       with subtest("inference api responds"):
-        model.succeed("curl -sf http://localhost:8000/models")
+          model.succeed("curl -sf http://localhost:8000/models")
 
       with subtest("inference through gateway"):
-        # The gateway must connect to the inference server, discover the model,
-        # trigger a load (which starts vllm), and mark it active before it can
-        # proxy requests.  Give vllm up to 5 minutes to start on this slow VM.
-        gateway.wait_for_unit("skvaider.service")
-        gateway.wait_for_open_port(23211)
-        gateway.wait_until_succeeds(
-            "curl -sf -X POST http://127.0.0.1:23211/openai/v1/completions"
-            " -H 'Authorization: Bearer testtoken'"
-            " -H 'Content-Type: application/json'"
-            " -d '{\"model\": \"tiny-gpt2\", \"prompt\": \"Hello\", \"max_tokens\": 5}'",
-            timeout=300
-        )
+          # The gateway must connect to the inference server, discover the model,
+          # trigger a load (which starts vllm), and mark it active before it can
+          # proxy requests.  Give vllm up to 5 minutes to start on this slow VM.
+          gateway.wait_for_unit("skvaider.service")
+          gateway.wait_for_open_port(23211)
+          gateway.wait_until_succeeds(
+              "curl -sf -X POST http://127.0.0.1:23211/openai/v1/completions"
+              " -H 'Authorization: Bearer testtoken'"
+              " -H 'Content-Type: application/json'"
+              " -d '{\"model\": \"tiny-gpt2\", \"prompt\": \"Hello\", \"max_tokens\": 5}'",
+              timeout=300
+          )
+
+      with subtest("skvaider pytest suite"):
+          gateway.succeed("cp -r ${pkgs.fc.skvaider.passthru.src} /tmp/skvaider-src")
+          gateway.succeed("chmod -R u+w /tmp/skvaider-src")
+          gateway.succeed(
+              "cd /tmp/skvaider-src && "
+              "${pkgs.fc.skvaider.passthru.testEnv}/bin/pytest src/skvaider/ "
+              "--override-ini=addopts= -v --tb=short -p no:cacheprovider",
+              timeout=300
+          )
     '';
   }
 )
