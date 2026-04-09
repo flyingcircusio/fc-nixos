@@ -43,4 +43,5 @@ in
     "*"
   ];
   passthru.src = src;
+  passthru.testEnv = pythonSet.mkVirtualEnv "skvaider-test-env" workspace.deps.all;
 })
