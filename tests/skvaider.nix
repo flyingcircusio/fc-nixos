@@ -194,11 +194,25 @@ import ./make-test-python.nix (
           #                  so without this pytest 8.1+ can't import those files
           #                  as package-relative modules and relative imports fail
           #   junit_family  - legacy: minor XML output format, skipped here
+          #
+          # Excluded test modules (computed dynamically via python3 -c since
+          # --ignore requires absolute paths when using --pyargs):
+          #   tests/{test_endpoints,test_openai_client,test_model_management}.py
+          #     → use client fixture → test_lifespan → wait for :8001 (devenv
+          #       inference backend). No such backend in the NixOS test VM.
+          #   inference/tests/test_stability.py
+          #     → downloads a real GGUF from huggingface; no internet in VM.
           gateway.succeed(
+              "pkg=$(${pkgs.fc.skvaider.passthru.testEnv}/bin/python3 -c "
+              "'import skvaider,os; print(os.path.dirname(skvaider.__file__))') && "
               "${pkgs.fc.skvaider.passthru.testEnv}/bin/pytest --pyargs skvaider "
               "--override-ini=addopts= "
               "--override-ini=asyncio_mode=auto "
               "--override-ini=consider_namespace_packages=true "
+              "--ignore=$pkg/tests/test_endpoints.py "
+              "--ignore=$pkg/tests/test_openai_client.py "
+              "--ignore=$pkg/tests/test_model_management.py "
+              "--ignore=$pkg/inference/tests/test_stability.py "
               "-v --tb=short -p no:cacheprovider",
               timeout=300
           )
