@@ -12,6 +12,12 @@ let
   role = config.flyingcircus.roles.ceph_rgw;
   enc = config.flyingcircus.enc;
   inherit (fclib.ceph) normaliseCephOptionAttrs normaliseCephOptionSection releaseAtLeast;
+  bucketNameValidationPy = fclib.python3BinFromFile ./rgw-check-bucket-names.py {
+    flakeIgnore = [ "E501" ];
+  };
+  rgw-validate-bucket-names = pkgs.writeShellScriptBin "rgw-validate-bucket-names" ''
+    sudo radosgw-admin bucket list | ${lib.getExe bucketNameValidationPy}
+  '';
 
   username = "client.radosgw.${config.networking.hostName}";
 
@@ -125,6 +131,8 @@ in
           # no fc-ceph settings necessary so far
         };
       };
+
+      environment.systemPackages = [ rgw-validate-bucket-names ];
 
       systemd.tmpfiles.rules = [
         "d /srv/ceph/radosgw 2775 root service"
