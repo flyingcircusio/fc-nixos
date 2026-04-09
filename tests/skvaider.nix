@@ -185,15 +185,19 @@ import ./make-test-python.nix (
           # ImportPathMismatchError: copying source to /tmp while the
           # testEnv already has skvaider installed causes pytest to find
           # the same module at two different paths.
-          # consider_namespace_packages=true is required because
-          # skvaider/proxy/tests/ has no __init__.py (it is a namespace
-          # package). Without this, pytest 8.1+ defaults to False and
-          # relative imports in those test files fail at collection time.
-          # The skvaider pytest.ini sets this, but that file is not in the
-          # Nix store; we reproduce the relevant setting here explicitly.
+          #
+          # The skvaider pytest.ini (not in the Nix store) sets these four
+          # options that we must reproduce explicitly:
+          #   addopts       - stripped: contains coverage flags not needed here
+          #   asyncio_mode  - auto: all async tests use implicit asyncio marks
+          #   consider_namespace_packages - true: proxy/tests/ has no __init__.py,
+          #                  so without this pytest 8.1+ can't import those files
+          #                  as package-relative modules and relative imports fail
+          #   junit_family  - legacy: minor XML output format, skipped here
           gateway.succeed(
               "${pkgs.fc.skvaider.passthru.testEnv}/bin/pytest --pyargs skvaider "
               "--override-ini=addopts= "
+              "--override-ini=asyncio_mode=auto "
               "--override-ini=consider_namespace_packages=true "
               "-v --tb=short -p no:cacheprovider",
               timeout=300
