@@ -53,6 +53,9 @@ import ./make-test-python.nix (
         systemd.services.skvaider-inference.path = lib.mkAfter [ vllm-cpu ];
 
         flyingcircus.roles.ai-model-server.skvaider-inference.settings = {
+          # Explicitly set models_dir: our settings attrset takes priority over the
+          # lib.mkDefault in the module, so we must carry any required keys ourselves.
+          models_dir = "/var/lib/skvaider/model";
           openai.models = [
             {
               id = "tiny-gpt2";
