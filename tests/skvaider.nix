@@ -181,11 +181,12 @@ import ./make-test-python.nix (
           )
 
       with subtest("skvaider pytest suite"):
-          gateway.succeed("cp -r ${pkgs.fc.skvaider.passthru.src} /tmp/skvaider-src")
-          gateway.succeed("chmod -R u+w /tmp/skvaider-src")
+          # Run against the installed package via --pyargs to avoid
+          # ImportPathMismatchError: copying source to /tmp while the
+          # testEnv already has skvaider installed causes pytest to find
+          # the same module at two different paths.
           gateway.succeed(
-              "cd /tmp/skvaider-src && "
-              "${pkgs.fc.skvaider.passthru.testEnv}/bin/pytest src/skvaider/ "
+              "${pkgs.fc.skvaider.passthru.testEnv}/bin/pytest --pyargs skvaider "
               "--override-ini=addopts= -v --tb=short -p no:cacheprovider",
               timeout=300
           )
