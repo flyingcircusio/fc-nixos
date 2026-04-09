@@ -1,3 +1,11 @@
+# Release 2026_013
+
+## NixOS XX.XX platform
+
+- fix Nix security vulnerability CVE-2026-39860 / GHSA-g3g9-5vj6-r3gj (FC-52786)
+
+
+
 # Release 2026_005
 
 ## Impact
