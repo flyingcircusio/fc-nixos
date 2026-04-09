@@ -135,9 +135,9 @@
     "version": "5.3.28"
   },
   "discourse": {
-    "name": "discourse-2026.1.2",
+    "name": "discourse-2026.1.3",
     "pname": "discourse",
-    "version": "2026.1.2"
+    "version": "2026.1.3"
   },
   "dnsmasq": {
     "name": "dnsmasq-2.91",
@@ -225,9 +225,9 @@
     "version": "18.9.3"
   },
   "github-runner": {
-    "name": "github-runner-2.332.0",
+    "name": "github-runner-2.333.1",
     "pname": "github-runner",
-    "version": "2.332.0"
+    "version": "2.333.1"
   },
   "gitlab": {
     "name": "gitlab-18.9.3",
@@ -635,9 +635,9 @@
     "version": "3.0.19"
   },
   "openvpn": {
-    "name": "openvpn-2.6.14",
+    "name": "openvpn-2.6.19",
     "pname": "openvpn",
-    "version": "2.6.14"
+    "version": "2.6.19"
   },
   "pciutils": {
     "name": "pciutils-3.14.0",
