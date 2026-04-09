@@ -2,7 +2,9 @@
 
 # Varnish (Webproxy)
 
-This role provides Varnish Cache, the high-performance HTTP accelerator, in the latest version provided by NixOS which is 7.7.x at the moment.
+This role provides Varnish Cache, the high-performance HTTP accelerator.
+By default, the role uses the version 7.7.x. \
+As this version is out of upstream support, we recommend you upgrade to varnish 8.0.x by setting `services.varnish.package = pkgs.varnish80;` after checking for [breaking changes](https://vinyl-cache.org/docs/8.0/whats-new/upgrading-8.0.html) of that update.
 
 ## How we differ from what you are used to
 
