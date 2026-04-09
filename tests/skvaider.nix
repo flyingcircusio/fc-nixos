@@ -53,9 +53,13 @@ import ./make-test-python.nix (
         systemd.services.skvaider-inference.path = lib.mkAfter [ vllm-cpu ];
 
         flyingcircus.roles.ai-model-server.skvaider-inference.settings = {
-          # Explicitly set models_dir: our settings attrset takes priority over the
-          # lib.mkDefault in the module, so we must carry any required keys ourselves.
+          # Explicitly carry all required fields: our attrset at normal priority
+          # fully supersedes the lib.mkDefault block in the module, so any key
+          # the module sets via mkDefault that we do not repeat here will be absent
+          # from the generated TOML, causing Pydantic validation failures at startup.
           models_dir = "/var/lib/skvaider/model";
+          server.host = "0.0.0.0";
+          server.port = 8000;
           openai.models = [
             {
               id = "tiny-gpt2";
