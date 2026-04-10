@@ -115,6 +115,14 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
           hash = "sha256-4i1s9YAs0JtnTDB8yeA4cLjDfFA+vsPSW4byzoxTXcc=";
         };
       });
+      pymongo4_13 = python-super.pymongo.overridePythonAttrs (old: {
+        version = "4.13.2";
+        src = python-self.fetchPypi {
+          inherit (old) pname;
+          version = "4.13.2";
+          hash = "sha256-D2TGRpwjYpYubOlyWK4Tkau6FWapU6SSVi0pJLRIFcI=";
+        };
+      });
     })
   ];
 
@@ -123,8 +131,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       (super.fetchFromGitHub {
         owner = "pyproject-nix";
         repo = "pyproject.nix";
-        rev = "8d77f342d66ad1601cdb9d97e9388b69f64d4c8e";
-        hash = "sha256-6pNlGhwOIMfhe/RLjHdpXveKS4FyLHvlGe+KtjDild4=";
+        rev = "794afa6eb588b498344f2eaa36ab1ceb7e6b0b09";
+        hash = "sha256-wTfdyzzrmpuqt4TQQNqilF91v0m5Mh1stNy9h7a/WK4=";
       })
       {
         inherit (self) lib;
@@ -134,8 +142,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       (super.fetchFromGitHub {
         owner = "pyproject-nix";
         repo = "uv2nix";
-        rev = "64298e806f4a5f63a51c625edc100348138491aa";
-        hash = "sha256-9JcKAA7T9J98LWdcxbXvmf+amQG3ZErxqQnBjEJI04I=";
+        rev = "5d0e883867b1cf53263fcf1bfd34542d40abf5a9";
+        hash = "sha256-dMTjy8hu4XFAdNHdcLtCryN3SHqSUFHHqDLep+3b2v4=";
       })
       {
         inherit (self) lib pyproject-nix;
@@ -145,8 +153,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       (super.fetchFromGitHub {
         owner = "pyproject-nix";
         repo = "build-system-pkgs";
-        rev = "5b8e37fe0077db5c1df3a5ee90a651345f085d38";
-        hash = "sha256-6nzSZl28IwH2Vx8YSmd3t6TREHpDbKlDPK+dq1LKIZQ=";
+        rev = "b6e74f433b02fa4b8a7965ee24680f4867e2926f";
+        hash = "sha256-ZoTdqZP03DcdoyxvpFHCAek4bkPUTUPUF3oCCgc3dP4=";
       })
       {
         inherit (self) lib uv2nix pyproject-nix;

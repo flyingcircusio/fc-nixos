@@ -77,6 +77,8 @@ let
   checkPkg =
     if (lib.versionOlder majorVersion "4.0") then
       pkgs.fc.check-mongodb.override { pymongo = pkgs.fc.check-mongodb.python.pkgs.pymongo3; }
+    else if (lib.versionOlder majorVersion "4.2") then
+      pkgs.fc.check-mongodb.override { pymongo = pkgs.fc.check-mongodb.python.pkgs.pymongo4_13; }
     else
       pkgs.fc.check-mongodb;
 

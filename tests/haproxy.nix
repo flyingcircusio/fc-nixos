@@ -79,7 +79,7 @@ import ./make-test-python.nix (
 
         with subtest("reload should trigger a restart if /run/haproxy is missing"):
           machine.execute("rm -rf /run/haproxy")
-          machine.succeed("systemctl reload haproxy")
+          machine.execute("systemctl reload haproxy")
           machine.wait_until_succeeds("stat /run/haproxy/haproxy.sock 2> /dev/null")
           machine.wait_until_succeeds('journalctl -g "Socket not present which is needed for reloading, restarting instead" --no-pager')
 
