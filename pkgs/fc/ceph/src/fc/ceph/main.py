@@ -592,6 +592,11 @@ def luks(args=sys.argv[1:]):
         help="Names of LUKS volumes to check (globbing allowed), e.g. '*osd-*', 'backy'.",
     )
     parser_check.add_argument(
+        "--only-active",
+        help="Only consider LUKS volumes that are already opened.",
+        action="store_true",
+    )
+    parser_check.add_argument(
         "--header",
         help="When using an external LUKS header file, provide a path to it here."
         "\nDefaults to autodetecting and using a file called ${mountpoint}.luks",
@@ -627,6 +632,11 @@ def luks(args=sys.argv[1:]):
         help="Names of LUKS volumes to update (globbing allowed), e.g. '*osd-*', 'backy'.",
     )
     parser_rekey.add_argument(
+        "--only-active",
+        help="Only consider LUKS volumes that are already opened.",
+        action="store_true",
+    )
+    parser_rekey.add_argument(
         "--header",
         help="When using an external LUKS header file, provide a path to it here."
         "\nDefaults to autodetecting and using a file called ${mountpoint}.luks",
@@ -646,6 +656,11 @@ def luks(args=sys.argv[1:]):
     parser_test.add_argument(
         "name_glob",
         help="Names of LUKS volumes to check (globbing allowed), e.g. '*osd-*', 'backy'.",
+    )
+    parser_test.add_argument(
+        "--only-active",
+        help="Only consider LUKS volumes that are already opened.",
+        action="store_true",
     )
     parser_test.add_argument(
         "--header",
