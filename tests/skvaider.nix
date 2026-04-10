@@ -195,27 +195,76 @@ import ./make-test-python.nix (
           #                  as package-relative modules and relative imports fail
           #   junit_family  - legacy: minor XML output format, skipped here
           #
-          # Excluded test modules (computed dynamically via python3 -c since
-          # --ignore requires absolute paths when using --pyargs):
-          #   tests/{test_endpoints,test_openai_client,test_model_management}.py
-          #     → use client fixture → test_lifespan → wait for :8001 (devenv
-          #       inference backend). No such backend in the NixOS test VM.
-          #   inference/tests/test_stability.py
-          #     → downloads a real GGUF from huggingface; no internet in VM.
-          #   inference/tests/test_main.py, inference/tests/test_proxy.py
-          #     → all tests use inference client fixture → requires gemma LlamaModel
-          #       fixture → downloads a 270 MB GGUF from huggingface.
+          # Two blocking chains prevent the excluded tests from running in the VM:
           #
-          # Individual test functions deselected in otherwise-mixed files for
-          # the same reason (gemma or client fixture → HF download):
-          #   test_manager: test_manager_start_crash_quick_return,
-          #                 test_download_model_success, test_manager_start_model
-          #   test_metrics: test_metrics_endpoint_returns_prometheus_format,
-          #                 test_proxy_unavailable_increments_counter,
-          #                 test_metrics_content_type_is_prometheus,
-          #                 test_metrics_includes_memory_bytes_after_monitor_update
-          #   test_model_name_case_normalization:
-          #                 test_inference_endpoints_normalize_model_name
+          # Chain A — devenv backend (:8001 not present in VM):
+          #   conftest.py:137  url = 'http://127.0.0.1:8001'  # hardcoded
+          #   conftest.py:138  await backend_connection_is_up(url)  # hangs/errors
+          #   conftest.py:319  client = TestClient(app_factory(lifespan=test_lifespan))
+          #   conftest.py:332  openai_client depends on client (second hop)
+          #
+          # Chain B — HuggingFace download (no internet in VM):
+          #   inference/conftest.py:166  if not cache_dir.exists(): await model.download()
+          #   inference/model.py:441     httpx.AsyncClient GET to huggingface.co URL
+          #   The persistent cache (var/tests/models/) is always empty in a fresh VM.
+          #   inference/conftest.py:22   client(manager, gemma) — gemma is a fixture dep;
+          #                              model.download() fires during fixture setup,
+          #                              before the test body runs.
+          #
+          # --- File-level ignores ---
+          #
+          # tests/test_endpoints.py (8 tests)
+          #   All use `client` fixture → Chain A.
+          #
+          # tests/test_openai_client.py (7 tests)
+          #   All use `openai_client` → `client` → Chain A (two hops).
+          #
+          # tests/test_model_management.py (1 test: test_backend_model_warmup)
+          #   Direct Chain A: test body itself hardcodes url='http://127.0.0.1:8001'
+          #   and calls backend_connection_is_up(url) before touching any fixture.
+          #
+          # inference/tests/test_stability.py (1 test: test_embeddinggemma_output_stability)
+          #   Uses `embeddinggemma` fixture → prepare_model() → Chain B.
+          #   embeddinggemma-300M-F32.gguf (~300 MB) from huggingface.
+          #
+          # inference/tests/test_main.py (3 tests)
+          #   test_health, test_usage_returns_ram_structure,
+          #   test_usage_reflects_monitor_values
+          #   All use inference `client(manager, gemma)` → Chain B via gemma dep.
+          #
+          # inference/tests/test_proxy.py (2 tests)
+          #   test_proxy_returns_540_when_model_unavailable,
+          #   test_proxy_returns_540_when_model_inactive
+          #   Both use inference `client` → Chain B.
+          #   Note: test_proxy_returns_540_* does not need the model started — only
+          #   registered — but `client`'s gemma dependency triggers download anyway.
+          #
+          # --- Individual deselects in otherwise-passing files ---
+          #
+          # inference/tests/test_manager.py::test_manager_start_crash_quick_return
+          #   Uses `gemma` directly → Chain B.
+          #
+          # inference/tests/test_manager.py::test_download_model_success
+          #   Uses `gemma` directly; test body also calls gemma.download() explicitly
+          #   (line 21), but fixture setup is the first blocker → Chain B.
+          #
+          # inference/tests/test_manager.py::test_manager_start_model
+          #   Uses `gemma` directly; also calls manager.start_model() which runs
+          #   llama-server — not in test VM either. Primary block: Chain B.
+          #
+          # inference/tests/test_metrics.py::{test_metrics_endpoint_returns_prometheus_format,
+          #   test_proxy_unavailable_increments_counter,
+          #   test_metrics_content_type_is_prometheus,
+          #   test_metrics_includes_memory_bytes_after_monitor_update}
+          #   All use inference `client` (or `client` + explicit `gemma`) → Chain B.
+          #   The other 7 tests in this file (test_record_usage_*, test_extract_*)
+          #   have no network deps and pass.
+          #
+          # inference/tests/test_model_name_case_normalization.py::
+          #   test_inference_endpoints_normalize_model_name
+          #   Uses inference `client` + explicit `gemma` → Chain B.
+          #   test_model_config_normalizes_id_to_lowercase in the same file has no
+          #   network dep and passes.
           gateway.succeed(
               "pkg=$(${pkgs.fc.skvaider.passthru.testEnv}/bin/python3 -c "
               "'import skvaider,os; print(os.path.dirname(skvaider.__file__))') && "
