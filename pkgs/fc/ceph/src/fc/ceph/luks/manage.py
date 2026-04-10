@@ -19,27 +19,67 @@ from fc.ceph.util import console, run
 
 class LuksDevice(NamedTuple):
     base_blockdev: str  # path of the underlying block device
-    name: str  # the LUKS name of the device
+    base_blockdev_name: str  # name of the underlying block device
+    luks_name: Optional[str] = None  # the LUKS name of the device
     # required for external header discovery, which we only utilise for backy
-    mountpoint: Optional[str]
+    mountpoint: Optional[str] = None
     header: Optional[str] = None
 
+    @property
+    def name(self) -> str:
+        """Often we just need *any* name to filter on or display, let's take
+        the best we can get."""
+        return self.luks_name if self.luks_name else self.base_blockdev_name
+
     @classmethod
-    def lsblk_to_cryptdevices(cls, lsblk_blockdevs: list) -> list["LuksDevice"]:
-        """parses the output of lsblk -Js -o NAME,PATH,TYPE,MOUNTPOINT"""
-        return [
-            cls(
-                base_blockdev=dev["children"][0]["path"],
-                name=dev["name"],
-                mountpoint=dev["mountpoint"],
-            )
-            for dev in lsblk_blockdevs
-            if dev["type"] == "crypt"
-        ]
+    def detect_cryptdevices(
+        cls, lsblk_blockdevs: list, only_active: bool
+    ) -> list["LuksDevice"]:
+        """Detects crypt devices from lsblk -Js -o NAME,PATH,TYPE,MOUNTPOINT output.
+
+        When only_active is False, also probes LVM volumes via
+        `cryptsetup isLuks` to find inactive LUKS devices."""
+
+        devs = []
+        for dev in lsblk_blockdevs:
+            # In the json output, we are only interested in the top-level list entries.
+            # These represent the leaf-node devices, meaning the most concrete
+            # device subsystem possible.
+            if dev["type"] == "crypt":
+                devs.append(
+                    cls(
+                        base_blockdev=dev["children"][0]["path"],
+                        base_blockdev_name=dev["children"][0]["name"],
+                        luks_name=dev["name"],
+                        mountpoint=dev["mountpoint"],
+                    )
+                )
+                # crypt devices' base blockdevs only show up in their children,
+                # not again in the top-level list. We're done here.
+                continue
+            if dev["type"] == "lvm" and not only_active:
+                try:
+                    run.cryptsetup("isLuks", dev["path"], check=True)
+                except CalledProcessError as e:
+                    if e.returncode == 1:
+                        # not a luks device
+                        continue
+                    else:
+                        raise
+                else:
+                    # is a luks device
+                    devs.append(
+                        cls(
+                            base_blockdev=dev["path"],
+                            base_blockdev_name=dev["name"],
+                        )
+                    )
+
+        return devs
 
     @classmethod
     def filter_cryptvolumes(
-        cls, name_glob: str, header: Optional[str]
+        cls, name_glob: str, only_active: bool, header: Optional[str]
     ) -> list["LuksDevice"]:
         """Retrieves visible crypt volumes via `lsblk`, filters their name to
         match `name_glob`.
@@ -48,8 +88,9 @@ class LuksDevice(NamedTuple):
         auto-discovery based on looking for a corresponding header file named
         <mountpoint>.luks and passes an Optional[str].
         """
-        candidates = cls.lsblk_to_cryptdevices(
-            run.json.lsblk("-s", "-o", "NAME,PATH,TYPE,MOUNTPOINT")
+        candidates = cls.detect_cryptdevices(
+            run.json.lsblk("-s", "-o", "NAME,PATH,TYPE,MOUNTPOINT"),
+            only_active=only_active,
         )
 
         matching_devs = []
@@ -136,6 +177,7 @@ class LUKSKeyStoreManager(object):
     def rekey(
         self,
         name_glob: str,
+        only_active: bool,
         header: Optional[str],
         slot="local",
     ):
@@ -156,7 +198,9 @@ class LUKSKeyStoreManager(object):
         else:
             raise ValueError(f"slot={slot}")
 
-        for dev in LuksDevice.filter_cryptvolumes(name_glob, header=header):
+        for dev in LuksDevice.filter_cryptvolumes(
+            name_glob, only_active=only_active, header=header
+        ):
             console.print(f"Rekeying {dev.name}")
             self._do_rekey(slot, device=dev.base_blockdev, header=dev.header)
 
@@ -205,8 +249,12 @@ class LUKSKeyStoreManager(object):
             self._KEYSTORE.backup_external_header(Path(header))
 
     @staticmethod
-    def check_luks(name_glob: str, header: Optional[str]) -> int:
-        devices = LuksDevice.filter_cryptvolumes(name_glob, header=header)
+    def check_luks(
+        name_glob: str, only_active: bool, header: Optional[str]
+    ) -> int:
+        devices = LuksDevice.filter_cryptvolumes(
+            name_glob, only_active=only_active, header=header
+        )
         if not devices:
             console.print(f"Note: The glob `{name_glob}` matches no volume.")
             # Do not fail as hosts may be prepared for encryption without having
@@ -233,11 +281,15 @@ class LUKSKeyStoreManager(object):
 
         return 1 if errors else 0
 
-    def test_open(self, name_glob: str, header: Optional[str]) -> int:
+    def test_open(
+        self, name_glob: str, only_active: bool, header: Optional[str]
+    ) -> int:
         # Ensure to request the admin key early on.
         self._KEYSTORE.admin_key_for_input()
 
-        devices = LuksDevice.filter_cryptvolumes(name_glob, header=header)
+        devices = LuksDevice.filter_cryptvolumes(
+            name_glob, only_active=only_active, header=header
+        )
         if not devices:
             console.print(
                 f"Warning: The glob `{name_glob}` matches no volume.",

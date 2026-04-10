@@ -239,12 +239,14 @@ def test_check_integration_ok(monkeypatch, capsys):
         return_value=[
             LuksDevice(
                 base_blockdev="/dev/mapper/foo",
-                name="testdev1",
+                luks_name="testdev1",
+                base_blockdev_name="foo--mapper1",
                 mountpoint="/mnt/foo",
             ),
             LuksDevice(
                 base_blockdev="/dev/vgbar/holygrail",
-                name="testdev2",
+                luks_name="testdev2",
+                base_blockdev_name="foo--mapper2",
                 mountpoint="/mnt/bar",
             ),
         ]
@@ -256,7 +258,9 @@ def test_check_integration_ok(monkeypatch, capsys):
         MagicMock(return_value=data_correct.encode("utf-8")),
     )
 
-    assert LUKSKeyStoreManager.check_luks("*", header=None) == 0
+    assert (
+        LUKSKeyStoreManager.check_luks("*", only_active=True, header=None) == 0
+    )
 
     captured = capsys.readouterr()
     assert captured.out == textwrap.dedent(
@@ -285,13 +289,15 @@ def test_check_integration_error(monkeypatch, capsys):
         return_value=[
             LuksDevice(
                 base_blockdev="/dev/mapper/foo",
-                name="testdev1",
+                luks_name="testdev1",
+                base_blockdev_name="foo--mapper1",
                 mountpoint="/mnt/foo",
                 header="/mnt/foo.luks",
             ),
             LuksDevice(
                 base_blockdev="/dev/vgbar/holygrail",
-                name="testdev2",
+                luks_name="testdev2",
+                base_blockdev_name="foo--mapper2",
                 mountpoint="/mnt/bar",
                 header="/mnt/bar.luks",
             ),
@@ -308,7 +314,9 @@ def test_check_integration_error(monkeypatch, capsys):
 
     monkeypatch.setattr("fc.ceph.luks.Cryptsetup.cryptsetup", DumpMock())
 
-    assert LUKSKeyStoreManager.check_luks("*", header=None) == 1
+    assert (
+        LUKSKeyStoreManager.check_luks("*", only_active=True, header=None) == 1
+    )
 
     captured = capsys.readouterr()
     assert captured.out == textwrap.dedent(
