@@ -202,6 +202,20 @@ import ./make-test-python.nix (
           #       inference backend). No such backend in the NixOS test VM.
           #   inference/tests/test_stability.py
           #     → downloads a real GGUF from huggingface; no internet in VM.
+          #   inference/tests/test_main.py, inference/tests/test_proxy.py
+          #     → all tests use inference client fixture → requires gemma LlamaModel
+          #       fixture → downloads a 270 MB GGUF from huggingface.
+          #
+          # Individual test functions deselected in otherwise-mixed files for
+          # the same reason (gemma or client fixture → HF download):
+          #   test_manager: test_manager_start_crash_quick_return,
+          #                 test_download_model_success, test_manager_start_model
+          #   test_metrics: test_metrics_endpoint_returns_prometheus_format,
+          #                 test_proxy_unavailable_increments_counter,
+          #                 test_metrics_content_type_is_prometheus,
+          #                 test_metrics_includes_memory_bytes_after_monitor_update
+          #   test_model_name_case_normalization:
+          #                 test_inference_endpoints_normalize_model_name
           gateway.succeed(
               "pkg=$(${pkgs.fc.skvaider.passthru.testEnv}/bin/python3 -c "
               "'import skvaider,os; print(os.path.dirname(skvaider.__file__))') && "
@@ -213,6 +227,16 @@ import ./make-test-python.nix (
               "--ignore=$pkg/tests/test_openai_client.py "
               "--ignore=$pkg/tests/test_model_management.py "
               "--ignore=$pkg/inference/tests/test_stability.py "
+              "--ignore=$pkg/inference/tests/test_main.py "
+              "--ignore=$pkg/inference/tests/test_proxy.py "
+              "--deselect inference/tests/test_manager.py::test_manager_start_crash_quick_return "
+              "--deselect inference/tests/test_manager.py::test_download_model_success "
+              "--deselect inference/tests/test_manager.py::test_manager_start_model "
+              "--deselect inference/tests/test_metrics.py::test_metrics_endpoint_returns_prometheus_format "
+              "--deselect inference/tests/test_metrics.py::test_proxy_unavailable_increments_counter "
+              "--deselect inference/tests/test_metrics.py::test_metrics_content_type_is_prometheus "
+              "--deselect inference/tests/test_metrics.py::test_metrics_includes_memory_bytes_after_monitor_update "
+              "--deselect inference/tests/test_model_name_case_normalization.py::test_inference_endpoints_normalize_model_name "
               "-v --tb=short -p no:cacheprovider",
               timeout=300
           )
