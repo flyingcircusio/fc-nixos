@@ -368,8 +368,10 @@ def find_nix_eval_warnings(stderr: str) -> list[str]:
     # back to traces
     WARNINGS_MARKER_LEGACY = "trace: evaluation warning: "
     lines = filter(
-        lambda line: line.startswith(WARNINGS_MARKER)
-        or line.startswith(WARNINGS_MARKER_LEGACY),
+        lambda line: (
+            line.startswith(WARNINGS_MARKER)
+            or line.startswith(WARNINGS_MARKER_LEGACY)
+        ),
         stderr.splitlines(),
     )
     return list(

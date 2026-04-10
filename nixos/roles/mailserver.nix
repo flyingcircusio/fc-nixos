@@ -106,7 +106,7 @@ let
     };
 
     dynamicMaps = mkOption {
-      description = '''';
+      description = "";
       type = with types; attrsOf (listOf path);
       default = { };
       example = {

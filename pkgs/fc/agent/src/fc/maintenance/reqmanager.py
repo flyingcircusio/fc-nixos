@@ -1082,8 +1082,9 @@ class ReqManager:
                     )
                     for name in name_matches
                 ],
-                key=lambda r: r.added_at
-                or datetime.fromtimestamp(0, tz=timezone.utc),
+                key=lambda r: (
+                    r.added_at or datetime.fromtimestamp(0, tz=timezone.utc)
+                ),
             )
         return []
 
@@ -1104,8 +1105,9 @@ class ReqManager:
                     )
                     for name in name_matches
                 ],
-                key=lambda r: r.added_at
-                or datetime.fromtimestamp(0, tz=timezone.utc),
+                key=lambda r: (
+                    r.added_at or datetime.fromtimestamp(0, tz=timezone.utc)
+                ),
             )
         return []
 
