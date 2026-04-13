@@ -90,12 +90,10 @@ import ./make-test-python.nix (
           # inference/conftest.py's 'client' fixture to shadow skvaider/conftest.py's
           # 'client' for the gateway tests. Three separate processes avoid this.
           e = "${pkgs.fc.skvaider.passthru.testEnv}"
-          # --override-ini=addopts= strips --cov and --capture=fd from pytest.ini
-          # (coverage paths don't exist in the VM, no browser for html report).
-          # asyncio_mode and consider_namespace_packages are already in pytest.ini
-          # but --pyargs rootdir never reaches the source checkout, so pytest.ini
-          # is not found and these must be supplied explicitly.
-          opts = "--override-ini=addopts= --override-ini=asyncio_mode=auto --override-ini=consider_namespace_packages=true -v --tb=short -p no:cacheprovider"
+          # -c points at the source pytest.ini so asyncio_mode, consider_namespace_packages
+          # etc. are read directly from it. --override-ini=addopts= strips --cov and
+          # --capture=fd which don't apply in the VM (no writable src, no browser).
+          opts = "-c ${src}/pytest.ini --override-ini=addopts= -v --tb=short -p no:cacheprovider"
           testnode.succeed(f"cd /tmp/pytest-run && {e}/bin/pytest --pyargs skvaider.inference.tests {opts}", timeout=600)
           testnode.succeed(f"cd /tmp/pytest-run && SKVAIDER_CONFIG_FILE=${gatewayConfig} {e}/bin/pytest --pyargs skvaider.tests {opts}", timeout=600)
           pkg = testnode.succeed(f"{e}/bin/python3 -c 'import skvaider,os;print(os.path.dirname(skvaider.__file__))'").strip()
