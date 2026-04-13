@@ -1,14 +1,10 @@
 import ./make-test-python.nix (
   { pkgs, testlib, ... }:
   let
-    # Actual models used by the skvaider test fixtures. Pre-fetched into the
-    # Nix store so the VM has no need for internet access. Two separate caches
-    # are pre-populated from these paths:
-    #
-    #   1. /tmp/pytest-run/var/tests/models/ — used by inference/conftest.py
-    #      prepare_model() fixture (slugs: gemma-e5420636, embeddinggemma-a3125072)
-    #   2. /tmp/inference-models/ — used by the devenv-style inference backend
-    #      at :8001 so download() skips the network at server startup
+    # GGUFs pre-fetched into the Nix store — the VM has no internet access.
+    # Two caches are pre-populated from these paths:
+    #   1. /tmp/pytest-run/var/tests/models/ — inference/conftest.py prepare_model()
+    #   2. /tmp/inference-models/           — inference backend at :8001
     gemmaGGUF = pkgs.fetchurl {
       url = "https://huggingface.co/unsloth/gemma-3-270m-it-GGUF/resolve/c90975dbd40c0c7b275fefaae758c3415c906238/gemma-3-270m-it-UD-Q4_K_XL.gguf?download=true";
       hash = "sha256-5UIGNuDL/uJAUf8i6XGTgKOpMgekcu2xjdDImpX274A=";
@@ -18,75 +14,12 @@ import ./make-test-python.nix (
       hash = "sha256-oxJQchKPx20cHY0Z97CVx+O/vwBZTc+Ki9O8szSTXVc=";
     };
 
-    # Config for the devenv-style inference backend at :8001.
-    # models_dir is absolute so it is independent of the working directory.
-    # llama_server is not overridden: PATH resolution via pkgs.llama-cpp in
-    # environment.systemPackages is sufficient.
-    inferenceConfig = pkgs.writeText "skvaider-inference-config.toml" ''
-      models_dir = "/tmp/inference-models"
-
-      [server]
-      host = "127.0.0.1"
-      port = 8001
-
-      [logging]
-      log_level = "DEBUG"
-      log_dir = "/tmp/inference-logs"
-
-      [[openai.models]]
-      engine = "llama-server"
-      id = "gemma"
-      context_size = 4096
-      port = 8100
-      cmd_args = []
-      max_requests = 21
-      task = "chat"
-
-      [[openai.models.files]]
-      url = "https://huggingface.co/unsloth/gemma-3-270m-it-GGUF/resolve/c90975dbd40c0c7b275fefaae758c3415c906238/gemma-3-270m-it-UD-Q4_K_XL.gguf?download=true"
-      hash = "e5420636e0cbfee24051ff22e9719380a3a93207a472edb18dd0c89a95f6ef80"
-
-      [[openai.models]]
-      engine = "llama-server"
-      id = "embeddinggemma"
-      task = "embedding"
-      cmd_args = ["-ngl", "0"]
-      port = 8101
-      context_size = 4096
-
-      [[openai.models.files]]
-      url = "https://huggingface.co/unsloth/embeddinggemma-300m-GGUF/resolve/main/embeddinggemma-300M-F32.gguf"
-      hash = "a3125072128fc76d1c1d8d19f7b095c7e3bfbf00594dcf8a8bd3bcb334935d57"
-    '';
-    # Minimal gateway config for app_factory() when running Chain A tests
-    # (test_endpoints.py, test_openai_client.py).  The test_lifespan in
-    # skvaider/conftest.py overrides backends/models at runtime; we only
-    # need a syntactically valid file so app_factory() can read it.
-    gatewayConfig = pkgs.writeText "skvaider-gateway-config.toml" ''
-      [auth]
-
-      [server]
-      directory = "/tmp"
-
-      [logging]
-      log_dir = "/tmp"
-
-      [[backend]]
-      type = "skvaider"
-      url = "http://127.0.0.1:8001"
-
-      [[models]]
-      id = "gemma"
-      instances = 1
-      memory = { ram = 1 }
-      task = "chat"
-
-      [[models]]
-      id = "embeddinggemma"
-      instances = 1
-      memory = { ram = 1 }
-      task = "embedding"
-    '';
+    # Config files live in the skvaider source alongside the devenv configs.
+    # inferenceConfig mirrors config-inference-1.toml with absolute /tmp paths.
+    # gatewayConfig is a minimal single-backend variant of config.toml.
+    src = pkgs.fc.skvaider.passthru.src;
+    inferenceConfig = "${src}/nix/config-inference-test.toml";
+    gatewayConfig = "${src}/nix/config-gateway-test.toml";
   in
   {
     name = "skvaider-pytest";
