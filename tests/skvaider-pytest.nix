@@ -90,9 +90,9 @@ import ./make-test-python.nix (
           # inference/conftest.py's 'client' fixture to shadow skvaider/conftest.py's
           # 'client' for the gateway tests. Three separate processes avoid this.
           e = "${pkgs.fc.skvaider.passthru.testEnv}"
-          # -c points at the source pytest.ini so asyncio_mode, consider_namespace_packages
-          # etc. are read directly from it. --override-ini=addopts= strips --cov and
-          # --capture=fd which don't apply in the VM (no writable src, no browser).
+          # -c points at the source pytest.ini so its settings are picked up.
+          # addopts is cleared because the Nix store is read-only: --cov=src
+          # and --cov-report=html would fail trying to write coverage output.
           opts = "-c ${src}/pytest.ini --override-ini=addopts= -v --tb=short -p no:cacheprovider"
           testnode.succeed(f"cd /tmp/pytest-run && {e}/bin/pytest --pyargs skvaider.inference.tests {opts}", timeout=600)
           testnode.succeed(f"cd /tmp/pytest-run && SKVAIDER_CONFIG_FILE=${gatewayConfig} {e}/bin/pytest --pyargs skvaider.tests {opts}", timeout=600)
