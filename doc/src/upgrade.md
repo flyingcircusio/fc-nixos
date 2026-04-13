@@ -411,6 +411,27 @@ fc-userscan no longer scans for nix store references in human users and all
 existing garbage collection roots will be removed. Service users are not
 affected. You can still add gcroots manually (e.g. via `nix-store --add-root`).
 
+
+### Webproxy: Vinyl Cache and Varnish Cache
+
+The Varnish Cache open-source project renamed itself to Vinyl Cache.
+We follow this rename and use Vinyl Cache 9 as the new default package for the `webproxy` role.
+We still allow using Varnish Cache 8 in this release, but will remove this option with fc-nixos 26.11,
+read the [role documentation](#nixos-webproxy) for more information on how to use Varnish Cache 8.
+
+The project [`varnish-modules`](https://github.com/varnish/varnish-modules), which is published under `pkgs.varnish80Packages.modules` is not available for Vinyl Cache 9, as it is incompatible.
+
+The Vinyl Cache 9 release contains breaking changes, see [Upgrading to Vinyl Cache 9.0](https://vinyl-cache.org/docs/9.0/whats-new/upgrading-9.0.html).
+
+With the update to Vinyl Cache 9, all binary names changed from `varnishXXX` to `vinylXXX`
+and the user it runs in changed to `vinyl-cache`.
+
+We still support configuring Vinyl Cache 9 via `flyingcircus.services.varnish.virtualHosts` and `/etc/local/varnish/default.vcl` for this release, but please migrate this configuration to `flyingcircus.services.vinyl-cache.virtualHosts` and `/etc/local/vinyl-cache/default.vcl`.
+
+We support this migration with NixOS warnings, which you can review using the command 'fc-manage check'.
+After migrating to fc-nixos 26.05, this command will highlight any deprecated behaviour and
+suggest migration paths tailored to the VMs' specific situation.
+
 ## Other notable changes
 
 - The `imagemagick6` family of packages has known vulnerabilities and is not permitted by default anymore. Update your applications to work with a current version of imagemagick, or add this to `flyingcircus.permittedInsecurePackages`.
