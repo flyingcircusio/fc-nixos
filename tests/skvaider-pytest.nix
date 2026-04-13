@@ -70,60 +70,27 @@ import ./make-test-python.nix (
           )
 
       with subtest("start inference backend at :8001"):
-          # skvaider-inference reads its config via --config (argparse), not
-          # an env var.  The uvicorn server inside main() re-reads sys.argv
-          # for the same --config flag when the ASGI lifespan runs.
           testnode.succeed(
-              "${pkgs.fc.skvaider.passthru.testEnv}/bin/skvaider-inference "
-              "--config ${inferenceConfig} "
-              "> /tmp/inference.log 2>&1 &"
+              "${pkgs.fc.skvaider.passthru.testEnv}/bin/skvaider-inference"
+              " --config ${inferenceConfig} > /tmp/inference.log 2>&1 &"
           )
-          testnode.wait_for_open_port(8001, timeout=60)
-          testnode.wait_until_succeeds(
-              "curl -sf http://127.0.0.1:8001/manager/health", timeout=30
-          )
-
-          # Explicitly load both models before pytest starts.  POST /models/{id}/load
-          # blocks until llama-server is healthy, so by the time both curls
-          # return the models are active and Chain A tests skip waiting entirely.
+          testnode.wait_until_succeeds("curl -sf http://127.0.0.1:8001/manager/health", timeout=60)
+          # POST /models/{id}/load blocks until llama-server is healthy.
           testnode.succeed(
-              "curl -sf -X POST http://127.0.0.1:8001/models/gemma/load && "
-              "curl -sf -X POST http://127.0.0.1:8001/models/embeddinggemma/load",
+              "curl -sf -X POST http://127.0.0.1:8001/models/gemma/load &&"
+              " curl -sf -X POST http://127.0.0.1:8001/models/embeddinggemma/load",
               timeout=120
           )
 
       with subtest("skvaider pytest suite"):
-          pytest = "${pkgs.fc.skvaider.passthru.testEnv}/bin/pytest"
-          python = "${pkgs.fc.skvaider.passthru.testEnv}/bin/python3"
-          common = (
-              "--override-ini=addopts= "
-              "--override-ini=asyncio_mode=auto "
-              "--override-ini=consider_namespace_packages=true "
-              "-v --tb=short -p no:cacheprovider"
-          )
-          # 1. Inference tests in their own process: scopes
-          #    skvaider/inference/conftest.py locally so it does NOT shadow
-          #    the gateway 'client' fixture in a subsequent pytest session.
-          testnode.succeed(
-              f"cd /tmp/pytest-run && {pytest} --pyargs skvaider.inference.tests {common}",
-              timeout=600
-          )
-          # 2. Gateway tests in their own process: skvaider/inference/conftest.py
-          #    is not imported; skvaider/conftest.py 'client' is used correctly.
-          #    SKVAIDER_CONFIG_FILE gives app_factory() a valid config to parse.
-          testnode.succeed(
-              f"cd /tmp/pytest-run && SKVAIDER_CONFIG_FILE=${gatewayConfig} "
-              f"{pytest} --pyargs skvaider.tests {common}",
-              timeout=600
-          )
-          # 3. Proxy + router unit tests via filesystem paths (no __init__.py in
-          #    those test dirs so --pyargs dotted names don't work for them).
-          #    These tests use only DummyBackend fixtures; no client/app_factory.
-          testnode.succeed(
-              f"pkg=$({python} -c 'import skvaider,os; print(os.path.dirname(skvaider.__file__))') && "
-              f"cd /tmp/pytest-run && {pytest} $pkg/proxy/tests $pkg/routers/tests {common}",
-              timeout=120
-          )
+          # Three separate processes so inference/conftest.py's 'client' fixture
+          # does not shadow skvaider/conftest.py's 'client' in the gateway tests.
+          e = "${pkgs.fc.skvaider.passthru.testEnv}"
+          opts = "--override-ini=addopts= --override-ini=asyncio_mode=auto --override-ini=consider_namespace_packages=true -v --tb=short -p no:cacheprovider"
+          testnode.succeed(f"cd /tmp/pytest-run && {e}/bin/pytest --pyargs skvaider.inference.tests {opts}", timeout=600)
+          testnode.succeed(f"cd /tmp/pytest-run && SKVAIDER_CONFIG_FILE=${gatewayConfig} {e}/bin/pytest --pyargs skvaider.tests {opts}", timeout=600)
+          pkg = testnode.succeed(f"{e}/bin/python3 -c 'import skvaider,os;print(os.path.dirname(skvaider.__file__))'").strip()
+          testnode.succeed(f"cd /tmp/pytest-run && {e}/bin/pytest {pkg}/proxy/tests {pkg}/routers/tests {opts}", timeout=120)
     '';
   }
 )
