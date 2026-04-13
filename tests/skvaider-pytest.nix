@@ -58,6 +58,35 @@ import ./make-test-python.nix (
       url = "https://huggingface.co/unsloth/embeddinggemma-300m-GGUF/resolve/main/embeddinggemma-300M-F32.gguf"
       hash = "a3125072128fc76d1c1d8d19f7b095c7e3bfbf00594dcf8a8bd3bcb334935d57"
     '';
+    # Minimal gateway config for app_factory() when running Chain A tests
+    # (test_endpoints.py, test_openai_client.py).  The test_lifespan in
+    # skvaider/conftest.py overrides backends/models at runtime; we only
+    # need a syntactically valid file so app_factory() can read it.
+    gatewayConfig = pkgs.writeText "skvaider-gateway-config.toml" ''
+      [auth]
+
+      [server]
+      directory = "/tmp"
+
+      [logging]
+      log_dir = "/tmp"
+
+      [[backend]]
+      type = "skvaider"
+      url = "http://127.0.0.1:8001"
+
+      [[models]]
+      id = "gemma"
+      instances = 1
+      memory = { ram = 1 }
+      task = "chat"
+
+      [[models]]
+      id = "embeddinggemma"
+      instances = 1
+      memory = { ram = 1 }
+      task = "embedding"
+    '';
   in
   {
     name = "skvaider-pytest";
@@ -131,16 +160,28 @@ import ./make-test-python.nix (
           )
 
       with subtest("skvaider pytest suite"):
-          testnode.succeed(
-              "pkg=$(${pkgs.fc.skvaider.passthru.testEnv}/bin/python3 -c "
-              "'import skvaider,os; print(os.path.dirname(skvaider.__file__))') && "
-              "cd /tmp/pytest-run && "
-              "${pkgs.fc.skvaider.passthru.testEnv}/bin/pytest --pyargs skvaider "
+          pytest = "${pkgs.fc.skvaider.passthru.testEnv}/bin/pytest"
+          common = (
               "--override-ini=addopts= "
               "--override-ini=asyncio_mode=auto "
               "--override-ini=consider_namespace_packages=true "
-              "-v --tb=short -p no:cacheprovider",
-              timeout=900
+              "-v --tb=short -p no:cacheprovider"
+          )
+          # Run inference tests in their own invocation so that
+          # skvaider/inference/conftest.py is scoped correctly and does NOT
+          # shadow the gateway 'client' fixture from skvaider/conftest.py.
+          testnode.succeed(
+              f"cd /tmp/pytest-run && {pytest} --pyargs skvaider.inference.tests {common}",
+              timeout=600
+          )
+          # Run gateway + proxy + router tests.  Runs separately so the
+          # inference conftest is not in scope and skvaider/conftest.py
+          # provides the correct 'client' fixture (gateway app_factory).
+          testnode.succeed(
+              f"cd /tmp/pytest-run && SKVAIDER_CONFIG_FILE=${gatewayConfig} {pytest} --pyargs "
+              "skvaider.tests skvaider.proxy.tests skvaider.routers.tests "
+              f"{common}",
+              timeout=600
           )
     '';
   }
