@@ -93,7 +93,7 @@ import ./make-test-python.nix (
           # -c points at the source pytest.ini so its settings are picked up.
           # addopts is cleared because the Nix store is read-only: --cov=src
           # and --cov-report=html would fail trying to write coverage output.
-          opts = "-c ${src}/pytest.ini --override-ini=addopts= -v --tb=short -p no:cacheprovider"
+          opts = "-c ${src}/pytest.ini --override-ini=addopts= -v"
           testnode.succeed(f"cd /tmp/pytest-run && {e}/bin/pytest --pyargs skvaider.inference.tests {opts}", timeout=600)
           testnode.succeed(f"cd /tmp/pytest-run && SKVAIDER_CONFIG_FILE=${gatewayConfig} {e}/bin/pytest --pyargs skvaider.tests {opts}", timeout=600)
           pkg = testnode.succeed(f"{e}/bin/python3 -c 'import skvaider,os;print(os.path.dirname(skvaider.__file__))'").strip()
