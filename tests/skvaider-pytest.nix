@@ -83,14 +83,16 @@ import ./make-test-python.nix (
           )
 
       with subtest("skvaider pytest suite"):
-          # Three separate processes so inference/conftest.py's 'client' fixture
-          # does not shadow skvaider/conftest.py's 'client' in the gateway tests.
-          e = "${pkgs.fc.skvaider.passthru.testEnv}"
-          opts = "--override-ini=addopts= --override-ini=asyncio_mode=auto --override-ini=consider_namespace_packages=true -v --tb=short -p no:cacheprovider"
-          testnode.succeed(f"cd /tmp/pytest-run && {e}/bin/pytest --pyargs skvaider.inference.tests {opts}", timeout=600)
-          testnode.succeed(f"cd /tmp/pytest-run && SKVAIDER_CONFIG_FILE=${gatewayConfig} {e}/bin/pytest --pyargs skvaider.tests {opts}", timeout=600)
-          pkg = testnode.succeed(f"{e}/bin/python3 -c 'import skvaider,os;print(os.path.dirname(skvaider.__file__))'").strip()
-          testnode.succeed(f"cd /tmp/pytest-run && {e}/bin/pytest {pkg}/proxy/tests {pkg}/routers/tests {opts}", timeout=120)
+          # Mirror GitHub CI: filesystem discovery from the source tree so
+          # conftest.py files are scoped by directory, not package import.
+          testnode.succeed(
+              "cd /tmp/pytest-run"
+              " && SKVAIDER_CONFIG_FILE=${gatewayConfig}"
+              " ${pkgs.fc.skvaider.passthru.testEnv}/bin/pytest"
+              " -c ${src}/pytest.ini --override-ini=addopts="
+              " -v --tb=short -p no:cacheprovider ${src}/src",
+              timeout=600
+          )
     '';
   }
 )
