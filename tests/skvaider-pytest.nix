@@ -83,18 +83,18 @@ import ./make-test-python.nix (
           )
 
       with subtest("skvaider pytest suite"):
-          # Mirror GitHub CI: filesystem discovery so conftest.py files are
-          # scoped by directory. Point at the installed package (site-packages)
-          # so Python's import resolution and pytest's file discovery agree.
-          testnode.succeed(
-              "pkg=$(${pkgs.fc.skvaider.passthru.testEnv}/bin/python3"
-              " -c 'import skvaider,os;print(os.path.dirname(skvaider.__file__))') &&"
-              " cd /tmp/pytest-run && SKVAIDER_CONFIG_FILE=${gatewayConfig}"
-              " ${pkgs.fc.skvaider.passthru.testEnv}/bin/pytest"
-              " -c ${src}/pytest.ini --override-ini=addopts="
-              " -v --tb=short -p no:cacheprovider $pkg",
-              timeout=600
-          )
+          # Unlike GitHub CI (which runs `uv run pytest` from the source tree
+          # and gets filesystem-scoped conftest.py loading), here the package is
+          # installed into the test venv. Running `--pyargs skvaider` in a single
+          # session loads ALL conftest.py files across the package tree, causing
+          # inference/conftest.py's 'client' fixture to shadow skvaider/conftest.py's
+          # 'client' for the gateway tests. Three separate processes avoid this.
+          e = "${pkgs.fc.skvaider.passthru.testEnv}"
+          opts = "--override-ini=addopts= --override-ini=asyncio_mode=auto --override-ini=consider_namespace_packages=true -v --tb=short -p no:cacheprovider"
+          testnode.succeed(f"cd /tmp/pytest-run && {e}/bin/pytest --pyargs skvaider.inference.tests {opts}", timeout=600)
+          testnode.succeed(f"cd /tmp/pytest-run && SKVAIDER_CONFIG_FILE=${gatewayConfig} {e}/bin/pytest --pyargs skvaider.tests {opts}", timeout=600)
+          pkg = testnode.succeed(f"{e}/bin/python3 -c 'import skvaider,os;print(os.path.dirname(skvaider.__file__))'").strip()
+          testnode.succeed(f"cd /tmp/pytest-run && {e}/bin/pytest {pkg}/proxy/tests {pkg}/routers/tests {opts}", timeout=120)
     '';
   }
 )
