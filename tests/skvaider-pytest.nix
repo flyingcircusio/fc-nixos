@@ -83,14 +83,16 @@ import ./make-test-python.nix (
           )
 
       with subtest("skvaider pytest suite"):
-          # Mirror GitHub CI: filesystem discovery from the source tree so
-          # conftest.py files are scoped by directory, not package import.
+          # Mirror GitHub CI: filesystem discovery so conftest.py files are
+          # scoped by directory. Point at the installed package (site-packages)
+          # so Python's import resolution and pytest's file discovery agree.
           testnode.succeed(
-              "cd /tmp/pytest-run"
-              " && SKVAIDER_CONFIG_FILE=${gatewayConfig}"
+              "pkg=$(${pkgs.fc.skvaider.passthru.testEnv}/bin/python3"
+              " -c 'import skvaider,os;print(os.path.dirname(skvaider.__file__))') &&"
+              " cd /tmp/pytest-run && SKVAIDER_CONFIG_FILE=${gatewayConfig}"
               " ${pkgs.fc.skvaider.passthru.testEnv}/bin/pytest"
               " -c ${src}/pytest.ini --override-ini=addopts="
-              " -v --tb=short -p no:cacheprovider ${src}/src",
+              " -v --tb=short -p no:cacheprovider $pkg",
               timeout=600
           )
     '';
