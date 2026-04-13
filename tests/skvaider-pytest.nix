@@ -161,27 +161,35 @@ import ./make-test-python.nix (
 
       with subtest("skvaider pytest suite"):
           pytest = "${pkgs.fc.skvaider.passthru.testEnv}/bin/pytest"
+          python = "${pkgs.fc.skvaider.passthru.testEnv}/bin/python3"
           common = (
               "--override-ini=addopts= "
               "--override-ini=asyncio_mode=auto "
               "--override-ini=consider_namespace_packages=true "
               "-v --tb=short -p no:cacheprovider"
           )
-          # Run inference tests in their own invocation so that
-          # skvaider/inference/conftest.py is scoped correctly and does NOT
-          # shadow the gateway 'client' fixture from skvaider/conftest.py.
+          # 1. Inference tests in their own process: scopes
+          #    skvaider/inference/conftest.py locally so it does NOT shadow
+          #    the gateway 'client' fixture in a subsequent pytest session.
           testnode.succeed(
               f"cd /tmp/pytest-run && {pytest} --pyargs skvaider.inference.tests {common}",
               timeout=600
           )
-          # Run gateway + proxy + router tests.  Runs separately so the
-          # inference conftest is not in scope and skvaider/conftest.py
-          # provides the correct 'client' fixture (gateway app_factory).
+          # 2. Gateway tests in their own process: skvaider/inference/conftest.py
+          #    is not imported; skvaider/conftest.py 'client' is used correctly.
+          #    SKVAIDER_CONFIG_FILE gives app_factory() a valid config to parse.
           testnode.succeed(
-              f"cd /tmp/pytest-run && SKVAIDER_CONFIG_FILE=${gatewayConfig} {pytest} --pyargs "
-              "skvaider.tests skvaider.proxy.tests skvaider.routers.tests "
-              f"{common}",
+              f"cd /tmp/pytest-run && SKVAIDER_CONFIG_FILE=${gatewayConfig} "
+              f"{pytest} --pyargs skvaider.tests {common}",
               timeout=600
+          )
+          # 3. Proxy + router unit tests via filesystem paths (no __init__.py in
+          #    those test dirs so --pyargs dotted names don't work for them).
+          #    These tests use only DummyBackend fixtures; no client/app_factory.
+          testnode.succeed(
+              f"pkg=$({python} -c 'import skvaider,os; print(os.path.dirname(skvaider.__file__))') && "
+              f"cd /tmp/pytest-run && {pytest} $pkg/proxy/tests $pkg/routers/tests {common}",
+              timeout=120
           )
     '';
   }
