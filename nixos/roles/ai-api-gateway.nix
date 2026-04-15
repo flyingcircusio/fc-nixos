@@ -68,8 +68,8 @@ in
               url = "http://${val.address}:8000";
             }) (builtins.filter (s: s.service == "ai-model-server-server") config.flyingcircus.encServices);
           };
-          auth.static_tokens = lib.mkOption {
-            description = "List of static bearer tokens accepted by the proxy.";
+          auth.admin_tokens = lib.mkOption {
+            description = "List of admin bearer tokens for privileged access (check-skvaider, /health endpoint).";
             type = with lib.types; listOf str;
             default = [ ];
           };
