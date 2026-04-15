@@ -111,6 +111,65 @@ import ../make-test-python.nix (
         '';
       };
 
+      sysctl = {
+        name = "sysctl";
+        nodes.machine =
+          { config, lib, ... }:
+          {
+            imports = [
+              (testlib.fcConfig { id = 1; })
+            ];
+
+            environment.systemPackages = [ pkgs.procps ];
+
+            networking.interfaces = lib.mapAttrs (k: _: { name = k; }) config.virtualisation.interfaces;
+
+            boot.kernel.sysctl = {
+              "net.ipv4.conf.ethfe.forwarding" = true;
+              "net/ipv6/neigh/ethfe/proxy_delay" = 20;
+            };
+
+            specialisation.changed.configuration = {
+              boot.kernel.sysctl = {
+                "net.ipv4.conf.ethfe.forwarding" = lib.mkForce false;
+                "net/ipv6/neigh/ethfe/proxy_delay" = lib.mkForce 40;
+                "net.ipv4.conf.ethfe.invalid" = false;
+              };
+            };
+          };
+
+        testScript = ''
+          def assertSysctl(sysctl, expected):
+            value = machine.succeed(f'sysctl -nb "{sysctl}"')
+            t.assertEqual(value, str(expected))
+
+          def testBoot():
+            machine.wait_for_unit("network.target")
+            assertSysctl("net.ipv4.conf.ethfe.forwarding", 1)
+            assertSysctl("net.ipv6.neigh.ethfe.proxy_delay", 20)
+            unitStatus = machine.succeed(f"systemctl status network-sysctl-ethfe.service")
+            t.assertNotIn("Couldn't write '0' to 'net/ipv4/conf/ethfe/invalid'", unitStatus)
+
+          def testSpecialisation():
+            assertSysctl("net.ipv4.conf.ethfe.forwarding", 0)
+            assertSysctl("net.ipv6.neigh.ethfe.proxy_delay", 40)
+            unitStatus = machine.succeed(f"systemctl status network-sysctl-ethfe.service")
+            t.assertIn("Couldn't write '0' to 'net/ipv4/conf/ethfe/invalid'", unitStatus)
+
+          with subtest("after boot"):
+            testBoot()
+
+          with subtest("after switch"):
+            machine.succeed("/run/current-system/specialisation/changed/bin/switch-to-configuration test")
+            testSpecialisation()
+
+          with subtest("after reboot"):
+            machine.shutdown()
+            machine.start()
+            testBoot()
+        '';
+      };
+
       wireguard = {
         name = "wireguard";
         nodes.machine = {
