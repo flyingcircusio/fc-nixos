@@ -28,36 +28,14 @@ import ./make-test-python.nix (
 
     testEnv = pkgs.fc.skvaider.passthru.testEnv;
 
-    # pytest invocation options shared across all three runs.
-    # -c points at the source pytest.ini so its settings are picked up.
-    # addopts is cleared because the Nix store is read-only: --cov=src
-    # and --cov-report=html would fail trying to write coverage output.
-    pytestBaseOpts = "-c ${src}/pytest.ini --override-ini=addopts= -v";
-
     runTestsScript = pkgs.writeShellScriptBin "run-tests" ''
       set -euo pipefail
 
       export PYTHONUNBUFFERED=1
+      export SKVAIDER_CONFIG_FILE=${gatewayConfig}
 
-      # Unlike GitHub CI (which runs `uv run pytest` from the source tree
-      # and gets filesystem-scoped conftest.py loading), here the package is
-      # installed into the test venv. Running --pyargs skvaider in a single
-      # session loads ALL conftest.py files across the package tree, causing
-      # inference/conftest.py's 'client' fixture to shadow skvaider/conftest.py's
-      # 'client' for the gateway tests. Three separate processes avoid this.
-      cd /tmp/pytest-run
-
-      ${testEnv}/bin/pytest --pyargs skvaider.inference.tests \
-        ${pytestBaseOpts} "$@"
-
-      SKVAIDER_CONFIG_FILE=${gatewayConfig} \
-        ${testEnv}/bin/pytest --pyargs skvaider.tests \
-        ${pytestBaseOpts} "$@"
-
-      pkg=$(${testEnv}/bin/python3 -c \
-        'import skvaider,os;print(os.path.dirname(skvaider.__file__))')
-      ${testEnv}/bin/pytest "$pkg/proxy/tests" "$pkg/routers/tests" \
-        ${pytestBaseOpts} "$@"
+      cd ${src}
+      ${testEnv}/bin/pytest --override-ini=addopts= -v "$@"
     '';
   in
   {
