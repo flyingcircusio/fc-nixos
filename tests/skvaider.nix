@@ -30,6 +30,34 @@ import ./make-test-python.nix (
         cp ${fetch "merges.txt" "1idd4rvkpqqbks51i2vjbd928inw7slij9l4r063w3y5fd3ndq8w"} $out/merges.txt
         cp ${fetch "pytorch_model.bin" "1rh4bk5fqjy74k5r1dwmm6ax40fj0djapmfycpkxyaq36i0b41mp"} $out/pytorch_model.bin
       '';
+
+    # All functional assertions run inside this script on the gateway node.
+    # The testScript handles only cross-node readiness ordering (wait_for_unit,
+    # wait_for_open_port) before invoking this.
+    runTestsScript = pkgs.writeShellScriptBin "run-tests" ''
+      set -euo pipefail
+
+      # gateway ↔ model network connectivity
+      ping -c1 ${modelServerIp}
+
+      # gateway has discovered the model server and written its config
+      grep '${modelServerIp}:8000' /var/lib/skvaider/config.toml
+      ${pkgs.lib.getExe' pkgs.fc.skvaider "check-skvaider-config"} \
+        /var/lib/skvaider/config.toml
+
+      # inference API is reachable from gateway
+      curl -sf http://${modelServerIp}:8000/models
+
+      # gateway proxies model list through to a bearer-authenticated caller
+      curl -sf http://127.0.0.1:23211/openai/v1/models \
+        -H 'Authorization: Bearer testtoken' \
+        | python3 -c "
+      import sys, json
+      d = json.load(sys.stdin)
+      assert any(m['id'] == 'tiny-gpt2' for m in d['data']), \
+          f'tiny-gpt2 not in model list: {d}'
+      "
+    '';
   in
   {
     name = "skvaider";
@@ -104,6 +132,8 @@ import ./make-test-python.nix (
         ];
         networking.domain = "fcio.net";
 
+        environment.systemPackages = [ runTestsScript ];
+
         flyingcircus.roles.ai-api-gateway.enable = true;
         flyingcircus.enc.name = "gateway";
         flyingcircus.encServices = [
@@ -143,42 +173,25 @@ import ./make-test-python.nix (
     testScript = ''
       start_all()
 
+      # Wait for both nodes to be fully up before running any tests.
       model.wait_for_unit("multi-user.target")
       gateway.wait_for_unit("multi-user.target")
 
-      with subtest("network connectivity"):
-          gateway.succeed("ping -c1 ${modelServerIp}")
-          model.succeed("ping -c1 ${gatewayIp}")
+      # Wait for skvaider services to be ready before handing off to run-tests.
+      gateway.wait_for_unit("skvaider-config.service")
+      gateway.wait_for_file("/var/lib/skvaider/config.toml")
+      model.wait_for_unit("skvaider-inference.service")
+      model.wait_for_open_port(8000)
+      gateway.wait_for_unit("skvaider.service")
+      gateway.wait_for_open_port(23211)
+      gateway.wait_until_succeeds(
+          "curl -sf http://127.0.0.1:23211/openai/v1/models"
+          " -H 'Authorization: Bearer testtoken'",
+          timeout=120,
+      )
 
-      with subtest("gateway discovers model server"):
-          gateway.wait_for_unit("skvaider-config.service")
-          gateway.wait_for_file("/var/lib/skvaider/config.toml")
-          gateway.succeed("grep '${modelServerIp}:8000' /var/lib/skvaider/config.toml")
-          gateway.succeed(
-              "${pkgs.lib.getExe' pkgs.fc.skvaider "check-skvaider-config"} /var/lib/skvaider/config.toml"
-          )
-
-      with subtest("skvaider-inference starts and serves"):
-          model.wait_for_unit("skvaider-inference.service")
-          model.wait_for_open_port(8000)
-
-      with subtest("inference api responds"):
-          model.succeed("curl -sf http://localhost:8000/models")
-
-      with subtest("inference through gateway"):
-          # Check the gateway can reach the model server and discover the model.
-          # We do not trigger a full model load (which requires vllm/llama-server
-          # to run) because that is too slow and environment-dependent for CI.
-          # Checking /openai/v1/models is sufficient to validate the gateway↔
-          # inference-server plumbing: health check, model discovery, pool state.
-          gateway.wait_for_unit("skvaider.service")
-          gateway.wait_for_open_port(23211)
-          gateway.wait_until_succeeds(
-              "curl -sf http://127.0.0.1:23211/openai/v1/models"
-              " -H 'Authorization: Bearer testtoken'"
-              " | python3 -c \"import sys,json; d=json.load(sys.stdin); assert any(m['id']=='tiny-gpt2' for m in d['data'])\"",
-              timeout=120
-          )
+      with subtest("Run tests"):
+          gateway.succeed("run-tests", timeout=120)
     '';
   }
 )

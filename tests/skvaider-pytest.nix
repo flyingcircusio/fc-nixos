@@ -1,5 +1,10 @@
 import ./make-test-python.nix (
-  { pkgs, testlib, ... }:
+  {
+    pkgs,
+    testlib,
+    testOpts ? "",
+    ...
+  }:
   let
     # GGUFs pre-fetched into the Nix store — the VM has no internet access.
     # Two caches are pre-populated from these paths:
@@ -20,6 +25,40 @@ import ./make-test-python.nix (
     src = pkgs.fc.skvaider.passthru.src;
     inferenceConfig = "${src}/nix/config-inference-test.toml";
     gatewayConfig = "${src}/nix/config-gateway-test.toml";
+
+    testEnv = pkgs.fc.skvaider.passthru.testEnv;
+
+    # pytest invocation options shared across all three runs.
+    # -c points at the source pytest.ini so its settings are picked up.
+    # addopts is cleared because the Nix store is read-only: --cov=src
+    # and --cov-report=html would fail trying to write coverage output.
+    pytestBaseOpts = "-c ${src}/pytest.ini --override-ini=addopts= -v";
+
+    runTestsScript = pkgs.writeShellScriptBin "run-tests" ''
+      set -euo pipefail
+
+      export PYTHONUNBUFFERED=1
+
+      # Unlike GitHub CI (which runs `uv run pytest` from the source tree
+      # and gets filesystem-scoped conftest.py loading), here the package is
+      # installed into the test venv. Running --pyargs skvaider in a single
+      # session loads ALL conftest.py files across the package tree, causing
+      # inference/conftest.py's 'client' fixture to shadow skvaider/conftest.py's
+      # 'client' for the gateway tests. Three separate processes avoid this.
+      cd /tmp/pytest-run
+
+      ${testEnv}/bin/pytest --pyargs skvaider.inference.tests \
+        ${pytestBaseOpts} "$@"
+
+      SKVAIDER_CONFIG_FILE=${gatewayConfig} \
+        ${testEnv}/bin/pytest --pyargs skvaider.tests \
+        ${pytestBaseOpts} "$@"
+
+      pkg=$(${testEnv}/bin/python3 -c \
+        'import skvaider,os;print(os.path.dirname(skvaider.__file__))')
+      ${testEnv}/bin/pytest "$pkg/proxy/tests" "$pkg/routers/tests" \
+        ${pytestBaseOpts} "$@"
+    '';
   in
   {
     name = "skvaider-pytest";
@@ -35,69 +74,75 @@ import ./make-test-python.nix (
         imports = [ (testlib.fcConfig { id = 1; }) ];
         networking.domain = "fcio.net";
         virtualisation.memorySize = 4096;
-        environment.systemPackages = [ pkgs.llama-cpp ];
+
+        environment.systemPackages = [
+          pkgs.llama-cpp
+          runTestsScript
+        ];
+
+        # Populate both model caches from the Nix store before any service starts.
+        # This is a oneshot so it runs exactly once and the inference service
+        # can declare After/Requires on it instead of doing setup inline.
+        systemd.services.skvaider-test-init = {
+          description = "Populate skvaider test model caches";
+          wantedBy = [ "multi-user.target" ];
+          before = [ "skvaider-inference-test.service" ];
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+          };
+          script = ''
+            # pytest fixture cache — used by inference/conftest.py prepare_model()
+            mkdir -p /tmp/pytest-run/var/tests/models/gemma-e5420636
+            ln -sf ${gemmaGGUF} \
+              /tmp/pytest-run/var/tests/models/gemma-e5420636/gemma-3-270m-it-UD-Q4_K_XL.gguf
+            mkdir -p /tmp/pytest-run/var/tests/models/embeddinggemma-a3125072
+            ln -sf ${embeddinggemmaGGUF} \
+              /tmp/pytest-run/var/tests/models/embeddinggemma-a3125072/embeddinggemma-300M-F32.gguf
+
+            # Inference server model cache — LlamaModel.download() checks
+            # integrity_marker_file + model_files existence and skips the
+            # download when both are present.  Pre-populating here prevents
+            # any outbound network access from skvaider-inference at startup.
+            mkdir -p /tmp/inference-models/gemma-e5420636
+            ln -sf ${gemmaGGUF} \
+              /tmp/inference-models/gemma-e5420636/gemma-3-270m-it-UD-Q4_K_XL.gguf
+            touch /tmp/inference-models/gemma-e5420636/integrity.ok
+            mkdir -p /tmp/inference-models/embeddinggemma-a3125072
+            ln -sf ${embeddinggemmaGGUF} \
+              /tmp/inference-models/embeddinggemma-a3125072/embeddinggemma-300M-F32.gguf
+            touch /tmp/inference-models/embeddinggemma-a3125072/integrity.ok
+            mkdir -p /tmp/inference-logs
+          '';
+        };
+
+        systemd.services.skvaider-inference-test = {
+          description = "skvaider inference backend for pytest VM test";
+          wantedBy = [ "multi-user.target" ];
+          requires = [ "skvaider-test-init.service" ];
+          after = [ "skvaider-test-init.service" ];
+          serviceConfig = {
+            Type = "simple";
+            ExecStart = "${testEnv}/bin/skvaider-inference --config ${inferenceConfig}";
+            StandardOutput = "append:/tmp/inference.log";
+            StandardError = "append:/tmp/inference.log";
+          };
+        };
       };
 
     testScript = ''
       start_all()
-      testnode.wait_for_unit("multi-user.target")
+      testnode.wait_for_unit("skvaider-inference-test.service")
+      testnode.wait_until_succeeds("curl -sf http://127.0.0.1:8001/manager/health", timeout=60)
+      # POST /models/{id}/load blocks until llama-server is healthy.
+      testnode.succeed(
+          "curl -sf -X POST http://127.0.0.1:8001/models/gemma/load &&"
+          " curl -sf -X POST http://127.0.0.1:8001/models/embeddinggemma/load",
+          timeout=120,
+      )
 
-      with subtest("prepare model caches"):
-          # pytest fixture cache — used by inference/conftest.py prepare_model()
-          testnode.succeed(
-              "mkdir -p /tmp/pytest-run/var/tests/models/gemma-e5420636 && "
-              "ln -sf ${gemmaGGUF} "
-              "    /tmp/pytest-run/var/tests/models/gemma-e5420636/gemma-3-270m-it-UD-Q4_K_XL.gguf && "
-              "mkdir -p /tmp/pytest-run/var/tests/models/embeddinggemma-a3125072 && "
-              "ln -sf ${embeddinggemmaGGUF} "
-              "    /tmp/pytest-run/var/tests/models/embeddinggemma-a3125072/embeddinggemma-300M-F32.gguf"
-          )
-
-          # Inference server model cache — LlamaModel.download() checks
-          # integrity_marker_file + model_files existence and skips the
-          # download when both are present.  Pre-populating here prevents
-          # any outbound network access from skvaider-inference at startup.
-          testnode.succeed(
-              "mkdir -p /tmp/inference-models/gemma-e5420636 && "
-              "ln -sf ${gemmaGGUF} "
-              "    /tmp/inference-models/gemma-e5420636/gemma-3-270m-it-UD-Q4_K_XL.gguf && "
-              "touch /tmp/inference-models/gemma-e5420636/integrity.ok && "
-              "mkdir -p /tmp/inference-models/embeddinggemma-a3125072 && "
-              "ln -sf ${embeddinggemmaGGUF} "
-              "    /tmp/inference-models/embeddinggemma-a3125072/embeddinggemma-300M-F32.gguf && "
-              "touch /tmp/inference-models/embeddinggemma-a3125072/integrity.ok && "
-              "mkdir -p /tmp/inference-logs"
-          )
-
-      with subtest("start inference backend at :8001"):
-          testnode.succeed(
-              "${pkgs.fc.skvaider.passthru.testEnv}/bin/skvaider-inference"
-              " --config ${inferenceConfig} > /tmp/inference.log 2>&1 &"
-          )
-          testnode.wait_until_succeeds("curl -sf http://127.0.0.1:8001/manager/health", timeout=60)
-          # POST /models/{id}/load blocks until llama-server is healthy.
-          testnode.succeed(
-              "curl -sf -X POST http://127.0.0.1:8001/models/gemma/load &&"
-              " curl -sf -X POST http://127.0.0.1:8001/models/embeddinggemma/load",
-              timeout=120
-          )
-
-      with subtest("skvaider pytest suite"):
-          # Unlike GitHub CI (which runs `uv run pytest` from the source tree
-          # and gets filesystem-scoped conftest.py loading), here the package is
-          # installed into the test venv. Running `--pyargs skvaider` in a single
-          # session loads ALL conftest.py files across the package tree, causing
-          # inference/conftest.py's 'client' fixture to shadow skvaider/conftest.py's
-          # 'client' for the gateway tests. Three separate processes avoid this.
-          e = "${pkgs.fc.skvaider.passthru.testEnv}"
-          # -c points at the source pytest.ini so its settings are picked up.
-          # addopts is cleared because the Nix store is read-only: --cov=src
-          # and --cov-report=html would fail trying to write coverage output.
-          opts = "-c ${src}/pytest.ini --override-ini=addopts= -v"
-          testnode.succeed(f"cd /tmp/pytest-run && {e}/bin/pytest --pyargs skvaider.inference.tests {opts}", timeout=600)
-          testnode.succeed(f"cd /tmp/pytest-run && SKVAIDER_CONFIG_FILE=${gatewayConfig} {e}/bin/pytest --pyargs skvaider.tests {opts}", timeout=600)
-          pkg = testnode.succeed(f"{e}/bin/python3 -c 'import skvaider,os;print(os.path.dirname(skvaider.__file__))'").strip()
-          testnode.succeed(f"cd /tmp/pytest-run && {e}/bin/pytest {pkg}/proxy/tests {pkg}/routers/tests {opts}", timeout=120)
+      with subtest("Run tests"):
+          testnode.succeed("run-tests ${testOpts}", timeout=30 * 60)
     '';
   }
 )
