@@ -120,6 +120,36 @@ let
   concatMapLinesIndent = concatFuncWithIndent lib.concatMapStringsSep;
   concatMapLines = lib.concatMapStringsSep "\n";
 
+  extractSysctlInterface =
+    sysctl:
+    lib.pipe
+      [
+        ''net\.ipv[46]\.conf\.([/[:alnum:]]+)\..+''
+        "net/ipv[46]/conf/([.[:alnum:]]+)/.+"
+        ''net\.ipv[46]\.neigh\.([/[:alnum:]]+)\..+''
+        "net/ipv[46]/neigh/([.[:alnum:]]+)/.+"
+      ]
+      [
+        (lib.map (re: lib.match re sysctl))
+        (lib.findFirst lib.isList [ null ])
+        lib.head
+        (lib.mapNullable (replaceStrings [ "/" ] [ "." ]))
+      ];
+
+  interfaceSysctls = lib.pipe config.boot.kernel.sysctl [
+    lib.attrsToList
+    (map (e: e // { iface = extractSysctlInterface e.name; }))
+    (lib.filter (
+      { value, iface, ... }:
+      value != null
+      && !elem iface [
+        null
+        "default"
+        "all"
+        "*"
+      ]
+    ))
+  ];
 in
 {
 
@@ -148,6 +178,28 @@ in
 
   config = lib.mkMerge [
     {
+      assertions =
+        let
+          invalidSysctls = lib.filter (
+            { iface, ... }: !lib.elem iface (lib.mapAttrsToList (n: v: v.name) config.networking.interfaces)
+          ) interfaceSysctls;
+        in
+        [
+          {
+            assertion = lib.length invalidSysctls == 0;
+            message = ''
+              The following sysctls refer to interfaces that are not managed through networking.interfaces:
+              ${lib.concatMapStringsSep ", " ({ name, iface, ... }: "${name} (${iface})") invalidSysctls}
+              Applying sysctls to these interfaces won't work automatically. Add a systemd unit that sets the sysctls
+              and depends on the unit that brings up the interface. Then remove these entries from boot.kernel.sysctl to
+              clear this error.
+            '';
+          }
+        ];
+
+      environment.etc."sysctl.d/90-nixos-overwrite.conf".text = # Do not log error and keep excluded from glob patterns
+        lib.concatMapStrings ({ name, ... }: "-${name}\n") interfaceSysctls;
+
       environment.etc."host.conf".text = ''
         order hosts, bind
         multi on
@@ -731,6 +783,36 @@ in
               (map (link: lib.nameValuePair (unitName link) (unitTemplate link false)) virtualLinks)
               ++ (map (link: lib.nameValuePair (unitName link.link) (unitTemplate link.link true)) ethernetLinks)
             )
+          ++ (
+            let
+              sysctlFile =
+                link:
+                pkgs.writeText "sysctl-${link}" (
+                  lib.concatMapStrings (
+                    { name, value, ... }: "${name}=${if value == false then "0" else toString value}\n"
+                  ) (filter ({ iface, ... }: link == iface) interfaceSysctls)
+                );
+              unitName = link: "network-sysctl-${link}";
+              unitTemplate = link: rec {
+                description = "Apply Sysctls for link ${link}";
+                wantedBy = [ "network-addresses-${link}.service" ];
+                before = wantedBy;
+                requires = [ "${link}-netdev.service" ];
+                bindsTo = requires;
+                after = requires;
+                script = ''
+                  ${pkgs.systemd}/lib/systemd/systemd-sysctl ${sysctlFile link}
+                '';
+                serviceConfig = {
+                  Type = "oneshot";
+                  RemainAfterExit = true;
+                };
+              };
+            in
+            (lib.mapAttrsToList (
+              n: v: lib.nameValuePair (unitName v.name) (unitTemplate v.name)
+            ) config.networking.interfaces)
+          )
           ++
 
             (lib.optionals (!isNull fclib.underlay)
