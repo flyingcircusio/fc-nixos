@@ -146,7 +146,7 @@ import ./make-test-python.nix (
           }
         ];
         flyingcircus.roles.ai-api-gateway.settings = {
-          auth.static_tokens = [ "testtoken" ];
+          auth.admin_tokens = [ "testtoken" ];
           # server.directory must be explicit: the Python default is Path(".") and
           # systemd's working directory is /, so the debug middleware would try to
           # mkdir /debug which the skvaider user cannot write.
