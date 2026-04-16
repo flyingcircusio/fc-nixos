@@ -585,6 +585,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   opensearch-dashboards = super.callPackage ./opensearch-dashboards { };
 
+  opensearch_3_5 = super.callPackage ./opensearch_3_5.nix { };
+
   percona = self.percona84;
   percona-toolkit = super.perlPackages.PerconaToolkit.overrideAttrs (oldAttrs: {
     # The script uses usr/bin/env perl and the Perl builder adds PERL5LIB to it.
