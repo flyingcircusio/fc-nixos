@@ -27,21 +27,6 @@ in
 {
   options = with lib; {
     flyingcircus.initrd = {
-      enableXFSUpgrades = lib.mkEnableOption "XFS upgrades during initrd";
-      upgradeXFS = lib.mkOption {
-        description = ''
-          Call xfs_admin -O with the specified devices and features before mounting.
-          :::{.warning}
-          Do not modify these light-heartedly. Changing xfs parameters can
-          take several (tens of) minutes at the next boot, depending on the number of inodes.
-          :::
-        '';
-        type = with lib.types; attrsOf (listOf (strMatching "[^=]+=[01]"));
-        default = { };
-        example = {
-          "/dev/disk/by-label/root" = [ "bigtime=1" ];
-        };
-      };
       formatXFS = lib.mkOption {
         description = ''
           Format device with mkfs.xfs options before mounting.
@@ -179,17 +164,6 @@ in
     })
 
     (lib.mkIf (cfg.formatXFS != { }) {
-      assertions =
-        let
-          shared = lib.attrNames (lib.intersectAttrs cfg.formatXFS cfg.upgradeXFS);
-        in
-        [
-          {
-            assertion = lib.length shared == 0;
-            message = "Can not format and upgrade at the same time. Offending entries: ${lib.concatStringsSep ", " shared}";
-          }
-        ];
-
       boot.initrd = {
         extraUtilsCommands = ''
           copy_bin_and_libs ${pkgs.xfsprogs}/bin/mkfs.xfs

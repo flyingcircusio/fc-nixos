@@ -122,13 +122,6 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
   };
 
   flyingcircus.initrd = {
-    upgradeXFS = {
-      "/dev/disk/by-label/root" = [
-        "bigtime=1"
-        "inobtcount=1"
-        "nrext64=1"
-      ];
-    };
     formatXFS = {
       "/dev/disk/by-partlabel/tmp" = "-L tmp -q -K -d su=4m,sw=1";
     };

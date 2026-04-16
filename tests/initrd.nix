@@ -34,10 +34,6 @@ import ./make-test-python.nix (
           };
         };
         flyingcircus.initrd = {
-          enableXFSUpgrades = true;
-          upgradeXFS = {
-            "/dev/disk/by-label/root" = [ "bigtime=1" ];
-          };
           formatXFS = {
             "/dev/disk/by-partlabel/tmp" =
               "-L tmp -q -K -m crc=1,finobt=1,bigtime=1 -i nrext64=0 -d su=4m,sw=1";
@@ -80,8 +76,6 @@ import ./make-test-python.nix (
         machine.succeed('mount /dev/disk/by-label/cidata /cidata')
 
       with subtest("xfs upgrade/format"):
-        assert "bigtime=1" in (r := machine.succeed('xfs_info /dev/disk/by-label/root')), r
-        assert "bigtime=1" in (r := machine.succeed('xfs_info /dev/disk/by-label/tmp')), r
         assert "drwxrwxrwt" in (r := machine.succeed('stat /tmp')), r
 
       with subtest("/tmp data"):
