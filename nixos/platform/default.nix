@@ -336,11 +336,21 @@ in
       '';
 
       settings = {
-        substituters = lib.mkOverride 90 [
-          "https://cache.nixos.org"
-          "https://s3.whq.fcio.net/hydra"
-          "https://hydra.flyingcircus.io"
-        ];
+        # In absense of a specific priority in both the nix-cache-info and the URL, order matters.
+        substituters = lib.mkOverride 90 (
+          [
+            "https://cache.nixos.org"
+          ]
+          ++ lib.optionals (config.flyingcircus.location == "dev") [
+            "https://objects.whq.fcio.net/hydra"
+          ]
+          ++ lib.optionals (config.flyingcircus.location != "dev") [
+            "https://s3.whq.fcio.net/hydra"
+          ]
+          ++ [
+            "https://hydra.flyingcircus.io"
+          ]
+        );
 
         trusted-public-keys = [
           "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
