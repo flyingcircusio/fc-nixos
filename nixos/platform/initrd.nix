@@ -9,20 +9,6 @@
 let
   cfg = config.flyingcircus.initrd;
   qemuStateDir = "/var/lib/qemu";
-
-  fsInfo =
-    fs:
-    lib.pipe fs [
-      (lib.mapAttrsToList (
-        k: v: [
-          k
-          v
-        ]
-      ))
-      lib.flatten
-      (lib.concatStringsSep "\n")
-      (pkgs.writeText "fsinfo")
-    ];
 in
 {
   options = with lib; {
@@ -47,59 +33,6 @@ in
   };
 
   config = lib.mkMerge [
-    (lib.mkIf (cfg.enableXFSUpgrades && cfg.upgradeXFS != { }) {
-      boot.initrd = {
-        extraUtilsCommands = ''
-          copy_bin_and_libs ${pkgs.xfsprogs}/bin/xfs_admin
-          copy_bin_and_libs ${pkgs.xfsprogs}/bin/xfs_info
-
-          copy_bin_and_libs ${pkgs.xfsprogs}/bin/xfs_db
-          copy_bin_and_libs ${pkgs.xfsprogs}/bin/xfs_spaceman
-        '';
-
-        extraUtilsCommandsTest = ''
-          # from nixos/modules/tasks/filesystems/xfs.nix
-          sed -i -e 's,^#!.*,#!'$out/bin/sh, $out/bin/xfs_admin $out/bin/xfs_info
-          export PATH=$out/bin:$PATH
-          $out/bin/xfs_admin -V
-          $out/bin/xfs_info -V
-        '';
-
-        postDeviceCommands =
-          let
-            fName = f: lib.head (lib.splitString "=" f);
-            fState = f: lib.last (lib.splitString "=" f);
-            invert = f: "${fName f}=${if fState f == "0" then "1" else "0"}";
-            upgradeXFS = lib.mapAttrs (
-              _: v:
-              (
-                (lib.concatMap (f: [
-                  (invert f)
-                  f
-                ]) v)
-              )
-              ++ [ "" ]
-            ) cfg.upgradeXFS;
-          in
-          ''
-            exec 3< ${fsInfo upgradeXFS}
-            while read -u 3 device; do
-              INFO=$(xfs_info "$device")
-              while read -u 3 oldFeature; do
-                if [ -z "$oldFeature" ]; then
-                  break
-                fi
-                read -u 3 newFeature
-                if echo "$INFO" | grep "$oldFeature"; then
-                  # xfs_admin does not always apply all features if they are specified as a list
-                  xfs_repair -n "$device" && xfs_admin -O "$newFeature" "$device"
-                fi
-              done
-            done
-          '';
-      };
-    })
-
     (lib.mkIf cfg.collectQemuData {
       assertions =
         let
@@ -132,51 +65,69 @@ in
           "xfs"
         ];
 
-        postMountCommands = lib.mkBefore ''
-          QEMU_DIR="/mnt-root${qemuStateDir}"
-          ENC_PATH="/mnt-root${config.flyingcircus.encPath}"
-          mkdir -p $QEMU_DIR
-          mkdir -p $(dirname $ENC_PATH)
-          mkdir -m 0755 -p /cidata
-          for args in "cidata vfat" "tmp xfs"; do
-            set $args
-            if [ ! -e /dev/disk/by-label/$1 ]; then
-              continue
-            fi
-            mount -n -t $2 -o ro /dev/disk/by-label/$1 /cidata
-            if [ ! -d /cidata/fc-data ]; then
+        systemd.services."fc-extract-fc-data" = {
+          serviceConfig.Type = "oneshot";
+          wantedBy = [ "initrd.target" ];
+          after = [
+            "initrd-fs.target"
+          ];
+          before = [
+            "initrd.target"
+          ]
+          ++ lib.optionals (cfg.formatXFS != { }) [
+            "fc-format-xfs.service"
+          ];
+          script = ''
+            QEMU_DIR="/sysroot${qemuStateDir}"
+            ENC_PATH="/sysroot${config.flyingcircus.encPath}"
+
+            mkdir -p $QEMU_DIR
+            mkdir -p $(dirname $ENC_PATH)
+            mkdir -m 0755 -p /cidata
+            for args in "cidata vfat" "tmp xfs"; do
+              set $args
+              if [ ! -e /dev/disk/by-label/$1 ]; then
+                continue
+              fi
+              mount -n -t $2 -o ro /dev/disk/by-label/$1 /cidata
+              if [ ! -d /cidata/fc-data ]; then
+                umount -n /cidata
+                continue
+              fi
+              if [ ! -e "$ENC_PATH" ] && [ -e "/cidata/fc-data/enc.json" ]; then
+                cp /cidata/fc-data/enc.json "$ENC_PATH"
+              fi
+              if [ -e /cidata/fc-data/qemu-guest-properties-booted ]; then
+                cp /cidata/fc-data/qemu-guest-properties-booted "$QEMU_DIR"
+              elif [ -e /cidata/fc-data/qemu-binary-generation-booted ]; then
+                cp /cidata/fc-data/qemu-binary-generation-booted "$QEMU_DIR"
+              fi
               umount -n /cidata
-              continue
-            fi
-            if [ ! -e "$ENC_PATH" ] && [ -e "/cidata/fc-data/enc.json" ]; then
-              cp /cidata/fc-data/enc.json "$ENC_PATH"
-            fi
-            if [ -e /cidata/fc-data/qemu-guest-properties-booted ]; then
-              cp /cidata/fc-data/qemu-guest-properties-booted "$QEMU_DIR"
-            elif [ -e /cidata/fc-data/qemu-binary-generation-booted ]; then
-              cp /cidata/fc-data/qemu-binary-generation-booted "$QEMU_DIR"
-            fi
-            umount -n /cidata
-            break
-          done
-        '';
+              break
+            done
+          '';
+        };
       };
     })
 
     (lib.mkIf (cfg.formatXFS != { }) {
       boot.initrd = {
-        extraUtilsCommands = ''
-          copy_bin_and_libs ${pkgs.xfsprogs}/bin/mkfs.xfs
-        '';
-
-        postMountCommands = ''
-          exec 3< ${fsInfo cfg.formatXFS}
-          while read -u 3 device; do
-            read -u 3 options
-            mkfs.xfs -f $options "$device"
-            udevadm trigger "$device"
-          done
-        '';
+        supportedFilesystems = [ "xfs" ];
+        systemd.services."fc-format-xfs" = {
+          serviceConfig.Type = "oneshot";
+          wantedBy = [ "initrd.target" ];
+          before = [
+            "initrd.target"
+          ];
+          after = [
+            "initrd-fs.target"
+          ];
+          script = lib.concatStringsSep "\n" (
+            lib.mapAttrsToList (device: options: ''
+              mkfs.xfs -f ${options} "${device}"
+            '') cfg.formatXFS
+          );
+        };
       };
     })
   ];
