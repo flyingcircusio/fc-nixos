@@ -46,7 +46,7 @@ import ./make-test-python.nix (
         /var/lib/skvaider/config.toml
 
       # inference API is reachable from gateway
-      curl -sf http://${modelServerIp}:8000/models
+      curl -sf http://${modelServerIp}:8000/manager/health
 
       # gateway proxies model list through to a bearer-authenticated caller
       curl -sf http://127.0.0.1:23211/openai/v1/models \

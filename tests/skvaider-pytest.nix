@@ -116,10 +116,17 @@ import ./make-test-python.nix (
       start_all()
       testnode.wait_for_unit("skvaider-inference-test.service")
       testnode.wait_until_succeeds("curl -sf http://127.0.0.1:8001/manager/health", timeout=60)
-      # POST /models/{id}/load blocks until llama-server is healthy.
+      # PATCH /manager/manifest triggers async model loading; poll until both are running.
       testnode.succeed(
-          "curl -sf -X POST http://127.0.0.1:8001/models/gemma/load &&"
-          " curl -sf -X POST http://127.0.0.1:8001/models/embeddinggemma/load",
+          "curl -sf -X PATCH http://127.0.0.1:8001/manager/manifest"
+          " -H 'Content-Type: application/json'"
+          " -d '{\"models\":[\"gemma\",\"embeddinggemma\"],\"serial\":[\"00000-00000\",1]}'",
+          timeout=10,
+      )
+      testnode.wait_until_succeeds(
+          "curl -sf http://127.0.0.1:8001/manager/health | python3 -c \""
+          "import sys,json; d=json.load(sys.stdin); statuses={m['id']:set(m['status']) for m in d['models']};"
+          " assert 'running' in statuses.get('gemma',set()) and 'running' in statuses.get('embeddinggemma',set())\"" ,
           timeout=120,
       )
 
