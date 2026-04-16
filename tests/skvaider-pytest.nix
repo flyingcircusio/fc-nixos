@@ -34,8 +34,11 @@ import ./make-test-python.nix (
       export PYTHONUNBUFFERED=1
       export SKVAIDER_CONFIG_FILE=${gatewayConfig}
 
-      cd ${src}
-      ${testEnv}/bin/pytest --override-ini=addopts= -v "$@"
+      # Run from /tmp/pytest-run: the inference/conftest.py prepare_model()
+      # fixture resolves its model cache as var/tests/models/ relative to cwd,
+      # and the init service pre-populates /tmp/pytest-run/var/tests/models/.
+      cd /tmp/pytest-run
+      ${testEnv}/bin/pytest -c ${src}/pytest.ini --rootdir=${src} --import-mode=importlib -p no:cacheprovider --ignore=${src}/src/aramaki ${src}/src/ -v "$@"
     '';
   in
   {
@@ -99,6 +102,7 @@ import ./make-test-python.nix (
           wantedBy = [ "multi-user.target" ];
           requires = [ "skvaider-test-init.service" ];
           after = [ "skvaider-test-init.service" ];
+          path = [ pkgs.llama-cpp ];
           serviceConfig = {
             Type = "simple";
             ExecStart = "${testEnv}/bin/skvaider-inference --config ${inferenceConfig}";
