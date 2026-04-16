@@ -5,10 +5,13 @@ with lib;
 with config.flyingcircus.roles.mailserver;
 
 let
+  dkimSelector =
+    domain:
+    config.mailserver.dkim.domains.${domain}.selector or config.mailserver.dkim.defaults.selector;
   readDKIM =
     domain:
     let
-      path = "/var/dkim/${domain}.${config.mailserver.dkimSelector}.txt";
+      path = "/var/dkim/${domain}.${dkimSelector domain}.txt";
     in
     lib.optionalString (pathExists path) (readFile path);
 in
@@ -33,11 +36,9 @@ in
         autoconfig.${d}. CNAME ${mailHost}.
         _dmarc.${d}. TXT "v=DMARC1; p=none"
       ''
-      +
-        replaceStrings
-          [ "${config.mailserver.dkimSelector}._domainkey" ]
-          [ "${config.mailserver.dkimSelector}._domainkey.${d}." ]
-          (readDKIM d)
+      + replaceStrings [ "${dkimSelector d}._domainkey" ] [ "${dkimSelector d}._domainkey.${d}." ] (
+        readDKIM d
+      )
     )
   ) (attrNames (filterAttrs (domain: config: config.enable) domains))
 ))

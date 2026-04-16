@@ -252,23 +252,23 @@ in
             mailboxes = {
               "Trash" = {
                 auto = "create";
-                specialUse = "Trash";
+                special_use = "\\Trash";
               };
               "Junk" = {
                 auto = "subscribe";
-                specialUse = "Junk";
+                special_use = "\\Junk";
               };
               "Drafts" = {
                 auto = "subscribe";
-                specialUse = "Drafts";
+                special_use = "\\Drafts";
               };
               "Sent" = {
                 auto = "subscribe";
-                specialUse = "Sent";
+                special_use = "\\Sent";
               };
               "Archives" = {
                 auto = "subscribe";
-                specialUse = "Archive";
+                special_use = "\\Archive";
               };
             };
             vmailGroupName = "vmail";
@@ -282,20 +282,22 @@ in
           systemd.services.postfix.restartTriggers = [ config.mailserver.localDnsResolver ];
           systemd.services.rspamd.restartTriggers = [ config.mailserver.localDnsResolver ];
 
-          services.dovecot2.extraConfig = ''
-            passdb {
-              driver = passwd-file
-              args = ${role.passwdFile}
-            }
+          services.dovecot2.settings = {
+            passdb = [
+              {
+                driver = "passwd-file";
+                args = role.passwdFile;
+              }
+            ];
 
-            plugin {
-              mail_plugins = $mail_plugins expire
-              expire = Trash
-              expire2 = Trash/*
-              expire3 = Junk
-              expire_cache = yes
-            }
-          '';
+            plugin = {
+              mail_plugins = "$mail_plugins expire";
+              expire = "Trash";
+              expire2 = "Trash/*";
+              expire3 = "Junk";
+              expire_cache = "yes";
+            };
+          };
 
           services.nginx.virtualHosts =
             let
@@ -442,7 +444,7 @@ in
           );
 
           systemd.tmpfiles.rules = [
-            "f ${role.passwdFile} 0660 vmail service"
+            "f ${role.passwdFile} 0660 dovecot2 service"
             "d /etc/local/mail 02775 postfix service"
             "f /etc/local/mail/local_valiases.json 0664 postfix service - {}"
             "f /etc/local/mail/users.json 0664 postfix service - {}"

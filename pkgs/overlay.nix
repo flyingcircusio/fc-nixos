@@ -316,8 +316,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     libxcrypt = self.libxcrypt-legacy;
   };
 
-  dovecot =
-    (super.dovecot.override {
+  dovecot_2_3 =
+    (super.dovecot_2_3.override {
       cyrus_sasl = self.cyrus_sasl-legacyCrypt;
     }).overrideAttrs
       (old: {
