@@ -1,3 +1,16 @@
+# Release 2026_014
+
+## Impact
+
+-
+
+
+## NixOS XX.XX platform
+
+- Provide a new alloy configuration snippet that exports the running pod's journal to a loki instance (PL-135231)
+
+
+
 # Release 2026_013
 
 ## Impact
