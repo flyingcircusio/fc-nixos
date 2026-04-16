@@ -225,12 +225,6 @@ in
               "video"
             ];
             Restart = "always";
-            # Redirect all output (structlog, uvicorn, vllm subprocess) to a
-            # file. Using append: keeps prior content on restarts.
-            # StandardOutput/Error are inherited by subprocesses, so vllm's
-            # own stdout is captured too.
-            StandardOutput = "append:/var/log/skvaider/inference.log";
-            StandardError = "append:/var/log/skvaider/inference.log";
           };
         };
         users = {
