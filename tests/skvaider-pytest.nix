@@ -24,8 +24,8 @@ import ./make-test-python.nix (
     # gatewayConfig is a minimal single-backend variant of config.toml.
     src = pkgs.fc.skvaider.passthru.src;
     inferenceConfig = pkgs.runCommand "config-inference-test.toml" { } ''
-      cat ${src}/nix/config-inference-test.toml > $out
-      echo 'embedding_verification_file = "${src}/nix/embeddings-reference-test.json"' >> $out
+      echo 'embedding_verification_file = "${src}/embeddings-reference.json"' > $out
+      cat ${src}/nix/config-inference-test.toml >> $out
     '';
     gatewayConfig = "${src}/nix/config-gateway-test.toml";
 
@@ -126,12 +126,15 @@ import ./make-test-python.nix (
           " -d '{\"models\":[\"gemma\",\"embeddinggemma\"],\"serial\":[\"00000-00000\",1]}'",
           timeout=10,
       )
+      # Log model status every poll until both are active.
       testnode.wait_until_succeeds(
-          "h=$(curl -sf http://127.0.0.1:8001/manager/health); echo $h;"
-          " echo $h | python3 -c \"import sys,json; d=json.load(sys.stdin);"
+          "curl -sf http://127.0.0.1:8001/manager/health |"
+          " python3 -c \"import sys,json;"
+          " d=json.load(sys.stdin);"
           " [print(m['id'], sorted(m['status'])) for m in d['models']];"
           " statuses={m['id']:set(m['status']) for m in d['models']};"
-          " assert 'active' in statuses.get('gemma',set()) and 'active' in statuses.get('embeddinggemma',set())\"",
+          " assert 'active' in statuses.get('gemma',set())"
+          " and 'active' in statuses.get('embeddinggemma',set())\"",
           timeout=600,
       )
 
