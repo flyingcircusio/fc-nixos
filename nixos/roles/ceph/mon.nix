@@ -21,14 +21,33 @@ let
 
   # default definitions for the mgr.* options:
   mgrEnabledModules = {
-    # always_on_modules are not listed here
     nautilus = [
+      # always_on_modules for reference:
+      # balancer
+      # crash
+      # devicehealth
+      # orchestrator_cli
+      # progress
+      # rbd_support
+      # status
+      # volumes
+
       "telemetry"
       "iostat"
     ];
-    # FIXME: adjust, this is just copy-pasted for now
     pacific = [
-      "telemetry"
+      # always_on_modules for reference:
+      # balancer
+      # crash
+      # devicehealth
+      # orchestrator
+      # pg_autoscaler
+      # progress
+      # rbd_support
+      # status
+      # telemetry
+      # volumes
+
       "iostat"
     ];
   };
@@ -36,7 +55,6 @@ let
     nautilus = [
       "restful"
     ];
-    # FIXME: adjust, this is just copy-pasted for now
     pacific = [
       "restful"
     ];
@@ -48,6 +66,8 @@ let
     monWarnPgNotDeepScrubbedRatio = 1;
     monOsdNearfullRatio = 0.85;
     monOsdFullRatio = 0.95;
+    # belongs in the [mon] section for historical reasons
+    mgrInitialModules = lib.concatStringsSep " " mgrEnabledModules.${role.cephRelease};
   };
   perMonSettings =
     mon:
@@ -64,7 +84,7 @@ let
       };
     };
   defaultMgrSettings = {
-    mgrInitialModules = lib.concatStringsSep " " mgrEnabledModules.${role.cephRelease};
+    "mgr/pg_autoscaler/log_level" = "warning";
   };
 in
 {
@@ -87,6 +107,8 @@ in
           Contents of the Ceph config file for MONs.
         '';
       };
+      # XXX: only covers the [mon] section, we currently do not specify extraSettings
+      # for [mgr] in favour of doing that with a full settings revamp PL-135312
       extraSettings = lib.mkOption {
         type =
           with lib.types;
@@ -318,17 +340,15 @@ in
     ))
     (lib.mkIf (role.enable && role.config == "") {
       flyingcircus.services.ceph.extraSettingsSections =
-        lib.recursiveUpdate { mon = normaliseCephOptionAttrs defaultMonSettings; }
+        lib.recursiveUpdate
+          {
+            mon = normaliseCephOptionAttrs defaultMonSettings;
+            mgr = normaliseCephOptionAttrs defaultMgrSettings;
+          }
           (
-            lib.recursiveUpdate
-              (normaliseCephOptionSection (
-                lib.foldr (attr: acc: acc // attr) { } (map perMonSettings (fclib.findServices "ceph_mon-mon"))
-              ))
-              (
-                lib.recursiveUpdate { mon = normaliseCephOptionAttrs role.extraSettings; } {
-                  mon = normaliseCephOptionAttrs defaultMgrSettings;
-                }
-              )
+            lib.recursiveUpdate (normaliseCephOptionSection (
+              lib.foldr (attr: acc: acc // attr) { } (map perMonSettings (fclib.findServices "ceph_mon-mon"))
+            )) { mon = normaliseCephOptionAttrs role.extraSettings; }
           );
     })
 

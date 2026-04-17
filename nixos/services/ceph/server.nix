@@ -50,108 +50,114 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable {
+  config = lib.mkMerge [
+    (lib.mkIf cfg.enable {
 
-    environment.variables.CEPH_ARGS = fclib.mkPlatformOverride "";
+      environment.variables.CEPH_ARGS = fclib.mkPlatformOverride "";
 
-    flyingcircus.services.ceph.client = {
-      enable = true;
-      # set same ceph package to avoid conflicts
-      cephRelease = cfg.cephRelease;
-    };
-
-    flyingcircus.agent.maintenance.ceph = {
-      enter = "${cephPkgs.fc-ceph}/bin/fc-ceph maintenance enter";
-      leave = "${cephPkgs.fc-ceph}/bin/fc-ceph maintenance leave";
-    };
-
-    # We used to create the admin key directory from the ENC. However,
-    # this causes the file to become world readable on Ceph servers.
-
-    flyingcircus.activationScripts.ceph-admin-key = ''
-      # Only allow root to read/write this file
-      umask 066
-      echo -e "[client.admin]\nkey = $(${pkgs.jq}/bin/jq -r  '.parameters.secrets."ceph/admin_key"' /etc/nixos/enc.json)" > /etc/ceph/ceph.client.admin.keyring
-    '';
-
-    systemd.tmpfiles.rules = [
-      "d /srv/ceph 0755"
-    ];
-
-    flyingcircus.services.sensu-client.expectedConnections = {
-      warning = 30000;
-      critical = 50000;
-    };
-
-    services.logrotate.settings.ceph-server = {
-      files = [
-        "/var/log/ceph/ceph.log"
-        "/var/log/ceph/ceph.audit.log"
-        "/var/log/ceph/ceph-mon.*.log"
-        "/var/log/ceph/ceph-osd.*.log"
-      ];
-      rotate = "30";
-      create = "0644 root adm";
-      prerotate = ''
-        for dmn in $(cd /run/ceph && ls ceph-*.asok 2>/dev/null); do
-            echo "Flushing log for $dmn"
-            ${cephPkgs.ceph}/bin/ceph --admin-daemon /run/ceph/''${dmn} log flush || true
-        done
-      '';
-      postrotate = ''
-        for dmn in $(cd /run/ceph && ls ceph-*.asok 2>/dev/null); do
-            echo "Reopening log for $dmn"
-            ${cephPkgs.ceph}/bin/ceph --admin-daemon /run/ceph/''${dmn} log reopen || true
-        done
-      '';
-    };
-
-    services.telegraf.extraConfig.inputs.ceph = [
-      { ceph_binary = "${ceph_sudo}/bin/ceph-sudo"; }
-    ];
-
-    flyingcircus.passwordlessSudoPackages = [
-      {
-        commands = [ "bin/ceph" ];
-        package = cephPkgs.ceph;
-        users = [ "telegraf" ];
-      }
-    ];
-
-    flyingcircus.services.ceph.fc-ceph = {
-      enable = true;
-      package = cephPkgs.fc-ceph;
-    };
-    environment.systemPackages = with pkgs; [
-      fc.blockdev
-
-      # tools like radosgw-admin and crushtool are only included in the full ceph package, but are necessary admin tools
-      cephPkgs.ceph
-    ];
-
-    systemd.services.fc-blockdev = {
-      description = "Tune blockdevice settings.";
-      serviceConfig.Type = "oneshot";
-      serviceConfig.RemainAfterExit = true;
-      wantedBy = [ "basic.target" ];
-      script = ''
-        ${pkgs.fc.blockdev}/bin/fc-blockdev -a -v
-      '';
-      environment = {
-        PYTHONUNBUFFERED = "1";
+      flyingcircus.services.ceph.client = {
+        # many global settings are defined in client.nix
+        enable = true;
+        # set same ceph package to avoid conflicts
+        cephRelease = cfg.cephRelease;
       };
-    };
 
-    boot.kernel.sysctl = {
-      "fs.aio-max-nr" = "262144";
-      "fs.xfs.xfssyncd_centisecs" = "720000";
+      flyingcircus.agent.maintenance.ceph = {
+        enter = "${cephPkgs.fc-ceph}/bin/fc-ceph maintenance enter";
+        leave = "${cephPkgs.fc-ceph}/bin/fc-ceph maintenance leave";
+      };
 
-      "vm.dirty_background_ratio" = "10";
-      "vm.dirty_ratio" = "40";
-      "vm.max_map_count" = "524288";
+      # We used to create the admin key directory from the ENC. However,
+      # this causes the file to become world readable on Ceph servers.
 
-      "kernel.pid_max" = "999999";
-      "kernel.threads-max" = "999999";
-    };
-  };
+      flyingcircus.activationScripts.ceph-admin-key = ''
+        # Only allow root to read/write this file
+        umask 066
+        echo -e "[client.admin]\nkey = $(${pkgs.jq}/bin/jq -r  '.parameters.secrets."ceph/admin_key"' /etc/nixos/enc.json)" > /etc/ceph/ceph.client.admin.keyring
+      '';
+
+      systemd.tmpfiles.rules = [
+        "d /srv/ceph 0755"
+      ];
+
+      flyingcircus.services.sensu-client.expectedConnections = {
+        warning = 30000;
+        critical = 50000;
+      };
+
+      services.logrotate.settings.ceph-server = {
+        files = [
+          "/var/log/ceph/ceph.log"
+          "/var/log/ceph/ceph.audit.log"
+          "/var/log/ceph/ceph-mon.*.log"
+          "/var/log/ceph/ceph-osd.*.log"
+        ];
+        rotate = "30";
+        create = "0644 root adm";
+        prerotate = ''
+          for dmn in $(cd /run/ceph && ls ceph-*.asok 2>/dev/null); do
+              echo "Flushing log for $dmn"
+              ${cephPkgs.ceph}/bin/ceph --admin-daemon /run/ceph/''${dmn} log flush || true
+          done
+        '';
+        postrotate = ''
+          for dmn in $(cd /run/ceph && ls ceph-*.asok 2>/dev/null); do
+              echo "Reopening log for $dmn"
+              ${cephPkgs.ceph}/bin/ceph --admin-daemon /run/ceph/''${dmn} log reopen || true
+          done
+        '';
+      };
+
+      services.telegraf.extraConfig.inputs.ceph = [
+        { ceph_binary = "${ceph_sudo}/bin/ceph-sudo"; }
+      ];
+
+      flyingcircus.passwordlessSudoPackages = [
+        {
+          commands = [ "bin/ceph" ];
+          package = cephPkgs.ceph;
+          users = [ "telegraf" ];
+        }
+      ];
+
+      flyingcircus.services.ceph.fc-ceph = {
+        enable = true;
+        package = cephPkgs.fc-ceph;
+      };
+      environment.systemPackages = with pkgs; [
+        fc.blockdev
+
+        # tools like radosgw-admin and crushtool are only included in the full ceph package, but are necessary admin tools
+        cephPkgs.ceph
+      ];
+
+      systemd.services.fc-blockdev = {
+        description = "Tune blockdevice settings.";
+        serviceConfig.Type = "oneshot";
+        serviceConfig.RemainAfterExit = true;
+        wantedBy = [ "basic.target" ];
+        script = ''
+          ${pkgs.fc.blockdev}/bin/fc-blockdev -a -v
+        '';
+        environment = {
+          PYTHONUNBUFFERED = "1";
+        };
+      };
+
+      boot.kernel.sysctl = {
+        "fs.aio-max-nr" = "262144";
+        "fs.xfs.xfssyncd_centisecs" = "720000";
+
+        "vm.dirty_background_ratio" = "10";
+        "vm.dirty_ratio" = "40";
+        "vm.max_map_count" = "524288";
+
+        "kernel.pid_max" = "999999";
+        "kernel.threads-max" = "999999";
+      };
+    })
+    (lib.mkIf (cfg.enable && fclib.ceph.releaseAtLeast "pacific" cfg.cephRelease) {
+      flyingcircus.services.ceph.extraSettings.osd_pool_default_autoscale_mode = "on";
+    })
+  ];
 }
