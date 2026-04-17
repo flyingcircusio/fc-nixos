@@ -116,7 +116,7 @@ import ./make-test-python.nix (
       start_all()
       testnode.wait_for_unit("skvaider-inference-test.service")
       testnode.wait_until_succeeds("curl -sf http://127.0.0.1:8001/manager/health", timeout=60)
-      # PATCH /manager/manifest triggers async model loading; poll until both are running.
+      # PATCH /manager/manifest triggers async model loading; poll until both are active (running + healthy).
       testnode.succeed(
           "curl -sf -X PATCH http://127.0.0.1:8001/manager/manifest"
           " -H 'Content-Type: application/json'"
@@ -126,7 +126,7 @@ import ./make-test-python.nix (
       testnode.wait_until_succeeds(
           "curl -sf http://127.0.0.1:8001/manager/health | python3 -c \""
           "import sys,json; d=json.load(sys.stdin); statuses={m['id']:set(m['status']) for m in d['models']};"
-          " assert 'running' in statuses.get('gemma',set()) and 'running' in statuses.get('embeddinggemma',set())\"" ,
+          " assert 'active' in statuses.get('gemma',set()) and 'active' in statuses.get('embeddinggemma',set())\"",
           timeout=120,
       )
 
