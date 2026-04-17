@@ -131,9 +131,6 @@ in
       script = ''
         ${lib.getExe' pkgs.fc.skvaider "skvaider-proxy"} -c /var/lib/skvaider/config.toml
       '';
-      environment = {
-        SKVAIDER_CONFIG_FILE = "/var/lib/skvaider/config.toml";
-      };
       serviceConfig = {
         ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";
         UMask = "0022";
