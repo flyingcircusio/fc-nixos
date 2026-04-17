@@ -23,7 +23,10 @@ import ./make-test-python.nix (
     # inferenceConfig mirrors config-inference-1.toml with absolute /tmp paths.
     # gatewayConfig is a minimal single-backend variant of config.toml.
     src = pkgs.fc.skvaider.passthru.src;
-    inferenceConfig = "${src}/nix/config-inference-test.toml";
+    inferenceConfig = pkgs.runCommand "config-inference-test.toml" { } ''
+      cat ${src}/nix/config-inference-test.toml > $out
+      echo 'embedding_verification_file = "${src}/nix/embeddings-reference-test.json"' >> $out
+    '';
     gatewayConfig = "${src}/nix/config-gateway-test.toml";
 
     testEnv = pkgs.fc.skvaider.passthru.testEnv;
@@ -38,7 +41,7 @@ import ./make-test-python.nix (
       # fixture resolves its model cache as var/tests/models/ relative to cwd,
       # and the init service pre-populates /tmp/pytest-run/var/tests/models/.
       cd /tmp/pytest-run
-      ${testEnv}/bin/pytest -c ${src}/pytest.ini --rootdir=${src} --import-mode=importlib -p no:cacheprovider --ignore=${src}/src/aramaki ${src}/src/ -v "$@"
+      ${testEnv}/bin/pytest -c ${src}/pytest.ini --rootdir=${src} --import-mode=importlib -p no:cacheprovider --ignore=${src}/src/aramaki ${src}/src/ -v -s --tb=short "$@"
     '';
   in
   {
@@ -116,11 +119,20 @@ import ./make-test-python.nix (
       start_all()
       testnode.wait_for_unit("skvaider-inference-test.service")
       testnode.wait_until_succeeds("curl -sf http://127.0.0.1:8001/manager/health", timeout=60)
-      # POST /models/{id}/load blocks until llama-server is healthy.
+      # PATCH /manager/manifest triggers async model loading; poll until both are active (running + healthy).
       testnode.succeed(
-          "curl -sf -X POST http://127.0.0.1:8001/models/gemma/load &&"
-          " curl -sf -X POST http://127.0.0.1:8001/models/embeddinggemma/load",
-          timeout=120,
+          "curl -sf -X PATCH http://127.0.0.1:8001/manager/manifest"
+          " -H 'Content-Type: application/json'"
+          " -d '{\"models\":[\"gemma\",\"embeddinggemma\"],\"serial\":[\"00000-00000\",1]}'",
+          timeout=10,
+      )
+      testnode.wait_until_succeeds(
+          "h=$(curl -sf http://127.0.0.1:8001/manager/health); echo $h;"
+          " echo $h | python3 -c \"import sys,json; d=json.load(sys.stdin);"
+          " [print(m['id'], sorted(m['status'])) for m in d['models']];"
+          " statuses={m['id']:set(m['status']) for m in d['models']};"
+          " assert 'active' in statuses.get('gemma',set()) and 'active' in statuses.get('embeddinggemma',set())\"",
+          timeout=600,
       )
 
       with subtest("Run tests"):
