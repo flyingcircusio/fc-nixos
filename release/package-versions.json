@@ -160,9 +160,9 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.12.10",
+    "name": "element-web-1.12.14",
     "pname": "element-web",
-    "version": "1.12.10"
+    "version": "1.12.14"
   },
   "erlang": {
     "name": "erlang-28.4.2",
@@ -250,9 +250,9 @@
     "version": "18.10.3"
   },
   "gitlab-runner": {
-    "name": "gitlab-runner-18.9.0",
+    "name": "gitlab-runner-18.10.1",
     "pname": "gitlab-runner",
-    "version": "18.9.0"
+    "version": "18.10.1"
   },
   "gitlab-workhorse": {
     "name": "gitlab-workhorse-18.10.3",
@@ -575,9 +575,9 @@
     "version": "4.38.2"
   },
   "nss_latest": {
-    "name": "nss-3.122",
+    "name": "nss-3.122.1",
     "pname": "nss",
-    "version": "3.122"
+    "version": "3.122.1"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.15",
@@ -721,9 +721,9 @@
     "version": "8.3.30"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.19",
+    "name": "php-with-extensions-8.4.20",
     "pname": "php-with-extensions",
-    "version": "8.4.19"
+    "version": "8.4.20"
   },
   "php85": {
     "name": "php-with-extensions-8.5.4",
