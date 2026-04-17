@@ -12,11 +12,11 @@ with lib;
 
 stdenv.mkDerivation rec {
   pname = "opensearch-dashboards";
-  version = "2.19.2";
+  version = "3.5.0";
 
   src = fetchurl {
     url = "https://artifacts.opensearch.org/releases/bundle/opensearch-dashboards/${version}/${pname}-${version}-linux-x64.tar.gz";
-    hash = "sha256-EAhU8kEiiIvR3lR97tCbPw9HT+NuRgH6dBR8AgvXc+A=";
+    hash = "sha256-g0aKKvi2rAd3AFdlfkotzoyREfoSTKJFI7bihjFu2wU=";
   };
 
   patches = [
