@@ -437,6 +437,20 @@ in
           '';
         };
       };
+
+      systemd.services.ensure_slurmstepd_scope_active = {
+        script = ''
+          if systemctl is-active --quiet slurmd && ! systemctl is-active --quiet slurmstepd.scope; then
+            echo "ERROR: The slurmstepd scope is inactive! Restarting slurmd to restore functionality."
+            systemctl restart slurmd
+          fi
+        '';
+        serviceConfig = {
+          Type = "oneshot";
+          User = "root";
+        };
+        startAt = "*:0/2";
+      };
     })
 
     # We need at least one compute node or the controller will crash on startup.
