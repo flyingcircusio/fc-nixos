@@ -23,7 +23,10 @@ import ./make-test-python.nix (
     # inferenceConfig mirrors config-inference-1.toml with absolute /tmp paths.
     # gatewayConfig is a minimal single-backend variant of config.toml.
     src = pkgs.fc.skvaider.passthru.src;
-    inferenceConfig = "${src}/nix/config-inference-test.toml";
+    inferenceConfig = pkgs.runCommand "config-inference-test.toml" { } ''
+      cat ${src}/nix/config-inference-test.toml > $out
+      echo 'embedding_verification_file = "${src}/embeddings-reference.json"' >> $out
+    '';
     gatewayConfig = "${src}/nix/config-gateway-test.toml";
 
     testEnv = pkgs.fc.skvaider.passthru.testEnv;
