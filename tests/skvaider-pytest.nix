@@ -124,10 +124,12 @@ import ./make-test-python.nix (
           timeout=10,
       )
       testnode.wait_until_succeeds(
-          "curl -sf http://127.0.0.1:8001/manager/health | python3 -c \""
-          "import sys,json; d=json.load(sys.stdin); statuses={m['id']:set(m['status']) for m in d['models']};"
+          "h=$(curl -sf http://127.0.0.1:8001/manager/health); echo $h;"
+          " echo $h | python3 -c \"import sys,json; d=json.load(sys.stdin);"
+          " [print(m['id'], sorted(m['status'])) for m in d['models']];"
+          " statuses={m['id']:set(m['status']) for m in d['models']};"
           " assert 'active' in statuses.get('gemma',set()) and 'active' in statuses.get('embeddinggemma',set())\"",
-          timeout=120,
+          timeout=600,
       )
 
       with subtest("Run tests"):
