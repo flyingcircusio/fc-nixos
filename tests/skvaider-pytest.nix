@@ -25,7 +25,7 @@ import ./make-test-python.nix (
     src = pkgs.fc.skvaider.passthru.src;
     inferenceConfig = pkgs.runCommand "config-inference-test.toml" { } ''
       cat ${src}/nix/config-inference-test.toml > $out
-      echo 'embedding_verification_file = "${src}/embeddings-reference.json"' >> $out
+      echo 'embedding_verification_file = "${src}/nix/embeddings-reference-test.json"' >> $out
     '';
     gatewayConfig = "${src}/nix/config-gateway-test.toml";
 
