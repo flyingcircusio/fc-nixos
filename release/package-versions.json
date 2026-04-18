@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-147.0.7727.55",
+    "name": "chromedriver-unwrapped-147.0.7727.101",
     "pname": "chromedriver-unwrapped",
-    "version": "147.0.7727.55"
+    "version": "147.0.7727.101"
   },
   "chromium": {
-    "name": "chromium-147.0.7727.55",
+    "name": "chromium-147.0.7727.101",
     "pname": "chromium",
-    "version": "147.0.7727.55"
+    "version": "147.0.7727.101"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -480,9 +480,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.5.8",
+    "name": "mastodon-4.5.9",
     "pname": "mastodon",
-    "version": "4.5.8"
+    "version": "4.5.9"
   },
   "matomo": {
     "name": "matomo-5.8.0",
@@ -575,9 +575,9 @@
     "version": "4.38.2"
   },
   "nss_latest": {
-    "name": "nss-3.122.1",
+    "name": "nss-3.123",
     "pname": "nss",
-    "version": "3.122.1"
+    "version": "3.123"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.15",
