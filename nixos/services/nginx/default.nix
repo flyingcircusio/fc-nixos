@@ -443,7 +443,7 @@ in
               };
             }
           else
-            lib.warn "Informational: nginx vhost '${n}' does not declare a plain hostname. No HTTPS certificate check is added. This warning will be removed after 2 releases." acc
+            acc
         ) { } (lib.attrNames vhostsWithTLS))
         # Add certificate file checks for non-ACME hosts specified in nginx config.
         # ACME certificates in general (nginx enableACME or others) are covered in platform/acme.nix.
@@ -463,7 +463,7 @@ in
               };
             }
           else
-            lib.warn "Informational: nginx vhost '${n}' does not declare a plain hostname. No TLS certificate check is added. This warning will be removed after 2 releases." acc
+            acc
         ) { } (lib.attrNames nonAcmeVhostsWithTLS));
 
         networking.firewall.allowedTCPPorts = [
