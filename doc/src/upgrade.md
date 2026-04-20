@@ -113,7 +113,6 @@ is not allowed anymore.
 Please migrate to structured config with `services.postfix.settings.main`.
 
 SMTP with STARTTLS over port 587 is no longer allowed. Please use SMTP with SSL/TLS over port 465.i
-
 (nixos-upgrade-percona)=
 
 ### Percona / MySQL
@@ -127,6 +126,17 @@ This means that new user passwords are hashed with this mechanism and clients ne
 We still support the old hashes up to Percona Server 9.7 when these will be removed.
 Please read the [Percona Server Upgrade Guide](https://docs.percona.com/percona-server/8.4/upgrade.html) for more
 information about the upgrade.
+
+(nixos-upgrade-slurm)=
+
+### Slurm
+
+This release contains a major version upgrade of Slurm from 25.05.x.x (NixOS 25.11) to 25.11.x.x. Nodes of a cluster
+need to be upgraded in a particular order, please consult the [upgrade instructions of the role](#nixos-slurm-upgrade)
+for details.
+
+Regarding new features or changes in Slurm itself,
+consult [its release notes](https://github.com/SchedMD/slurm/blob/slurm-25-11-1-1/RELEASE_NOTES.md).
 
 ### RabbitMQ
 
