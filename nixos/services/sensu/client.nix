@@ -303,18 +303,6 @@ in
           };
         };
       };
-      expectedSwap = {
-        warning = mkOption {
-          type = types.int;
-          default = 1024;
-          description = "Limit of swap usage in MiB before warning.";
-        };
-        critical = mkOption {
-          type = types.int;
-          default = 2048;
-          description = "Limit of swap usage in MiB before reaching critical.";
-        };
-      };
 
       mutedSystemdUnits = mkOption {
         type = types.listOf types.str;
@@ -470,14 +458,6 @@ in
           #     "-c ${cfg.expectedLoad.critical}";
           #   interval = 10;
           # };
-          swap = {
-            notification = "Swap usage is too high";
-            command =
-              "${fc.sensuplugins}/bin/check_swap_abs "
-              + "-w ${toString cfg.expectedSwap.warning} "
-              + "-c ${toString cfg.expectedSwap.critical}";
-            interval = 300;
-          };
           ssh = {
             notification = "SSH server is not responding properly";
             command = "check_ssh localhost";

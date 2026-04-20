@@ -401,6 +401,8 @@ affected. You can still add gcroots manually (e.g. via `nix-store --add-root`).
 
 - The `imagemagick6` family of packages has known vulnerabilities and is not permitted by default anymore. Update your applications to work with a current version of imagemagick, or add this to `flyingcircus.permittedInsecurePackages`.
 
+- The sensu `swap` checks have been removed, as they are no longer relevant with systemd-oomd, which we introduced in fc-nixos 25.11
+
 ## Known issues
 
 None.
