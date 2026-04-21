@@ -24,6 +24,7 @@ in
   flyingcircus.roles.ceph_mon = {
     enable = true;
     cephRelease = "pacific";
+    mgr.sendTelemetry = false;
   };
   flyingcircus.roles.ceph_rgw = {
     rgwInterface = "srv";
