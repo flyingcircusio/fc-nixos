@@ -195,6 +195,9 @@ in
               ++ [
                 "${pkgs.writeShellScript "opensearch-link-jdk" "ln -sfT ${pkgs.jre_headless} ${cfgUpstream.dataDir}/jdk"}"
               ]
+              ++ (lib.optionals (lib.pathExists "${config.services.opensearch.package}/agent") [
+                "${pkgs.writeShellScript "opensearch-link-agent" "ln -sfT ${config.services.opensearch.package}/agent ${config.services.opensearch.dataDir}/agent"}"
+              ])
             );
         };
       };
