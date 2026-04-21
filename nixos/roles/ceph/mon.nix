@@ -148,6 +148,20 @@ in
             Note that `always_on` modules cannot be disabled so far
           '';
         };
+        sendTelemetry = lib.mkOption {
+          type = lib.types.bool;
+          # If we want to control telemetry at more places, this could become a
+          # top-level platform option
+          default = true;
+          description = ''
+            Whether to report telemetry to telemetry.ceph.com or not.
+            We do not distinguish between the different ceph telemetry *channels*
+            and either send all telemetry, including the `ident` channel, or none
+            at all.
+            If sending telemetry, the reported cluster description is
+            <FCIO Cluster #sha512_of_location/rg>
+          '';
+        };
       };
     };
   };
@@ -262,7 +276,7 @@ in
         wantedBy = [ "multi-user.target" ];
         wants = [ fclib.network.sto.addressUnit ];
         requires = [ "network-online.target" ]; # PL-133952
-        after = wants ++ requires;
+        after = wants ++ requires ++ [ "fc-ceph-mon.service" ];
 
         restartTriggers = [
           config.environment.etc."ceph/ceph.conf".source
@@ -273,7 +287,8 @@ in
           PYTHONUNBUFFERED = "1";
         };
 
-        # imperatively ensure mgr modules
+        # imperatively ensure mgr modules.
+        # preStart becuase these go via the mon.
         preStart = lib.concatStringsSep "\n" (
           lib.forEach mgrEnabledModules.${role.cephRelease} (
             mod: "${cephPkgs.ceph}/bin/ceph mgr module enable ${mod} --force"
@@ -282,6 +297,41 @@ in
             mod: "${cephPkgs.ceph}/bin/ceph mgr module disable ${mod}"
           )
         );
+        # these settings require an active mgr
+        postStart =
+          let
+            rg = lib.attrByPath [ "parameters" "resource_group" ] "" config.flyingcircus.enc;
+            location = lib.attrByPath [ "parameters" "location" ] "" config.flyingcircus.enc;
+          in
+          ''
+              # Wait until the mgr is available, can take up to 1 minute
+              count=0
+              while ! ${cephPkgs.ceph}/bin/ceph telemetry status
+              do
+              if [ $count -eq 21 ]
+              then
+                echo "Tried 60 seconds, not able to contact mgr…"
+                exit 1
+              fi
+
+              echo "Failed to contact a ceph mgr after $count attempts. Waiting…"
+              count=$((count+1))
+              sleep 3
+            done
+          ''
+          + (
+            if role.mgr.sendTelemetry then
+              ''
+                ${cephPkgs.ceph}/bin/ceph telemetry on --license sharing-1-0
+                ${cephPkgs.ceph}/bin/ceph config set mgr mgr/telemetry/contact 'FlyingCircus IO <support@flyingcircus.io>'
+                ${cephPkgs.ceph}/bin/ceph config set mgr mgr/telemetry/description 'FCIO Cluster #${builtins.hashString "sha512" "${location}/${rg}"}'
+                ${cephPkgs.ceph}/bin/ceph config set mgr mgr/telemetry/channel_ident true
+              ''
+            else
+              ''
+                ${cephPkgs.ceph}/bin/ceph telemetry off
+              ''
+          );
 
         serviceConfig = {
           Type = "simple";
@@ -293,7 +343,6 @@ in
           RestartMaxDelaySec = "1min";
         };
       };
-
     })
     (lib.mkIf role.enable (
       let
