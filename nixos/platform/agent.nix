@@ -528,8 +528,8 @@ in
 
         timerConfig = {
           OnActiveSec = "1m";
-          OnCalendar = "hourly";
-          RandomizedDelaySec = "60m";
+          OnCalendar = "00/2:00";
+          RandomizedDelaySec = "120m";
           FixedRandomDelay = true;
           Persistent = true;
         };
