@@ -3,6 +3,7 @@ import pathlib
 from io import StringIO
 from textwrap import dedent
 from unittest import mock
+from subprocess import CalledProcessError
 
 import fc.ceph.luks
 import pytest
@@ -95,7 +96,7 @@ LV_DUMMY_DATA = [
     },
 ]
 
-LSBLK_PATTY_JSON = """
+LSBLK_JSON = """
 [
   {
     "name": "sda1",
@@ -204,6 +205,28 @@ LSBLK_PATTY_JSON = """
           {
             "name": "sda",
             "path": "/dev/sda",
+            "type": "disk",
+            "mountpoint": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "vgosd--5-ceph--osd--5--wal--backup--crypted",
+    "path": "/dev/mapper/vgosd--5-ceph--osd--5--wal--backup--crypted",
+    "type": "lvm",
+    "mountpoint": null,
+    "children": [
+      {
+        "name": "sdb1",
+        "path": "/dev/sdb1",
+        "type": "part",
+        "mountpoint": null,
+        "children": [
+          {
+            "name": "sdb",
+            "path": "/dev/sdb",
             "type": "disk",
             "mountpoint": null
           }
@@ -321,45 +344,87 @@ def mock_LUKSKeyStoreManager(monkeypatch, tmpdir):
     return keyman
 
 
-def test_lsblk_to_cryptdevices():
+@pytest.fixture
+def mock_cryptsetup_isLuks(monkeypatch):
+    class CryptsetupIsLuksMock:
+        known_luks_devices: set
+        illegal_devices: set
+
+        def __init__(self):
+            self.known_luks_devices = set()
+            self.illegal_devices = set()
+
+        def __call__(self, *args, **kwargs):
+            assert args[0] == "isLuks", (
+                f"only isLuks is properly mocked by this object; args {args}, kwargs {kwargs}"
+            )
+
+            assert kwargs["check"], (
+                "isLuks only makes sense when checking the return code"
+            )
+            if (dev := args[1]) in self.illegal_devices:
+                raise CalledProcessError(
+                    returncode=4,
+                    cmd=f"cryptsetup isLuks {dev}",
+                    output=f"Device {dev} does not exist or access denied.",
+                )
+            if (dev := args[1]) in self.known_luks_devices:
+                return ""
+            else:
+                raise CalledProcessError(
+                    returncode=1, cmd=f"cryptestup isLuks {dev}", output=""
+                )
+
+    c_mock = CryptsetupIsLuksMock()
+    monkeypatch.setattr("fc.ceph.util.run.cryptsetup", c_mock)
+    return c_mock
+
+
+def test_detect_cryptdevices_only_active():
     import json
 
     from fc.ceph.luks import manage
 
     assert set(
-        manage.LuksDevice.lsblk_to_cryptdevices(json.loads(LSBLK_PATTY_JSON))
+        manage.LuksDevice.detect_cryptdevices(
+            json.loads(LSBLK_JSON), only_active=True
+        )
     ) == set(
         (
             manage.LuksDevice(
                 base_blockdev="/dev/mapper/vgsys-ceph--mon--crypted",
-                name="ceph-mon",
+                base_blockdev_name="vgsys-ceph--mon--crypted",
+                luks_name="ceph-mon",
                 mountpoint="/srv/ceph/mon/ceph-patty",
                 header=None,
             ),
             manage.LuksDevice(
                 base_blockdev="/dev/sdb1",
-                name="backy",
+                base_blockdev_name="sdb1",
+                luks_name="backy",
                 mountpoint="/srv/backy",
                 header=None,
             ),
             manage.LuksDevice(
                 base_blockdev="/dev/mapper/vgsys-ceph--mgr--crypted",
-                name="ceph-mgr",
+                base_blockdev_name="vgsys-ceph--mgr--crypted",
+                luks_name="ceph-mgr",
                 mountpoint="/srv/ceph/mgr/ceph-patty",
                 header=None,
             ),
         )
     )
-    assert manage.LuksDevice.lsblk_to_cryptdevices([]) == []
+    assert manage.LuksDevice.detect_cryptdevices([], only_active=True) == []
     # disks, but no crypt and no children
     assert (
-        manage.LuksDevice.lsblk_to_cryptdevices(
-            [{"name": "sdb", "path": "/dev/sda", "type": "disk"}]
+        manage.LuksDevice.detect_cryptdevices(
+            [{"name": "sdb", "path": "/dev/sda", "type": "disk"}],
+            only_active=True,
         )
         == []
     )
     # disks with mountpoint = null
-    assert manage.LuksDevice.lsblk_to_cryptdevices(
+    assert manage.LuksDevice.detect_cryptdevices(
         [
             {
                 "name": "ceph-osd3-block",
@@ -391,21 +456,122 @@ def test_lsblk_to_cryptdevices():
                     }
                 ],
             }
-        ]
+        ],
+        only_active=True,
     ) == [
         manage.LuksDevice(
-            name="ceph-osd3-block",
+            luks_name="ceph-osd3-block",
             base_blockdev="/dev/mapper/vgosd3-ceph--osd3--block--crypted",
+            base_blockdev_name="vgosd3-ceph--osd3--block--crypted",
             mountpoint=None,
         )
     ]
 
 
+def test_detect_cryptdevices_all_volumes(mock_cryptsetup_isLuks):
+    import json
+
+    from fc.ceph.luks import manage
+
+    # isLuks does not detect any additional devices: same as with `only_active=True`
+    assert set(
+        manage.LuksDevice.detect_cryptdevices(
+            json.loads(LSBLK_JSON), only_active=False
+        )
+    ) == set(
+        (
+            manage.LuksDevice(
+                base_blockdev="/dev/mapper/vgsys-ceph--mon--crypted",
+                base_blockdev_name="vgsys-ceph--mon--crypted",
+                luks_name="ceph-mon",
+                mountpoint="/srv/ceph/mon/ceph-patty",
+                header=None,
+            ),
+            manage.LuksDevice(
+                base_blockdev="/dev/sdb1",
+                base_blockdev_name="sdb1",
+                luks_name="backy",
+                mountpoint="/srv/backy",
+                header=None,
+            ),
+            manage.LuksDevice(
+                base_blockdev="/dev/mapper/vgsys-ceph--mgr--crypted",
+                base_blockdev_name="vgsys-ceph--mgr--crypted",
+                luks_name="ceph-mgr",
+                mountpoint="/srv/ceph/mgr/ceph-patty",
+                header=None,
+            ),
+        )
+    )
+
+    # additional device is detected
+    mock_cryptsetup_isLuks.known_luks_devices.add(
+        "/dev/mapper/vgosd--5-ceph--osd--5--wal--backup--crypted"
+    )
+    assert set(
+        manage.LuksDevice.detect_cryptdevices(
+            json.loads(LSBLK_JSON), only_active=False
+        )
+    ) == set(
+        (
+            manage.LuksDevice(
+                base_blockdev="/dev/mapper/vgsys-ceph--mon--crypted",
+                base_blockdev_name="vgsys-ceph--mon--crypted",
+                luks_name="ceph-mon",
+                mountpoint="/srv/ceph/mon/ceph-patty",
+                header=None,
+            ),
+            manage.LuksDevice(
+                base_blockdev="/dev/sdb1",
+                base_blockdev_name="sdb1",
+                luks_name="backy",
+                mountpoint="/srv/backy",
+                header=None,
+            ),
+            manage.LuksDevice(
+                base_blockdev="/dev/mapper/vgsys-ceph--mgr--crypted",
+                base_blockdev_name="vgsys-ceph--mgr--crypted",
+                luks_name="ceph-mgr",
+                mountpoint="/srv/ceph/mgr/ceph-patty",
+                header=None,
+            ),
+            manage.LuksDevice(
+                base_blockdev="/dev/mapper/vgosd--5-ceph--osd--5--wal--backup--crypted",
+                base_blockdev_name="vgosd--5-ceph--osd--5--wal--backup--crypted",
+                luks_name=None,
+                mountpoint=None,
+                header=None,
+            ),
+        )
+    )
+
+    # other errors of isLuks still bubble up
+    mock_cryptsetup_isLuks.known_luks_devices = {}
+    mock_cryptsetup_isLuks.illegal_devices.add(
+        "/dev/mapper/vgosd--5-ceph--osd--5--wal--backup--crypted"
+    )
+    with pytest.raises(CalledProcessError):
+        manage.LuksDevice.detect_cryptdevices(
+            json.loads(LSBLK_JSON), only_active=False
+        )
+
+
 def test_keystore_rekey_argument_calls(mock_LUKSKeyStoreManager):
     keyman = mock_LUKSKeyStoreManager
-    keyman.rekey(name_glob="*", header=None)
-    keyman.rekey(name_glob="backy", slot="local", header="/srv/foo.luks")
-    keyman.rekey(name_glob="ceph*", slot="admin", header="/srv/foo.luks")
+    # testing with `only_active` is easier, no need to mock cryptsetup
+    keyman.rekey(name_glob="*", only_active=True, header=None)
+    keyman.rekey(
+        name_glob="backy",
+        only_active=True,
+        slot="local",
+        header="/srv/foo.luks",
+    )
+    keyman.rekey(
+        name_glob="ceph*",
+        only_active=True,
+        slot="admin",
+        header="/srv/foo.luks",
+    )
 
 
 @pytest.fixture
@@ -474,8 +640,7 @@ def test_keystore_admin_key_fingerprint_init(
     # If this was a multiline string, pre-commit would be eating the trailing spaces :\
     pe.optional("Warning: Password input may be echoed.")
     pe.in_order(
-        "LUKS admin key for this location: \n"
-        "LUKS admin key for this location: "
+        "LUKS admin key for this location: \nLUKS admin key for this location: "
     )
     assert pe == captured.err
 
@@ -659,21 +824,15 @@ def test_luks_fingerprint_verify(
     inputs_mock.seek(0)
 
     # no fingerprint file
-    assert (
-        mock_LUKSKeyStoreManager.fingerprint(confirm=False, verify=True) == 1
-    )
+    assert mock_LUKSKeyStoreManager.fingerprint(confirm=False, verify=True) == 1
 
     # mismatching fingerprint file
     persist_fingerprint(b"notfoo", tmpdir)
-    assert (
-        mock_LUKSKeyStoreManager.fingerprint(confirm=False, verify=True) == 1
-    )
+    assert mock_LUKSKeyStoreManager.fingerprint(confirm=False, verify=True) == 1
 
     # matching fingerprint file
     persist_fingerprint(b"foo", tmpdir)
-    assert (
-        mock_LUKSKeyStoreManager.fingerprint(confirm=False, verify=True) == 0
-    )
+    assert mock_LUKSKeyStoreManager.fingerprint(confirm=False, verify=True) == 0
 
     captured = capsys.readouterr()
 
