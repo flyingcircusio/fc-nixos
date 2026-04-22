@@ -330,7 +330,6 @@ def parse_requirement_string(requirement_string):
 
 
 class AppEnv(object):
-
     base = None  # The directory where we add the environments. Co-located
     # with the application script - not necessarily the appenv
     # script so we can link to an appenv script from multiple
