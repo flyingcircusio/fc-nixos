@@ -40,8 +40,10 @@ class RGWState:
                 "--uid",
                 self.uid,
                 # silence error when the user was previously deleted
-                silent_errors=lambda code, stdout, stderr: previously_deleted
-                and check_user_doesnt_exist(code, stdout, stderr),
+                silent_errors=lambda code, stdout, stderr: (
+                    previously_deleted
+                    and check_user_doesnt_exist(code, stdout, stderr)
+                ),
             )
 
         except subprocess.CalledProcessError as e:
@@ -332,9 +334,11 @@ class RgwUserManager:
                     "--uid",
                     user,
                     silent_errors=(
-                        lambda code, stdout, stderr: code == 2
-                        and b"User has not been initialized or user does not exist"
-                        in stderr
+                        lambda code, stdout, stderr: (
+                            code == 2
+                            and b"User has not been initialized or user does not exist"
+                            in stderr
+                        )
                     ),
                 )
                 usage[user] = str(stats["stats"]["size"])

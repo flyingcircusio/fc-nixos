@@ -334,9 +334,11 @@ class RgwUserManager:
                     "--uid",
                     user,
                     silent_errors=(
-                        lambda code, stdout, stderr: code == 2
-                        and b"User has not been initialized or user does not exist"
-                        in stderr
+                        lambda code, stdout, stderr: (
+                            code == 2
+                            and b"User has not been initialized or user does not exist"
+                            in stderr
+                        )
                     ),
                 )
                 usage[user] = str(stats["stats"]["total_bytes"])
