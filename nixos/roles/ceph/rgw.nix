@@ -58,14 +58,6 @@ in
         type = lib.types.bool;
       };
 
-      config = lib.mkOption {
-        type = lib.types.lines;
-        default = "";
-        description = ''
-          Contents of the Ceph config file for RGWs.
-        '';
-      };
-
       extraSettings = lib.mkOption {
         type =
           with lib.types;
@@ -106,20 +98,6 @@ in
   config = lib.mkMerge [
     (lib.mkIf role.enable {
 
-      assertions = [
-        {
-          assertion = (
-            (
-              role.extraSettings != { }
-              || config.flyingcircus.services.ceph.extraSettings != { }
-              || config.flyingcircus.services.ceph.client.extraSettings != { }
-            )
-            -> role.config == ""
-          );
-          message = "Mixing the configuration styles (extra)Config and (extra)Settings is unsupported, please use either plaintext config or structured settings for ceph.";
-        }
-      ];
-
       flyingcircus.services.ceph = {
         fc-ceph.settings.RgwUserManager = {
           release = role.cephRelease;
@@ -132,6 +110,11 @@ in
         };
         # PL-135287
         client.extraSettings."rgw_relaxed_s3_bucket_names" = true;
+
+        extraSettingsSections.${username} =
+          lib.recursiveUpdate (normaliseCephOptionAttrs defaultRgwSettings) (
+            normaliseCephOptionAttrs role.extraSettings
+          );
       };
 
       environment.systemPackages = [ rgw-validate-bucket-names ];
@@ -274,17 +257,6 @@ in
         '';
       };
 
-    })
-
-    (lib.mkIf (role.enable && role.config == "") {
-      flyingcircus.services.ceph.extraSettingsSections.${username} =
-        lib.recursiveUpdate (normaliseCephOptionAttrs defaultRgwSettings) (
-          normaliseCephOptionAttrs role.extraSettings
-        );
-    })
-
-    (lib.mkIf (role.enable && role.config != "") {
-      environment.etc."ceph/ceph.conf".text = lib.mkAfter role.config;
     })
 
     (lib.mkIf (role.enable && role.primary) {
