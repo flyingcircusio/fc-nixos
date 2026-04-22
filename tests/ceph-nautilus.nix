@@ -562,7 +562,7 @@ import ./make-test-python.nix (
           user_data = json.loads(host1.succeed("radosgw-admin user info --uid=user"))
           t.assertTrue(user_data['keys'])
           access_key, secret_key = user_data['keys'][0]['access_key'], user_data['keys'][0]['secret_key']
-          host4.succeed("mkdir -p /root/.aws")
+          host3.succeed("mkdir -p /root/.aws")
 
           aws_cfg = configparser.ConfigParser()
           endpoints = {
