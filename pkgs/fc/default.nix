@@ -8,7 +8,7 @@ rec {
   recurseForDerivations = true;
 
   agent = callPackage ./agent {
-    nix = pkgs.nixVersions.nix_2_28;
+    nix = pkgs.nixVersions.nix_2_34;
     pyPackages = pyPackages;
   };
   # FIXME: PL-135090

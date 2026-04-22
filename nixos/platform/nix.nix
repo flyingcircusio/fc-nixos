@@ -8,7 +8,7 @@
 let
   production = lib.attrByPath [ "parameters" "production" ] "" config.flyingcircus.enc;
 
-  nixPackage = pkgs.nixVersions.nix_2_28;
+  nixPackage = pkgs.nixVersions.nix_2_34;
 in
 {
   options.flyingcircus = {
@@ -35,5 +35,29 @@ in
 
   config = {
     nix.package = nixPackage;
+
+    # Nix 2.34 switches from the `tarball-cache` directory to the
+    # `tarball-cache-v2` directory without cleaning up the first one.
+    # This could lead to disk space issues. So we clean it up.
+    # The directory could be in each users home directory while most likely
+    # it primarily exists in /root/, because the fc-agent runs there.
+    systemd.services."fc-cleanup-nix-tarball-cache-v1" =
+      let
+        tarballCacheDirectories = lib.unique (
+          lib.mapAttrsToList (_: cfg: "${cfg.home}/.cache/nix/tarball-cache") config.users.users
+        );
+      in
+      lib.mkIf (lib.versionAtLeast config.nix.package.version "2.34") {
+        wantedBy = [ "multi-user.target" ];
+        unitConfig = {
+          # The | makes this condition OR based. When one directory exists,
+          # this systemd service runs.
+          ConditionPathExists = lib.map (v: "|${v}") tarballCacheDirectories;
+        };
+        serviceConfig = {
+          User = "root";
+        };
+        script = builtins.concatStringsSep "\n" (lib.map (v: "rm -rf ${v}") tarballCacheDirectories);
+      };
   };
 }
