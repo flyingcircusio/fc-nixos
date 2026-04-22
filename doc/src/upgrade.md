@@ -403,6 +403,10 @@ affected. You can still add gcroots manually (e.g. via `nix-store --add-root`).
 
 - The sensu `swap` checks have been removed, as they are no longer relevant with systemd-oomd, which we introduced in fc-nixos 25.11
 
+- The default `k3s` package has been bumped to 1.33
+
+- `services.dovecot2.extraConfig` was removed. Migrate configuration to `services.dovecot2.settings`.
+
 ## Known issues
 
 None.

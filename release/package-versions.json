@@ -30,9 +30,9 @@
     "version": "1.44.21"
   },
   "awscli2": {
-    "name": "awscli2-2.33.2",
+    "name": "awscli2-2.34.24",
     "pname": "awscli2",
-    "version": "2.33.2"
+    "version": "2.34.24"
   },
   "bash": {
     "name": "bash-interactive-5.3p9",
@@ -40,9 +40,9 @@
     "version": "5.3p9"
   },
   "bind": {
-    "name": "bind-9.20.18",
+    "name": "bind-9.20.22",
     "pname": "bind",
-    "version": "9.20.18"
+    "version": "9.20.22"
   },
   "binutils": {
     "name": "binutils-wrapper-2.44",
@@ -65,9 +65,9 @@
     "version": "3.121"
   },
   "calibre": {
-    "name": "calibre-9.5.0",
+    "name": "calibre-9.7.0",
     "pname": "calibre",
-    "version": "9.5.0"
+    "version": "9.7.0"
   },
   "ceph": {
     "name": "ceph-14.2.22",
@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-146.0.7680.177",
+    "name": "chromedriver-unwrapped-147.0.7727.55",
     "pname": "chromedriver-unwrapped",
-    "version": "146.0.7680.177"
+    "version": "147.0.7727.55"
   },
   "chromium": {
-    "name": "chromium-146.0.7680.177",
+    "name": "chromium-147.0.7727.55",
     "pname": "chromium",
-    "version": "146.0.7680.177"
+    "version": "147.0.7727.55"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.5",
@@ -135,9 +135,9 @@
     "version": "5.3.28"
   },
   "discourse": {
-    "name": "discourse-2026.1.2",
+    "name": "discourse-2026.1.3",
     "pname": "discourse",
-    "version": "2026.1.2"
+    "version": "2026.1.3"
   },
   "dnsmasq": {
     "name": "dnsmasq-2.92",
@@ -145,9 +145,9 @@
     "version": "2.92"
   },
   "docker": {
-    "name": "docker-29.3.0",
+    "name": "docker-29.4.0",
     "pname": "docker",
-    "version": "29.3.0"
+    "version": "29.4.0"
   },
   "docker-compose": {
     "name": "docker-compose-5.0.2",
@@ -155,19 +155,19 @@
     "version": "5.0.2"
   },
   "dovecot": {
-    "name": "dovecot-2.3.21.1",
+    "name": "dovecot-2.4.3",
     "pname": "dovecot",
-    "version": "2.3.21.1"
+    "version": "2.4.3"
   },
   "element-web": {
-    "name": "element-web-1.12.10",
+    "name": "element-web-1.12.14",
     "pname": "element-web",
-    "version": "1.12.10"
+    "version": "1.12.14"
   },
   "erlang": {
-    "name": "erlang-28.4.1",
+    "name": "erlang-28.4.2",
     "pname": "erlang",
-    "version": "28.4.1"
+    "version": "28.4.2"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-149.0",
+    "name": "firefox-149.0.2",
     "pname": "firefox",
-    "version": "149.0"
+    "version": "149.0.2"
   },
   "gcc": {
     "name": "gcc-wrapper-15.2.0",
@@ -220,19 +220,19 @@
     "version": "2.53.0"
   },
   "gitaly": {
-    "name": "gitaly-18.9.3",
+    "name": "gitaly-18.10.3",
     "pname": "gitaly",
-    "version": "18.9.3"
+    "version": "18.10.3"
   },
   "github-runner": {
-    "name": "github-runner-2.332.0",
+    "name": "github-runner-2.333.1",
     "pname": "github-runner",
-    "version": "2.332.0"
+    "version": "2.333.1"
   },
   "gitlab": {
-    "name": "gitlab-18.9.3",
+    "name": "gitlab-18.10.3",
     "pname": "gitlab",
-    "version": "18.9.3"
+    "version": "18.10.3"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.39.0",
@@ -240,14 +240,14 @@
     "version": "4.39.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.9.3",
+    "name": "gitlab-ee-18.10.3",
     "pname": "gitlab-ee",
-    "version": "18.9.3"
+    "version": "18.10.3"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.9.3",
+    "name": "gitlab-pages-18.10.3",
     "pname": "gitlab-pages",
-    "version": "18.9.3"
+    "version": "18.10.3"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-18.9.0",
@@ -255,9 +255,9 @@
     "version": "18.9.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.9.3",
+    "name": "gitlab-workhorse-18.10.3",
     "pname": "gitlab-workhorse",
-    "version": "18.9.3"
+    "version": "18.10.3"
   },
   "glibc": {
     "name": "glibc-2.42-51",
@@ -310,9 +310,9 @@
     "version": "3.20"
   },
   "irqbalance": {
-    "name": "irqbalance-1.9.4-unstable-2025-06-10",
+    "name": "irqbalance-1.9.5",
     "pname": "irqbalance",
-    "version": "1.9.4-unstable-2025-06-10"
+    "version": "1.9.5"
   },
   "jdk": {
     "name": "openjdk-21.0.10+7",
@@ -325,9 +325,9 @@
     "version": "21.0.9-b1163.86"
   },
   "jetty": {
-    "name": "jetty-12.1.7",
+    "name": "jetty-12.1.8",
     "pname": "jetty",
-    "version": "12.1.7"
+    "version": "12.1.8"
   },
   "jicofo": {
     "name": "jicofo-1.0-1153",
@@ -359,25 +359,25 @@
     "pname": "k3s",
     "version": "1.35.2+k3s1"
   },
-  "k3s_1_32": {
-    "name": "k3s-1.32.13+k3s1",
-    "pname": "k3s",
-    "version": "1.32.13+k3s1"
-  },
   "k3s_1_33": {
     "name": "k3s-1.33.9+k3s1",
     "pname": "k3s",
     "version": "1.33.9+k3s1"
   },
+  "k3s_1_34": {
+    "name": "k3s-1.34.5+k3s1",
+    "pname": "k3s",
+    "version": "1.34.5+k3s1"
+  },
   "keycloak": {
-    "name": "keycloak-26.5.6",
+    "name": "keycloak-26.5.7",
     "pname": "keycloak",
-    "version": "26.5.6"
+    "version": "26.5.7"
   },
   "kubernetes-helm": {
-    "name": "kubernetes-helm-3.19.1",
+    "name": "kubernetes-helm-3.20.1",
     "pname": "kubernetes-helm",
-    "version": "3.19.1"
+    "version": "3.20.1"
   },
   "libffi": {
     "name": "libffi-3.5.2",
@@ -440,14 +440,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.78",
+    "name": "linux-6.12.81",
     "pname": "linux",
-    "version": "6.12.78"
+    "version": "6.12.81"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.78",
+    "name": "linux-6.12.81",
     "pname": "linux",
-    "version": "6.12.78"
+    "version": "6.12.81"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -485,9 +485,9 @@
     "version": "5.8.0"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-1.150.0",
+    "name": "matrix-synapse-1.151.0",
     "pname": "matrix-synapse",
-    "version": "1.150.0"
+    "version": "1.151.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.3",
@@ -519,15 +519,10 @@
     "pname": "mariadb-server",
     "version": "11.4.9"
   },
-  "mysql80": {
-    "name": "mysql-8.0.45",
-    "pname": "mysql",
-    "version": "8.0.45"
-  },
   "nfs-utils": {
-    "name": "nfs-utils-2.8.7",
+    "name": "nfs-utils-2.9.1",
     "pname": "nfs-utils",
-    "version": "2.8.7"
+    "version": "2.9.1"
   },
   "nginx": {
     "name": "nginx-1.28.3",
@@ -545,9 +540,9 @@
     "version": "1.28.3"
   },
   "nix": {
-    "name": "nix-2.31.3",
+    "name": "nix-2.34.6",
     "pname": "nix",
-    "version": "2.31.3"
+    "version": "2.34.6"
   },
   "nodejs": {
     "name": "nodejs-24.14.0",
@@ -580,9 +575,9 @@
     "version": "2.16"
   },
   "ollama-rocm": {
-    "name": "ollama-0.19.0",
+    "name": "ollama-0.20.6",
     "pname": "ollama",
-    "version": "0.19.0"
+    "version": "0.20.6"
   },
   "openjdk": {
     "name": "openjdk-21.0.10+7",
@@ -600,9 +595,9 @@
     "version": "2.6.9"
   },
   "opensearch": {
-    "name": "opensearch-2.19.2",
+    "name": "opensearch-3.5.0",
     "pname": "opensearch",
-    "version": "2.19.2"
+    "version": "3.5.0"
   },
   "opensearch-dashboards": {
     "name": "opensearch-dashboards-2.19.2",
@@ -630,9 +625,9 @@
     "version": "3.0.19"
   },
   "openvpn": {
-    "name": "openvpn-2.6.14",
+    "name": "openvpn-2.6.19",
     "pname": "openvpn",
-    "version": "2.6.14"
+    "version": "2.6.19"
   },
   "pciutils": {
     "name": "pciutils-3.14.0",
@@ -850,11 +845,6 @@
     "pname": "prometheus",
     "version": "3.10.0"
   },
-  "promtail": {
-    "name": "promtail-3.6.8",
-    "pname": "promtail",
-    "version": "3.6.8"
-  },
   "prosody": {
     "name": "prosody-13.0.3",
     "pname": "prosody",
@@ -961,9 +951,9 @@
     "version": "4.2.5"
   },
   "rclone": {
-    "name": "rclone-1.73.3",
+    "name": "rclone-1.73.4",
     "pname": "rclone",
-    "version": "1.73.3"
+    "version": "1.73.4"
   },
   "re2c": {
     "name": "re2c-4.4",
@@ -981,9 +971,9 @@
     "version": "1.8.0"
   },
   "roundcube": {
-    "name": "roundcube-1.6.14",
+    "name": "roundcube-1.6.15",
     "pname": "roundcube",
-    "version": "1.6.14"
+    "version": "1.6.15"
   },
   "rsync": {
     "name": "rsync-3.4.1",
@@ -996,9 +986,9 @@
     "version": "3.4.8"
   },
   "runc": {
-    "name": "runc-1.4.1",
+    "name": "runc-1.4.2",
     "pname": "runc",
-    "version": "1.4.1"
+    "version": "1.4.2"
   },
   "screen": {
     "name": "screen-5.0.1",
@@ -1106,9 +1096,9 @@
     "version": "2.41.3"
   },
   "uv": {
-    "name": "uv-0.11.2",
+    "name": "uv-0.11.6",
     "pname": "uv",
-    "version": "0.11.2"
+    "version": "0.11.6"
   },
   "varnish": {
     "name": "varnish-8.0.1",

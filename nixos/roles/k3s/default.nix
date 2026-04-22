@@ -119,7 +119,7 @@ in
         ];
 
         services.k3s = {
-          package = config.fclib.mkPlatform pkgs.k3s_1_32;
+          package = config.fclib.mkPlatform pkgs.k3s_1_33;
           extraKubeletConfig.imageGCLowThresholdPercent = config.fclib.mkPlatform 70;
           extraKubeletConfig.imageGCHighThresholdPercent = config.fclib.mkPlatform 75;
         };

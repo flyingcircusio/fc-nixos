@@ -235,7 +235,7 @@ import ../make-test-python.nix (
           roundcube_sudo = mail.succeed('grep roundcube-chpasswd /etc/sudoers').strip().split()
           expected_sudo = [
             "roundcube",
-            "ALL=(vmail)",
+            "ALL=(dovecot2)",
             "NOPASSWD:",
             "${globalChpasswd},", # mind the comma, it's part of the sudoers syntax!
             "NOPASSWD:",
@@ -247,7 +247,7 @@ import ../make-test-python.nix (
           mail.succeed("echo user1@example.local:placeholder > ${passwdFile}")
           mail.succeed(
             "sudo -u roundcube "
-            "sudo -u vmail ${chpasswdNixPath} "
+            "sudo -u dovecot2 ${chpasswdNixPath} "
             "--passwd-file ${passwdFile} "
             "<<< 'user1@example.local:pass'"
           )
