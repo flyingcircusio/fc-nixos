@@ -19,10 +19,10 @@ let
     # a few additional modifications and updates to the original upstream packaging
     import
       (fetchFromGitHub {
-        hash = "sha256-+LDp5xGdQlxu0xA7PgO7imZ+TKh2Eu/sSi7eRmAVizM=";
+        hash = "sha256-RIo+rVVGk7/vD8QXyDJ0hQSWzU1sET1KdRiwVEm+GG0=";
         owner = "flyingcircusio";
         repo = "nixpkgs";
-        rev = "db221fbbc6089ae73024ec29b3cd4748c3b52923";
+        rev = "38815aab5fa9d1ab6f2e9d9f2929a49a7feef41a";
         # branch = "fc-ceph-pacific"
       })
       {
