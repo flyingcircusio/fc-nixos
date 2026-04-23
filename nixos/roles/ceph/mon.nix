@@ -356,7 +356,7 @@ in
               if role.mgr.sendTelemetry then
                 ''
                   ${cephPkgs.ceph}/bin/ceph telemetry on --license sharing-1-0
-                  ${cephPkgs.ceph}/bin/ceph config set mgr mgr/telemetry/contact 'FlyingCircus IO <support@flyingcircus.io>'
+                  ${cephPkgs.ceph}/bin/ceph config set mgr mgr/telemetry/contact 'Flying Circus IO <support@flyingcircus.io>'
                   ${cephPkgs.ceph}/bin/ceph config set mgr mgr/telemetry/description 'FCIO Cluster #${builtins.hashString "sha512" "${location}/${rg}"}'
                   ${cephPkgs.ceph}/bin/ceph config set mgr mgr/telemetry/channel_ident true
                 ''
