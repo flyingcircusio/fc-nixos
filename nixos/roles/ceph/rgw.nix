@@ -108,8 +108,6 @@ in
           cephRelease = role.cephRelease;
           # no fc-ceph settings necessary so far
         };
-        # PL-135287
-        client.extraSettings."rgw_relaxed_s3_bucket_names" = true;
 
         extraSettingsSections.${username} =
           lib.recursiveUpdate (normaliseCephOptionAttrs defaultRgwSettings) (
