@@ -1,6 +1,6 @@
 self: super:
 let
-  poetry2nixSrc = (import ../versions.nix { pkgs = super; }).poetry2nix;
+  poetry2nixSrc = (import ../release/versions.nix { pkgs = super; }).poetry2nix;
   poetry2nix = import poetry2nixSrc { pkgs = self; };
 
   # import fossar/nix-phps overlay with nixpkgs-unstable's generic.nix copied in
@@ -13,6 +13,21 @@ let
     repo = "nixpkgs";
     rev = "a467063b4abb8bd7636d9bb2475edbd2f0e6c6b6";
   };
+
+  nixpkgs-ceph-pacific =
+    # we build ceph pacific from a nixpkgs-23.11 branch which also holds
+    # a few additional modifications and updates to the original upstream packaging
+    import
+      (fetchFromGitHub {
+        hash = "sha256-+LDp5xGdQlxu0xA7PgO7imZ+TKh2Eu/sSi7eRmAVizM=";
+        owner = "flyingcircusio";
+        repo = "nixpkgs";
+        rev = "db221fbbc6089ae73024ec29b3cd4748c3b52923";
+        # branch = "fc-ceph-pacific"
+      })
+      {
+        inherit (self) config;
+      };
 
   fc-nixos-21_05-src = fetchFromGitHub {
     hash = "sha256-U1ZpdP31bpWCParWr79YWVpA+oIU12cRkI2gf2l+IBM=";
@@ -209,6 +224,26 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   inherit (self.ceph-nautilus) ceph ceph-client libceph;
   # upstream ceph packaging switched to offering a reduced client tooling set, let's see how that works
   ceph-nautilus = lib.dontRecurseIntoAttrs fc-nixos-21_05.ceph-nautilus;
+  ceph-pacific =
+    let
+      applyBaselinePatches =
+        cephPkg:
+        cephPkg.overrideAttrs (oldAttrs: {
+          patches = (oldAttrs.patches or [ ]) ++ [
+            ./ceph/pacific/rgw-reduce-log-verbosity.patch
+            ./ceph/pacific/rbd-migration-status-poolname.patch
+          ];
+        });
+      patchedCeph = builtins.mapAttrs (_: applyBaselinePatches) {
+        inherit (nixpkgs-ceph-pacific) ceph ceph-client;
+      };
+    in
+    rec {
+      inherit (patchedCeph) ceph ceph-client;
+      # XXX: ceph-client for now also contains *our* rbd-locktool executable.
+      # We should reconsider this once we are able to use ceph from the current nixpkgs.
+      libceph = ceph.lib;
+    };
 
   consul = builtins.trace "using 21.05 consul" (
     fc-nixos-21_05.consul.overrideAttrs (old: {
@@ -626,6 +661,12 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   py38_pytest_patterns = fc-nixos-21_05.py_pytest_patterns;
 
   qemu-ceph-nautilus = fc-nixos-21_05.qemu-ceph-nautilus;
+  # pacific: let's also try a qemu version update from 6.0 to 10.1, because
+  # pacific does not compile against old qemu
+  qemu-ceph-pacific = super.qemu.override {
+    cephSupport = true;
+    ceph = self.ceph-pacific.ceph;
+  };
 
   # Ruby 2.7 is EOL but we still need it for Sensu until Aramaki takes over ;)
   #ruby_2_7 = getClosureFromStore /nix/store/qqc6v89xn0g2w123wx85blkpc4pz2ags-ruby-2.7.8;

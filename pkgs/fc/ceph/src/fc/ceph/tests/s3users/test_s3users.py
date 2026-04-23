@@ -5,13 +5,7 @@ from subprocess import CalledProcessError
 from unittest.mock import Mock, call
 
 import pytest
-from fc.manage.s3users import (
-    DirectoryState,
-    RGWState,
-    User,
-    UserManager,
-    accounting,
-)
+from fc.ceph.s3users import nautilus, pacific
 
 # TODO: directory ring api mock (xmlrpc server)
 
@@ -23,11 +17,17 @@ def subprocess_run(monkeypatch):
     return mock_obj
 
 
-def test_object_instances_trivial(subprocess_run):
-    user = User("test")
+@pytest.fixture(params=[nautilus, pacific], ids=["nautilus", "pacific"])
+def s3users(request):
+    """Fixture that yields each s3users module implementation."""
+    return request.param
+
+
+def test_object_instances_trivial(subprocess_run, s3users):
+    user = s3users.User("test")
     assert user.uid == "test"
-    assert isinstance(user.rgw, RGWState)
-    assert isinstance(user.directory, DirectoryState)
+    assert isinstance(user.rgw, s3users.RGWState)
+    assert isinstance(user.directory, s3users.DirectoryState)
 
     assert not user.should_exist
     assert not user.should_be_deleted
@@ -67,10 +67,8 @@ def test_object_instances_trivial(subprocess_run):
     assert user.validate()
 
 
-def test_rgw_state_ignores_additional_keys(
-    subprocess_run,
-):
-    user = User("test")
+def test_rgw_state_ignores_additional_keys(subprocess_run, s3users):
+    user = s3users.User("test")
 
     subprocess_run().stdout = json.dumps(
         {
@@ -94,10 +92,10 @@ def test_rgw_state_ignores_additional_keys(
     assert user.rgw.secret_key == "abcde"
 
 
-def test_ensure_exists_creates_user(subprocess_run, caplog, capfd):
+def test_ensure_exists_creates_user(subprocess_run, caplog, capfd, s3users):
     caplog.set_level(logging.INFO)
 
-    user = User("services:sometest")
+    user = s3users.User("services:sometest")
     user.directory.update(
         {
             "display_name": "test test",
@@ -162,12 +160,14 @@ def test_ensure_exists_creates_user(subprocess_run, caplog, capfd):
     assert "<REDACTED>" in captured.out
 
 
-def test_ensure_exists_creates_user_no_secret_provided_fails(subprocess_run, caplog):
+def test_ensure_exists_creates_user_no_secret_provided_fails(
+    subprocess_run, caplog, s3users
+):
     import logging
 
     caplog.set_level(logging.INFO)
 
-    user = User("services:sometest")
+    user = s3users.User("services:sometest")
     user.directory.update(
         {
             "display_name": "test test",
@@ -203,8 +203,8 @@ def test_ensure_exists_creates_user_no_secret_provided_fails(subprocess_run, cap
     assert subprocess_run.call_args_list == []  # fmt: skip
 
 
-def test_ensure_updates_users(subprocess_run):
-    user = User("services:sometest")
+def test_ensure_updates_users(subprocess_run, s3users):
+    user = s3users.User("services:sometest")
     user.directory.update(
         {
             "display_name": "a new display name",
@@ -288,8 +288,8 @@ def test_ensure_updates_users(subprocess_run):
     ]  # fmt: skip
 
 
-def test_validation(caplog):
-    user = User("test")
+def test_validation(caplog, s3users):
+    user = s3users.User("test")
 
     user.directory.exists = True
     user.rgw.exists = False
@@ -336,8 +336,10 @@ def test_validation(caplog):
     assert user.validate()
 
 
-def test_users_pending_soft_deletion_still_added(subprocess_run, caplog):
-    user = User("services:sometest")
+def test_users_pending_soft_deletion_still_added(
+    subprocess_run, caplog, s3users
+):
+    user = s3users.User("services:sometest")
     user.directory.update(
         {
             "display_name": "test test",
@@ -459,8 +461,8 @@ def test_users_pending_soft_deletion_still_added(subprocess_run, caplog):
     assert user.validate()
 
 
-def test_ensure_does_not_recreate_hard_deleted_users(subprocess_run):
-    user = User("services:sometest")
+def test_ensure_does_not_recreate_hard_deleted_users(subprocess_run, s3users):
+    user = s3users.User("services:sometest")
     user.directory.update(
         {
             "display_name": "test test",
@@ -490,8 +492,8 @@ def test_ensure_does_not_recreate_hard_deleted_users(subprocess_run):
     ]
 
 
-def test_ensure_hard_state_deletes_users(subprocess_run):
-    user = User("services:sometest")
+def test_ensure_hard_state_deletes_users(subprocess_run, s3users):
+    user = s3users.User("services:sometest")
     user.directory.update(
         {
             "display_name": "test test",
@@ -544,7 +546,12 @@ def test_ensure_hard_state_deletes_users(subprocess_run):
 
     subprocess_run.side_effect = [
         Mock(stdout=""),
-        subprocess.CalledProcessError(cmd="", returncode=22, output=b"", stderr=b"could not fetch user info: no user info saved")
+        subprocess.CalledProcessError(
+            cmd="",
+            returncode=22,
+            output=b"",
+            stderr=b"could not fetch user info: no user info saved",
+        ),
     ]
 
     user.ensure()
@@ -582,22 +589,30 @@ def test_ensure_hard_state_deletes_users(subprocess_run):
     ]
 
 
-def test_accounting(subprocess_run):
+@pytest.mark.parametrize(
+    "s3users,stats_key",
+    [
+        (nautilus, "total_bytes"),
+        (pacific, "size"),
+    ],
+    ids=["nautilus", "pacific"],
+)
+def test_accounting(subprocess_run, s3users, stats_key):
     directory = Mock()
 
     subprocess_run.side_effect = [
         Mock(stdout=json.dumps(["services:user1"])),
-        Mock(stdout=json.dumps({"stats": {"total_bytes": 1000}})),
+        Mock(stdout=json.dumps({"stats": {stats_key: 1000}})),
     ]
 
-    accounting("test-location", directory)
+    s3users.RgwUserManager.accounting("test-location", directory)
 
     assert directory.store_s3.call_args_list == [
         call("test-location", {"services:user1": "1000"})
     ]
 
 
-def test_user_manager(subprocess_run, caplog):
+def test_user_manager(subprocess_run, caplog, s3users):
     caplog.set_level(logging.INFO)
 
     directory = Mock()
@@ -650,7 +665,7 @@ def test_user_manager(subprocess_run, caplog):
         ),
     ]
 
-    manager = UserManager(directory, "test", "services")
+    manager = s3users.UserManager(directory, "test", "services")
     manager.sync_users()
 
     assert directory.list_s3_users.call_args_list == [call()]
@@ -681,7 +696,9 @@ def test_user_manager(subprocess_run, caplog):
     )
 
 
-def test_usermanager_blocks_users_from_foreign_location_or_resource_group():
+def test_usermanager_blocks_users_from_foreign_location_or_resource_group(
+    s3users,
+):
     directory = Mock()
     directory.list_s3_users.return_value = {
         "services:sometest": {
@@ -695,7 +712,9 @@ def test_usermanager_blocks_users_from_foreign_location_or_resource_group():
     }
 
     with pytest.raises(AssertionError) as e:
-        UserManager(directory, "correct-location", "correct-resource-group")
+        s3users.UserManager(
+            directory, "correct-location", "correct-resource-group"
+        )
     assert (
         e.value.args[0]
         == "Encountered user from unexpected location: wrong-location"
@@ -713,13 +732,18 @@ def test_usermanager_blocks_users_from_foreign_location_or_resource_group():
     }
 
     with pytest.raises(AssertionError) as e:
-        UserManager(directory, "correct-location", "correct-resource-group")
+        s3users.UserManager(
+            directory, "correct-location", "correct-resource-group"
+        )
     assert (
         e.value.args[0]
         == "Encountered user from unexpected storage resource group: wrong-resource-group"
     )
 
-def test_rgw_user_unknown_error_info_doesnt_create_user_again(subprocess_run, caplog):
+
+def test_rgw_user_unknown_error_info_doesnt_create_user_again(
+    subprocess_run, caplog, s3users
+):
     caplog.set_level(logging.INFO)
 
     directory = Mock()
@@ -736,26 +760,40 @@ def test_rgw_user_unknown_error_info_doesnt_create_user_again(subprocess_run, ca
 
     subprocess_run.side_effect = [
         Mock(stdout=json.dumps(["services:sometest"])),
-        CalledProcessError(returncode=1, cmd="", output=b"", stderr=b"uh, i'm a weird error")
+        CalledProcessError(
+            returncode=1, cmd="", output=b"", stderr=b"uh, i'm a weird error"
+        ),
     ]
 
     with pytest.raises(CalledProcessError):
-        UserManager(directory, "test", "services")
+        s3users.UserManager(directory, "test", "services")
 
     assert subprocess_run.call_args_list == [
         call(
             [
-                "radosgw-admin", "--format", "json",
-                "user", "list",
+                "radosgw-admin",
+                "--format",
+                "json",
+                "user",
+                "list",
             ],
-            check=True, stdout=-1, stderr=-1,
+            check=True,
+            stdout=-1,
+            stderr=-1,
         ),
         call(
             [
-                "radosgw-admin", "--format", "json",
-                "user", "info", "--uid", "services:sometest",
+                "radosgw-admin",
+                "--format",
+                "json",
+                "user",
+                "info",
+                "--uid",
+                "services:sometest",
             ],
-            check=True, stdout=-1, stderr=-1,
+            check=True,
+            stdout=-1,
+            stderr=-1,
         ),
     ]
 
@@ -763,7 +801,9 @@ def test_rgw_user_unknown_error_info_doesnt_create_user_again(subprocess_run, ca
     assert directory.update_s3_users.call_args_list == []
 
 
-def test_rgw_user_unknown_error_list_doesnt_create_user_again(subprocess_run, caplog):
+def test_rgw_user_unknown_error_list_doesnt_create_user_again(
+    subprocess_run, caplog, s3users
+):
     caplog.set_level(logging.INFO)
 
     directory = Mock()
@@ -779,19 +819,29 @@ def test_rgw_user_unknown_error_list_doesnt_create_user_again(subprocess_run, ca
     }
 
     subprocess_run.side_effect = [
-        CalledProcessError(returncode=1, cmd="", output=b"", stderr=b"uh, i'm a weird list error")
+        CalledProcessError(
+            returncode=1,
+            cmd="",
+            output=b"",
+            stderr=b"uh, i'm a weird list error",
+        )
     ]
 
     with pytest.raises(CalledProcessError):
-        UserManager(directory, "test", "services")
+        s3users.UserManager(directory, "test", "services")
 
     assert subprocess_run.call_args_list == [
         call(
             [
-                "radosgw-admin", "--format", "json",
-                "user", "list",
+                "radosgw-admin",
+                "--format",
+                "json",
+                "user",
+                "list",
             ],
-            check=True, stdout=-1, stderr=-1,
+            check=True,
+            stdout=-1,
+            stderr=-1,
         ),
     ]
 

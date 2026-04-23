@@ -1,0 +1,24 @@
+From ec58eb83928f244a3b38a65f2d344860aa94489c Mon Sep 17 00:00:00 2001
+From: Christian Theune <ct@flyingcircus.io>
+Date: Thu, 12 Mar 2026 13:16:00 +0100
+Subject: [PATCH] Bugfix: fix migration status reporting incorrectly using
+ source pool where dest pool is expected
+
+Signed-off-by: Christian Theune <ct@flyingcircus.io>
+---
+ src/pybind/rbd/rbd.pyx | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/pybind/rbd/rbd.pyx b/src/pybind/rbd/rbd.pyx
+index 57a11b7dc0cf7..17062336e8553 100644
+--- a/src/pybind/rbd/rbd.pyx
++++ b/src/pybind/rbd/rbd.pyx
+@@ -1265,7 +1265,7 @@ class RBD(object):
+             'source_pool_namespace' : decode_cstr(c_status.source_pool_namespace),
+             'source_image_name'     : decode_cstr(c_status.source_image_name),
+             'source_image_id'       : decode_cstr(c_status.source_image_id),
+-            'dest_pool_id'          : c_status.source_pool_id,
++            'dest_pool_id'          : c_status.dest_pool_id,
+             'dest_pool_namespace'   : decode_cstr(c_status.dest_pool_namespace),
+             'dest_image_name'       : decode_cstr(c_status.dest_image_name),
+             'dest_image_id'         : decode_cstr(c_status.dest_image_id),

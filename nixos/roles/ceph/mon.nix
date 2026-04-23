@@ -11,7 +11,7 @@ let
   fclib = config.fclib;
   role = config.flyingcircus.roles.ceph_mon;
   enc = config.flyingcircus.enc;
-  inherit (fclib.ceph) expandCamelCaseAttrs expandCamelCaseSection;
+  inherit (fclib.ceph) normaliseCephOptionAttrs normaliseCephOptionSection;
 
   mons = (sort lessThan (map (service: service.address) (fclib.findServices "ceph_mon-mon")));
   # We do not have service data during bootstrapping.
@@ -21,14 +21,41 @@ let
 
   # default definitions for the mgr.* options:
   mgrEnabledModules = {
-    # always_on_modules are not listed here
     nautilus = [
+      # always_on_modules for reference:
+      # balancer
+      # crash
+      # devicehealth
+      # orchestrator_cli
+      # progress
+      # rbd_support
+      # status
+      # volumes
+
       "telemetry"
+      "iostat"
+    ];
+    pacific = [
+      # always_on_modules for reference:
+      # balancer
+      # crash
+      # devicehealth
+      # orchestrator
+      # pg_autoscaler
+      # progress
+      # rbd_support
+      # status
+      # telemetry
+      # volumes
+
       "iostat"
     ];
   };
   mgrDisabledModules = {
     nautilus = [
+      "restful"
+    ];
+    pacific = [
       "restful"
     ];
   };
@@ -39,6 +66,8 @@ let
     monWarnPgNotDeepScrubbedRatio = 1;
     monOsdNearfullRatio = 0.85;
     monOsdFullRatio = 0.95;
+    # belongs in the [mon] section for historical reasons
+    mgrInitialModules = lib.concatStringsSep " " mgrEnabledModules.${role.cephRelease};
   };
   perMonSettings =
     mon:
@@ -55,7 +84,7 @@ let
       };
     };
   defaultMgrSettings = {
-    mgrInitialModules = lib.concatStringsSep " " mgrEnabledModules.${role.cephRelease};
+    "mgr/pg_autoscaler/log_level" = "warning";
   };
 in
 {
@@ -71,13 +100,8 @@ in
         type = lib.types.bool;
       };
 
-      config = lib.mkOption {
-        type = lib.types.lines;
-        default = "";
-        description = ''
-          Contents of the Ceph config file for MONs.
-        '';
-      };
+      # XXX: only covers the [mon] section, we currently do not specify extraSettings
+      # for [mgr] in favour of doing that with a full settings revamp PL-135312
       extraSettings = lib.mkOption {
         type =
           with lib.types;
@@ -117,153 +141,26 @@ in
             Note that `always_on` modules cannot be disabled so far
           '';
         };
+        sendTelemetry = lib.mkOption {
+          type = lib.types.bool;
+          # If we want to control telemetry at more places, this could become a
+          # top-level platform option
+          default = true;
+          description = ''
+            Whether to report telemetry to telemetry.ceph.com or not.
+            We do not distinguish between the different ceph telemetry *channels*
+            and either send all telemetry, including the `ident` channel, or none
+            at all.
+            If sending telemetry, the reported cluster description is
+            <FCIO Cluster #sha512_of_location/rg>
+          '';
+        };
       };
     };
   };
 
   config = lib.mkMerge [
-    (lib.mkIf role.enable {
-      assertions = [
-        {
-          assertion = (
-            (
-              role.extraSettings != { }
-              || config.flyingcircus.services.ceph.extraSettings != { }
-              || config.flyingcircus.services.ceph.client.extraSettings != { }
-            )
-            -> role.config == ""
-          );
-          message = "Mixing the configuration styles (extra)Config and (extra)Settings is unsupported, please use either plaintext config or structured settings for ceph.";
-        }
-      ];
-      flyingcircus.services.ceph = {
-        fc-ceph.settings =
-          let
-            monSettings = {
-              release = role.cephRelease;
-              path = cephPkgs.fc-ceph-path;
-            };
-          in
-          {
-            # fc-ceph monitor components
-            Monitor = monSettings;
-            Manager = monSettings;
-            # use the same ceph release for KeyManager, as authentication is significantly
-            # coordinated by mons
-            KeyManager = monSettings;
-          };
 
-        server = {
-          enable = true;
-          cephRelease = role.cephRelease;
-        };
-      };
-
-      systemd.services.fc-ceph-mon = rec {
-        enable = !config.flyingcircus.services.ceph.server.passive;
-
-        description = "Local Ceph Mon (via fc-ceph)";
-        wantedBy = [ "multi-user.target" ];
-        wants = [ fclib.network.sto.addressUnit ];
-        requires = [ "network-online.target" ]; # PL-133952
-        after = wants ++ requires;
-
-        restartTriggers = [
-          config.environment.etc."ceph/ceph.conf".source
-          cephPkgs.ceph
-        ];
-
-        environment = {
-          PYTHONUNBUFFERED = "1";
-        };
-
-        serviceConfig = {
-          Type = "simple";
-          ExecStart = " ${cephPkgs.fc-ceph}/bin/fc-ceph mon activate --as-systemd-unit";
-          # try to restart after 5s for 6 attempts, afterwards wait for a minute between attempts
-          Restart = "always";
-          RestartSec = "5s";
-          RestartSteps = 6;
-          RestartMaxDelaySec = "1min";
-        };
-      };
-
-      systemd.services.fc-ceph-load-vm-images = {
-        description = "Load new VM base images";
-        serviceConfig.Type = "oneshot";
-        script = "${cephPkgs.fc-ceph}/bin/fc-ceph maintenance load-vm-images";
-        environment = {
-          PYTHONUNBUFFERED = "1";
-        };
-      };
-
-      systemd.services.fc-ceph-purge-old-snapshots = {
-        description = "Purge old snapshots";
-        serviceConfig.Type = "oneshot";
-        script = "${cephPkgs.fc-ceph}/bin/fc-ceph maintenance purge-old-snapshots";
-        environment = {
-          PYTHONUNBUFFERED = "1";
-        };
-      };
-
-      systemd.services.fc-ceph-clean-deleted-vms = {
-        description = "Purge old snapshots";
-        serviceConfig.Type = "oneshot";
-        script = "${cephPkgs.fc-ceph}/bin/fc-ceph maintenance clean-deleted-vms";
-        environment = {
-          PYTHONUNBUFFERED = "1";
-        };
-      };
-
-      systemd.services.fc-ceph-mon-update-client-keys = {
-        description = "Update client keys and authorization in the monitor database.";
-        serviceConfig.Type = "oneshot";
-        script = "${cephPkgs.fc-ceph}/bin/fc-ceph keys mon-update-client-keys";
-        environment = {
-          PYTHONUNBUFFERED = "1";
-        };
-      };
-
-      systemd.services.fc-ceph-mgr = rec {
-        enable = !config.flyingcircus.services.ceph.server.passive;
-
-        description = "Local Ceph MGR (via fc-ceph)";
-        wantedBy = [ "multi-user.target" ];
-        wants = [ fclib.network.sto.addressUnit ];
-        requires = [ "network-online.target" ]; # PL-133952
-        after = wants ++ requires;
-
-        restartTriggers = [
-          config.environment.etc."ceph/ceph.conf".source
-          cephPkgs.ceph
-        ];
-
-        environment = {
-          PYTHONUNBUFFERED = "1";
-        };
-
-        # imperatively ensure mgr modules
-        preStart = lib.concatStringsSep "\n" (
-          lib.forEach mgrEnabledModules.${role.cephRelease} (
-            mod: "${cephPkgs.ceph}/bin/ceph mgr module enable ${mod} --force"
-          )
-          ++ lib.forEach mgrDisabledModules.${role.cephRelease} (
-            mod: "${cephPkgs.ceph}/bin/ceph mgr module disable ${mod}"
-          )
-        );
-
-        serviceConfig = {
-          Type = "simple";
-          ExecStart = " ${cephPkgs.fc-ceph}/bin/fc-ceph mgr activate --as-systemd-unit";
-          # try to restart after 5s for 6 attempts, afterwards wait for a minute between attempts
-          Restart = "always";
-          RestartSec = "5s";
-          RestartSteps = 6;
-          RestartMaxDelaySec = "1min";
-        };
-      };
-
-    })
     (lib.mkIf role.enable (
       let
         checkSnapshotCmd = "fc-ceph check snapshot-restore ${configtoml}";
@@ -273,8 +170,8 @@ in
         configtoml = (pkgs.formats.toml { }).generate "config.toml" {
           thresholds = {
             # use canonical, non-camelCase form of ceph settings
-            nearfull = config.flyingcircus.services.ceph.allMergedSettings.mon."mon osd nearfull ratio";
-            full = config.flyingcircus.services.ceph.allMergedSettings.mon."mon osd full ratio";
+            nearfull = config.flyingcircus.services.ceph.allMergedSettings.mon."mon_osd_nearfull_ratio";
+            full = config.flyingcircus.services.ceph.allMergedSettings.mon."mon_osd_full_ratio";
           };
           ceph_roots = config.flyingcircus.services.ceph.server.crushroot_to_rbdpool_mapping;
         };
@@ -305,27 +202,184 @@ in
             interval = 60;
           };
         };
+        flyingcircus.services.ceph = {
+          fc-ceph.settings =
+            let
+              monSettings = {
+                release = role.cephRelease;
+                path = cephPkgs.fc-ceph-path;
+              };
+            in
+            {
+              # fc-ceph monitor components
+              Monitor = monSettings;
+              Manager = monSettings;
+              # use the same ceph release for KeyManager, as authentication is significantly
+              # coordinated by mons
+              KeyManager = monSettings;
+            };
+
+          server = {
+            enable = true;
+            cephRelease = role.cephRelease;
+          };
+
+          extraSettingsSections =
+            lib.recursiveUpdate
+              {
+                mon = normaliseCephOptionAttrs defaultMonSettings;
+                mgr = normaliseCephOptionAttrs defaultMgrSettings;
+              }
+              (
+                lib.recursiveUpdate (normaliseCephOptionSection (
+                  lib.foldr (attr: acc: acc // attr) { } (map perMonSettings (fclib.findServices "ceph_mon-mon"))
+                )) { mon = normaliseCephOptionAttrs role.extraSettings; }
+              );
+        };
+
+        systemd.services.fc-ceph-mon = rec {
+          enable = !config.flyingcircus.services.ceph.server.passive;
+
+          description = "Local Ceph Mon (via fc-ceph)";
+          wantedBy = [ "multi-user.target" ];
+          wants = [ fclib.network.sto.addressUnit ];
+          requires = [ "network-online.target" ]; # PL-133952
+          after = wants ++ requires;
+
+          restartTriggers = [
+            config.environment.etc."ceph/ceph.conf".source
+            cephPkgs.ceph
+          ];
+
+          environment = {
+            PYTHONUNBUFFERED = "1";
+          };
+
+          serviceConfig = {
+            Type = "simple";
+            ExecStart = " ${cephPkgs.fc-ceph}/bin/fc-ceph mon activate --as-systemd-unit";
+            # try to restart after 5s for 6 attempts, afterwards wait for a minute between attempts
+            Restart = "always";
+            RestartSec = "5s";
+            RestartSteps = 6;
+            RestartMaxDelaySec = "1min";
+          };
+        };
+
+        systemd.services.fc-ceph-load-vm-images = {
+          description = "Load new VM base images";
+          serviceConfig.Type = "oneshot";
+          script = "${cephPkgs.fc-ceph}/bin/fc-ceph maintenance load-vm-images";
+          environment = {
+            PYTHONUNBUFFERED = "1";
+          };
+        };
+
+        systemd.services.fc-ceph-purge-old-snapshots = {
+          description = "Purge old snapshots";
+          serviceConfig.Type = "oneshot";
+          script = "${cephPkgs.fc-ceph}/bin/fc-ceph maintenance purge-old-snapshots";
+          environment = {
+            PYTHONUNBUFFERED = "1";
+          };
+        };
+
+        systemd.services.fc-ceph-clean-deleted-vms = {
+          description = "Purge old snapshots";
+          serviceConfig.Type = "oneshot";
+          script = "${cephPkgs.fc-ceph}/bin/fc-ceph maintenance clean-deleted-vms";
+          environment = {
+            PYTHONUNBUFFERED = "1";
+          };
+        };
+
+        systemd.services.fc-ceph-mon-update-client-keys = {
+          description = "Update client keys and authorization in the monitor database.";
+          serviceConfig.Type = "oneshot";
+          script = "${cephPkgs.fc-ceph}/bin/fc-ceph keys mon-update-client-keys";
+          environment = {
+            PYTHONUNBUFFERED = "1";
+          };
+        };
+
+        systemd.services.fc-ceph-mgr = rec {
+          enable = !config.flyingcircus.services.ceph.server.passive;
+
+          description = "Local Ceph MGR (via fc-ceph)";
+          wantedBy = [ "multi-user.target" ];
+          wants = [ fclib.network.sto.addressUnit ];
+          requires = [ "network-online.target" ]; # PL-133952
+          after = wants ++ requires ++ [ "fc-ceph-mon.service" ];
+
+          restartTriggers = [
+            config.environment.etc."ceph/ceph.conf".source
+            cephPkgs.ceph
+          ];
+
+          environment = {
+            PYTHONUNBUFFERED = "1";
+          };
+
+          # imperatively ensure mgr modules.
+          # preStart becuase these go via the mon.
+          preStart = lib.concatStringsSep "\n" (
+            lib.forEach mgrEnabledModules.${role.cephRelease} (
+              mod: "${cephPkgs.ceph}/bin/ceph mgr module enable ${mod} --force"
+            )
+            ++ lib.forEach mgrDisabledModules.${role.cephRelease} (
+              mod: "${cephPkgs.ceph}/bin/ceph mgr module disable ${mod}"
+            )
+          );
+          # these settings require an active mgr
+          postStart =
+            let
+              rg = lib.attrByPath [ "parameters" "resource_group" ] "" config.flyingcircus.enc;
+              location = lib.attrByPath [ "parameters" "location" ] "" config.flyingcircus.enc;
+            in
+            ''
+                # Wait until the mgr is available, can take up to 1 minute
+                count=0
+                while ! ${cephPkgs.ceph}/bin/ceph telemetry status
+                do
+                if [ $count -eq 21 ]
+                then
+                  echo "Tried 60 seconds, not able to contact mgr…"
+                  exit 1
+                fi
+
+                echo "Failed to contact a ceph mgr after $count attempts. Waiting…"
+                count=$((count+1))
+                sleep 3
+              done
+            ''
+            + (
+              if role.mgr.sendTelemetry then
+                ''
+                  ${cephPkgs.ceph}/bin/ceph telemetry on --license sharing-1-0
+                  ${cephPkgs.ceph}/bin/ceph config set mgr mgr/telemetry/contact 'Flying Circus IO <support@flyingcircus.io>'
+                  ${cephPkgs.ceph}/bin/ceph config set mgr mgr/telemetry/description 'FCIO Cluster #${builtins.hashString "sha512" "${location}/${rg}"}'
+                  ${cephPkgs.ceph}/bin/ceph config set mgr mgr/telemetry/channel_ident true
+                ''
+              else
+                ''
+                  ${cephPkgs.ceph}/bin/ceph telemetry off
+                ''
+            );
+
+          serviceConfig = {
+            Type = "simple";
+            ExecStart = " ${cephPkgs.fc-ceph}/bin/fc-ceph mgr activate --as-systemd-unit";
+            # try to restart after 5s for 6 attempts, afterwards wait for a minute between attempts
+            Restart = "always";
+            RestartSec = "5s";
+            RestartSteps = 6;
+            RestartMaxDelaySec = "1min";
+          };
+        };
+
       }
     ))
-    (lib.mkIf (role.enable && role.config == "") {
-      flyingcircus.services.ceph.extraSettingsSections =
-        lib.recursiveUpdate { mon = expandCamelCaseAttrs defaultMonSettings; }
-          (
-            lib.recursiveUpdate
-              (expandCamelCaseSection (
-                lib.foldr (attr: acc: acc // attr) { } (map perMonSettings (fclib.findServices "ceph_mon-mon"))
-              ))
-              (
-                lib.recursiveUpdate { mon = expandCamelCaseAttrs role.extraSettings; } {
-                  mon = expandCamelCaseAttrs defaultMgrSettings;
-                }
-              )
-          );
-    })
 
-    (lib.mkIf (role.enable && role.config != "") {
-      environment.etc."ceph/ceph.conf".text = lib.mkAfter role.config;
-    })
     (lib.mkIf (role.enable && role.primary) {
 
       systemd.timers.fc-ceph-load-vm-images = {

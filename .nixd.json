@@ -1,0 +1,10 @@
+{
+  "nixpkgs": {
+    "expr": "import <nixpkgs> { }"
+  },
+  "options": {
+    "nixos": {
+      "expr": "(import <nixpkgs/nixos> { configuration.imports = [ <fc/nixos> <fc/nixos/roles> ]; }).options"
+    }
+  }
+}

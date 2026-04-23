@@ -11,7 +11,13 @@ let
   fclib = config.fclib;
   role = config.flyingcircus.roles.ceph_rgw;
   enc = config.flyingcircus.enc;
-  inherit (fclib.ceph) expandCamelCaseAttrs expandCamelCaseSection releaseAtLeast;
+  inherit (fclib.ceph) normaliseCephOptionAttrs normaliseCephOptionSection releaseAtLeast;
+  bucketNameValidationPy = fclib.python3BinFromFile ./rgw-check-bucket-names.py {
+    flakeIgnore = [ "E501" ];
+  };
+  rgw-validate-bucket-names = pkgs.writeShellScriptBin "rgw-validate-bucket-names" ''
+    radosgw-admin bucket list | ${lib.getExe bucketNameValidationPy}
+  '';
 
   username = "client.radosgw.${config.networking.hostName}";
 
@@ -52,14 +58,6 @@ in
         type = lib.types.bool;
       };
 
-      config = lib.mkOption {
-        type = lib.types.lines;
-        default = "";
-        description = ''
-          Contents of the Ceph config file for RGWs.
-        '';
-      };
-
       extraSettings = lib.mkOption {
         type =
           with lib.types;
@@ -89,31 +87,35 @@ in
           Whether or not to enable traffic accounting.
         '';
       };
+      rgwInterface = lib.mkOption {
+        internal = true; # only for customising that interface for development
+        default = "sto";
+        type = lib.types.str;
+      };
     };
   };
 
   config = lib.mkMerge [
     (lib.mkIf role.enable {
 
-      assertions = [
-        {
-          assertion = (
-            (
-              role.extraSettings != { }
-              || config.flyingcircus.services.ceph.extraSettings != { }
-              || config.flyingcircus.services.ceph.client.extraSettings != { }
-            )
-            -> role.config == ""
-          );
-          message = "Mixing the configuration styles (extra)Config and (extra)Settings is unsupported, please use either plaintext config or structured settings for ceph.";
-        }
-      ];
+      flyingcircus.services.ceph = {
+        fc-ceph.settings.RgwUserManager = {
+          release = role.cephRelease;
+          path = cephPkgs.fc-ceph-path;
+        };
+        server = {
+          enable = true;
+          cephRelease = role.cephRelease;
+          # no fc-ceph settings necessary so far
+        };
 
-      flyingcircus.services.ceph.server = {
-        enable = true;
-        cephRelease = role.cephRelease;
-        # no fc-ceph settings necessary so far
+        extraSettingsSections.${username} =
+          lib.recursiveUpdate (normaliseCephOptionAttrs defaultRgwSettings) (
+            normaliseCephOptionAttrs role.extraSettings
+          );
       };
+
+      environment.systemPackages = [ rgw-validate-bucket-names ];
 
       systemd.tmpfiles.rules = [
         "d /srv/ceph/radosgw 2775 root service"
@@ -124,7 +126,7 @@ in
 
         description = "Start/stop local Ceph Rados Gateway";
         wantedBy = [ "multi-user.target" ];
-        wants = [ fclib.network.sto.addressUnit ];
+        wants = [ fclib.network."${role.rgwInterface}".addressUnit ];
         requires = [ "network-online.target" ]; # PL-133952
         after = wants ++ requires;
 
@@ -156,7 +158,7 @@ in
       networking.firewall.extraCommands =
         let
           srv = fclib.network.srv;
-          sto = fclib.network.sto;
+          sto = fclib.network."${role.rgwInterface}";
         in
         lib.mkMerge [
           (lib.mkOrder 700 ''
@@ -195,7 +197,7 @@ in
           cephPkgs.ceph
           pkgs.jq
         ];
-        wants = [ fclib.network.sto.addressUnit ];
+        wants = [ fclib.network."${role.rgwInterface}".addressUnit ];
         after = wants;
         script = ''
           for uid in $(radosgw-admin metadata list user | jq -r '.[]'); do
@@ -233,9 +235,9 @@ in
           # This protects against not terminating radosgw-admin calls.
           TimeoutStartSec = 9 * 60;
         };
-        wants = [ fclib.network.sto.addressUnit ];
+        wants = [ fclib.network."${role.rgwInterface}".addressUnit ];
         after = wants;
-        script = "${pkgs.fc.agent}/bin/fc-s3users --enc ${config.flyingcircus.encPath}";
+        script = "${cephPkgs.fc-ceph}/bin/fc-s3users --enc ${config.flyingcircus.encPath}";
       };
 
       flyingcircus.services.sensu-client.checks = {
@@ -253,17 +255,6 @@ in
         '';
       };
 
-    })
-
-    (lib.mkIf (role.enable && role.config == "") {
-      flyingcircus.services.ceph.extraSettingsSections.${username} =
-        lib.recursiveUpdate (expandCamelCaseAttrs defaultRgwSettings) (
-          expandCamelCaseAttrs role.extraSettings
-        );
-    })
-
-    (lib.mkIf (role.enable && role.config != "") {
-      environment.etc."ceph/ceph.conf".text = lib.mkAfter role.config;
     })
 
     (lib.mkIf (role.enable && role.primary) {
