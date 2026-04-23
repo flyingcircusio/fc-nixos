@@ -1,3 +1,24 @@
+# Release 2026_015
+
+## Impact
+
+-
+
+
+## NixOS XX.XX platform
+
+- nix: test new object storage gateways as binary cache for our internal development VMs (PL-128135)
+
+- stagger the fetch and build of releases over 2 hours instead of 1 hour, to reduce load (FC-52891)
+
+- fc-luks: improve detection of LUKS volumes to cover those not opened currently as well (PL-133176)
+
+- Provide version 3.5 of the Opensearch package for use with the opensearch service and role. This is a temporary measure targeted at 25.11 until the package is updated upstream in 26.05.
+
+- Slurm: Add a workaround for a rare bug which causes new jobs to fail on startup. (PL-135105)
+
+
+
 # Release 2026_014
 
 ## Impact
