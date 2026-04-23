@@ -16,7 +16,7 @@ let
     flakeIgnore = [ "E501" ];
   };
   rgw-validate-bucket-names = pkgs.writeShellScriptBin "rgw-validate-bucket-names" ''
-    sudo radosgw-admin bucket list | ${lib.getExe bucketNameValidationPy}
+    radosgw-admin bucket list | ${lib.getExe bucketNameValidationPy}
   '';
 
   username = "client.radosgw.${config.networking.hostName}";
