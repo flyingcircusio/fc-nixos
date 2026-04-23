@@ -115,6 +115,19 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
           hash = "sha256-4i1s9YAs0JtnTDB8yeA4cLjDfFA+vsPSW4byzoxTXcc=";
         };
       });
+      pyslurm-25_11 =
+        (python-super.pyslurm.override {
+          slurm = self.slurm-25_11;
+        }).overridePythonAttrs
+          (old: rec {
+            version = "25.11.1";
+            src = self.fetchFromGitHub {
+              repo = "pyslurm";
+              owner = "PySlurm";
+              tag = "v${version}";
+              hash = "sha256-0VQ/f6ppUIt4j94CFsRB+kBUrFPAjqXPqwzIaK4StfA=";
+            };
+          });
     })
   ];
 
@@ -645,6 +658,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   sensu-plugins-postgres = getClosureFromStore /nix/store/mzlxvlfwn8bga044vdabpzdcqwjjblr1-sensu-plugins-postgres-4.2.0;
   sensu-plugins-rabbitmq = getClosureFromStore /nix/store/lcvrxlakcxiqzvwq7g284nhzqfc5gvjv-sensu-plugins-rabbitmq-8.1.0;
   sensu-plugins-redis = getClosureFromStore /nix/store/qbqnynpw5mzx98nz8lx89gpjw91wyd5b-sensu-plugins-redis-4.1.0;
+
+  slurm-25_11 = super.callPackage ./slurm-25_11 { };
 
   solr = super.callPackage ./solr { };
 
