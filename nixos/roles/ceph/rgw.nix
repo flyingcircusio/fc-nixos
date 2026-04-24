@@ -12,7 +12,7 @@ let
   role = config.flyingcircus.roles.ceph_rgw;
   enc = config.flyingcircus.enc;
   inherit (fclib.ceph) normaliseCephOptionAttrs normaliseCephOptionSection releaseAtLeast;
-  bucketNameValidationPy = fclib.python3BinFromFile ./rgw-check-bucket-names.py {
+  bucketNameValidationPy = pkgs.writers.writePython3BinFromFile ./rgw-check-bucket-names.py {
     flakeIgnore = [ "E501" ];
   };
   rgw-validate-bucket-names = pkgs.writeShellScriptBin "rgw-validate-bucket-names" ''
