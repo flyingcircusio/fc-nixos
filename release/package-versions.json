@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-147.0.7727.55",
+    "name": "chromedriver-unwrapped-147.0.7727.101",
     "pname": "chromedriver-unwrapped",
-    "version": "147.0.7727.55"
+    "version": "147.0.7727.101"
   },
   "chromium": {
-    "name": "chromium-147.0.7727.55",
+    "name": "chromium-147.0.7727.101",
     "pname": "chromium",
-    "version": "147.0.7727.55"
+    "version": "147.0.7727.101"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.5",
@@ -250,9 +250,9 @@
     "version": "18.10.3"
   },
   "gitlab-runner": {
-    "name": "gitlab-runner-18.9.0",
+    "name": "gitlab-runner-18.10.1",
     "pname": "gitlab-runner",
-    "version": "18.9.0"
+    "version": "18.10.1"
   },
   "gitlab-workhorse": {
     "name": "gitlab-workhorse-18.10.3",
@@ -370,14 +370,14 @@
     "version": "1.34.5+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.5.7",
+    "name": "keycloak-26.6.1",
     "pname": "keycloak",
-    "version": "26.5.7"
+    "version": "26.6.1"
   },
   "kubernetes-helm": {
-    "name": "kubernetes-helm-3.20.1",
+    "name": "kubernetes-helm-3.20.2",
     "pname": "kubernetes-helm",
-    "version": "3.20.1"
+    "version": "3.20.2"
   },
   "libffi": {
     "name": "libffi-3.5.2",
@@ -440,14 +440,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.81",
+    "name": "linux-6.12.82",
     "pname": "linux",
-    "version": "6.12.81"
+    "version": "6.12.82"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.81",
+    "name": "linux-6.12.82",
     "pname": "linux",
-    "version": "6.12.81"
+    "version": "6.12.82"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -475,9 +475,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.5.8",
+    "name": "mastodon-4.5.9",
     "pname": "mastodon",
-    "version": "4.5.8"
+    "version": "4.5.9"
   },
   "matomo": {
     "name": "matomo-5.8.0",
@@ -565,9 +565,9 @@
     "version": "4.38.2"
   },
   "nss_latest": {
-    "name": "nss-3.122",
+    "name": "nss-3.123",
     "pname": "nss",
-    "version": "3.122"
+    "version": "3.123"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.16",
@@ -575,9 +575,9 @@
     "version": "2.16"
   },
   "ollama-rocm": {
-    "name": "ollama-0.20.6",
+    "name": "ollama-0.20.7",
     "pname": "ollama",
-    "version": "0.20.6"
+    "version": "0.20.7"
   },
   "openjdk": {
     "name": "openjdk-21.0.10+7",
@@ -600,9 +600,9 @@
     "version": "3.5.0"
   },
   "opensearch-dashboards": {
-    "name": "opensearch-dashboards-2.19.2",
+    "name": "opensearch-dashboards-3.5.0",
     "pname": "opensearch-dashboards",
-    "version": "2.19.2"
+    "version": "3.5.0"
   },
   "openssh": {
     "name": "openssh-10.2p1",
@@ -711,19 +711,19 @@
     "version": "8.3.30"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.19",
+    "name": "php-with-extensions-8.4.20",
     "pname": "php-with-extensions",
-    "version": "8.4.19"
+    "version": "8.4.20"
   },
   "php85": {
-    "name": "php-with-extensions-8.5.4",
+    "name": "php-with-extensions-8.5.5",
     "pname": "php-with-extensions",
-    "version": "8.5.4"
+    "version": "8.5.5"
   },
   "phpPackages.composer": {
-    "name": "composer-2.9.5",
+    "name": "composer-2.9.7",
     "pname": "composer",
-    "version": "2.9.5"
+    "version": "2.9.7"
   },
   "pkg-config": {
     "name": "pkg-config-wrapper-0.29.2",
@@ -736,9 +736,9 @@
     "version": "5.8.1"
   },
   "poetry": {
-    "name": "poetry-2.3.3",
+    "name": "poetry-2.3.4",
     "pname": "poetry",
-    "version": "2.3.3"
+    "version": "2.3.4"
   },
   "polkit": {
     "name": "polkit-127",
@@ -756,9 +756,9 @@
     "version": "17.9"
   },
   "postgresql14Packages.postgis": {
-    "name": "postgis-3.6.2",
+    "name": "postgis-3.6.3",
     "pname": "postgis",
-    "version": "3.6.2"
+    "version": "3.6.3"
   },
   "postgresql14Packages.temporal_tables": {
     "name": "temporal_tables-1.2.2",
@@ -766,9 +766,9 @@
     "version": "1.2.2"
   },
   "postgresql15Packages.postgis": {
-    "name": "postgis-3.6.2",
+    "name": "postgis-3.6.3",
     "pname": "postgis",
-    "version": "3.6.2"
+    "version": "3.6.3"
   },
   "postgresql15Packages.temporal_tables": {
     "name": "temporal_tables-1.2.2",
@@ -776,9 +776,9 @@
     "version": "1.2.2"
   },
   "postgresql16Packages.postgis": {
-    "name": "postgis-3.6.2",
+    "name": "postgis-3.6.3",
     "pname": "postgis",
-    "version": "3.6.2"
+    "version": "3.6.3"
   },
   "postgresql16Packages.temporal_tables": {
     "name": "temporal_tables-1.2.2",
@@ -786,9 +786,9 @@
     "version": "1.2.2"
   },
   "postgresql17Packages.postgis": {
-    "name": "postgis-3.6.2",
+    "name": "postgis-3.6.3",
     "pname": "postgis",
-    "version": "3.6.2"
+    "version": "3.6.3"
   },
   "postgresql17Packages.temporal_tables": {
     "name": "temporal_tables-1.2.2",
@@ -796,9 +796,9 @@
     "version": "1.2.2"
   },
   "postgresql18Packages.postgis": {
-    "name": "postgis-3.6.2",
+    "name": "postgis-3.6.3",
     "pname": "postgis",
-    "version": "3.6.2"
+    "version": "3.6.3"
   },
   "postgresql18Packages.temporal_tables": {
     "name": "temporal_tables-1.2.2",
@@ -806,9 +806,9 @@
     "version": "1.2.2"
   },
   "postgresqlPackages.postgis": {
-    "name": "postgis-3.6.2",
+    "name": "postgis-3.6.3",
     "pname": "postgis",
-    "version": "3.6.2"
+    "version": "3.6.3"
   },
   "postgresqlPackages.temporal_tables": {
     "name": "temporal_tables-1.2.2",
@@ -1006,9 +1006,9 @@
     "version": "0.11.0"
   },
   "slurm": {
-    "name": "slurm-25-11-4-1",
+    "name": "slurm-25-11-5-1",
     "pname": "slurm",
-    "version": "25-11-4-1"
+    "version": "25-11-5-1"
   },
   "smartmontools": {
     "name": "smartmontools-7.5",
@@ -1096,9 +1096,9 @@
     "version": "2.41.3"
   },
   "uv": {
-    "name": "uv-0.11.6",
+    "name": "uv-0.11.7",
     "pname": "uv",
-    "version": "0.11.6"
+    "version": "0.11.7"
   },
   "varnish": {
     "name": "varnish-8.0.1",
@@ -1106,9 +1106,9 @@
     "version": "8.0.1"
   },
   "vim": {
-    "name": "vim-9.2.0106",
+    "name": "vim-9.2.0340",
     "pname": "vim",
-    "version": "9.2.0106"
+    "version": "9.2.0340"
   },
   "wget": {
     "name": "wget-1.25.0",
