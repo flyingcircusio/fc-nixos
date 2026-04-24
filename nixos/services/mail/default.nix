@@ -16,7 +16,7 @@ with lib;
 # - domains: list of mail domains for which regular mail accounts exist
 
 let
-  inherit (import ../../../versions.nix { }) nixos-mailserver;
+  inherit (import ../../../release/versions.nix { }) nixos-mailserver;
 
   copyToStore =
     pathString:

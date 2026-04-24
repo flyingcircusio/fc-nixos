@@ -1,6 +1,7 @@
 import collections
 
 import fc.ceph.api.cluster
+import fc.ceph.api.pools
 import fc.ceph.maintenance
 import fc.util.configfile
 import fc.util.directory
@@ -25,13 +26,16 @@ def fake_directory():
 
 
 @pytest.fixture
-def cluster(monkeypatch):
-    monkeypatch.setattr(
-        fc.ceph.api.cluster.Cluster,
-        "rbd",
-        mock.MagicMock(spec=fc.ceph.api.cluster.Cluster.rbd),
-    )
-    return fc.ceph.api.cluster.Cluster(ceph_id="admin")
+def mock_rbd(monkeypatch):
+    mock_rbd = mock.MagicMock()
+    monkeypatch.setattr("fc.ceph.api.pools.run.json.rbd", mock_rbd)
+    monkeypatch.setattr("fc.ceph.api.pools.run.rbd", mock_rbd)
+    return mock_rbd
+
+
+@pytest.fixture
+def cluster():
+    return fc.ceph.api.cluster.Cluster()
 
 
 @pytest.fixture
@@ -60,19 +64,33 @@ def pools(cluster, monkeypatch):
     return fc.ceph.api.pools.Pools(cluster)
 
 
-def test_node_deletion(fake_directory, cluster, pools, maintenance_manager):
+def test_node_deletion(
+    fake_directory, cluster, pools, maintenance_manager, mock_rbd
+):
     v = maintenance_manager.VolumeDeletions(fake_directory, cluster)
     v.ensure()
 
-    assert cluster.rbd.call_args_list == [
+    assert mock_rbd.call_args_list == [
         # hard
-        mock.call(["snap", "rm", "rbd.hdd/node03.root@snap1"]),
-        mock.call(["rm", "rbd.hdd/node03.root"]),
-        mock.call(["rm", "rbd.hdd/node03.swap"]),
-        mock.call(["rm", "rbd.hdd/node03.tmp"]),
+        mock.call(
+            "-c",
+            "/etc/ceph/ceph.conf",
+            "snap",
+            "rm",
+            "rbd.hdd/node03.root@snap1",
+        ),
+        mock.call("-c", "/etc/ceph/ceph.conf", "rm", "rbd.hdd/node03.root"),
+        mock.call("-c", "/etc/ceph/ceph.conf", "rm", "rbd.hdd/node03.swap"),
+        mock.call("-c", "/etc/ceph/ceph.conf", "rm", "rbd.hdd/node03.tmp"),
         # purge
-        mock.call(["snap", "rm", "rbd.ssd/node04.root@snap1"]),
-        mock.call(["rm", "rbd.ssd/node04.root"]),
-        mock.call(["rm", "rbd.ssd/node04.swap"]),
-        mock.call(["rm", "rbd.ssd/node04.tmp"]),
+        mock.call(
+            "-c",
+            "/etc/ceph/ceph.conf",
+            "snap",
+            "rm",
+            "rbd.ssd/node04.root@snap1",
+        ),
+        mock.call("-c", "/etc/ceph/ceph.conf", "rm", "rbd.ssd/node04.root"),
+        mock.call("-c", "/etc/ceph/ceph.conf", "rm", "rbd.ssd/node04.swap"),
+        mock.call("-c", "/etc/ceph/ceph.conf", "rm", "rbd.ssd/node04.tmp"),
     ]

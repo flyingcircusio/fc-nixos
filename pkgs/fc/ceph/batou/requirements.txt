@@ -1,0 +1,4 @@
+# appenv-python-preference: 3.12, 3.13
+# pre-release https://github.com/flyingcircusio/batou/pull/526
+batou @ https://github.com/flyingcircusio/batou/archive/eed3dc5274457cc2828cb5e6334f5c31ae1e719a.zip#sha256=29c18f5b963064ee8e2f0a69fbc4ff750b29d80882f9277fc713305a0d66d3ea
+# batou>=2.4.1

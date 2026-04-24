@@ -1,6 +1,6 @@
 {
   system ? builtins.currentSystem,
-  nixpkgs ? (import ../versions.nix { }).nixpkgs,
+  nixpkgs ? (import ../release/versions.nix { }).nixpkgs,
   pkgs ? import nixpkgs { inherit system; },
 }:
 
@@ -40,6 +40,7 @@ in
   backyserver_volumes = callTest ./backy_volumes.nix { };
   channel = callTest ./channel.nix { };
   ceph-nautilus = callTest ./ceph-nautilus.nix { };
+  ceph-pacific = callTest ./ceph-pacific.nix { };
   coturn = callTest ./coturn.nix { };
   docker = callTest ./docker.nix { };
   fcagent = callTest ./fcagent.nix { };
@@ -64,7 +65,16 @@ in
   kernelversions = callTest ./kernelversions.nix { };
   kvm_host_ceph-nautilus-nautilus = callTest ./kvm_host_ceph-nautilus.nix {
     clientCephRelease = "nautilus";
+    serverCephRelease = "nautilus";
   };
+  kvm_host_ceph-nautilus-pacific = callTest ./kvm_host_ceph-nautilus.nix {
+    clientCephRelease = "nautilus";
+    serverCephRelease = "pacific";
+  };
+  #kvm_host_ceph-pacific-pacific = callTest ./kvm_host_ceph-nautilus.nix {
+  #  clientCephRelease = "pacific";
+  #  serverCephRelease = "pacific";
+  #};
   lampVm = callTest ./lamp/vm-test.nix { };
   lampVm72 = callTest ./lamp/vm-test.nix { version = "lamp_php72"; };
   lampVm73 = callTest ./lamp/vm-test.nix { version = "lamp_php73"; };

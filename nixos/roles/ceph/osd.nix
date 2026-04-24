@@ -13,7 +13,7 @@ let
   clientConfig = config.flyingcircus.services.ceph.client;
   enc = config.flyingcircus.enc;
 
-  inherit (fclib.ceph) expandCamelCaseAttrs expandCamelCaseSection;
+  inherit (fclib.ceph) normaliseCephOptionAttrs normaliseCephOptionSection;
 
   cephPkgs = fclib.ceph.mkPkgs cfg.cephRelease;
 
@@ -149,14 +149,6 @@ in
         type = lib.types.bool;
       };
 
-      config = lib.mkOption {
-        type = lib.types.lines;
-        default = "";
-        description = ''
-          Contents of the Ceph config file for OSDs.
-        '';
-      };
-
       extraSettings = lib.mkOption {
         type =
           with lib.types;
@@ -195,19 +187,6 @@ in
   config = lib.mkMerge [
     (lib.mkIf cfg.enable {
 
-      assertions = [
-        {
-          assertion = (
-            (
-              cfg.extraSettings != { }
-              || config.flyingcircus.services.ceph.extraSettings != { }
-              || config.flyingcircus.services.ceph.client.extraSettings != { }
-            )
-            -> cfg.config == ""
-          );
-          message = "Mixing the configuration styles (extra)Config and (extra)Settings is unsupported, please use either plaintext config or structured settings for ceph.";
-        }
-      ];
       flyingcircus.services.ceph = {
         server = {
           enable = true;
@@ -229,6 +208,10 @@ in
             # by then both OSDs and MONs are already updated.
             MaintenanceTasks = osdSettings;
           };
+
+        extraSettingsSections.osd = lib.recursiveUpdate (normaliseCephOptionAttrs defaultOsdSettings) (
+          normaliseCephOptionAttrs cfg.extraSettings
+        );
       };
 
       flyingcircus.services.ceph.cluster_network = head cfg.network.v4.networks;
@@ -308,15 +291,6 @@ in
       }
       // osdServiceDeps;
 
-    })
-    (lib.mkIf (cfg.enable && cfg.config == "") {
-      flyingcircus.services.ceph.extraSettingsSections.osd =
-        lib.recursiveUpdate (expandCamelCaseAttrs defaultOsdSettings) (
-          expandCamelCaseAttrs cfg.extraSettings
-        );
-    })
-    (lib.mkIf (cfg.enable && cfg.config != "") {
-      environment.etc."ceph/ceph.conf".text = lib.mkAfter cfg.config;
     })
   ];
 }

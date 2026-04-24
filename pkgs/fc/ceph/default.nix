@@ -1,5 +1,6 @@
 {
   lib,
+  python,
   buildPythonApplication,
   parted,
   cryptsetup,
@@ -10,6 +11,8 @@
   freezegun,
   pytest,
   pytest_patterns,
+  pytest-cov,
+  pytest-timeout,
   setuptools,
   nagiosplugin,
   rich,
@@ -41,10 +44,17 @@ buildPythonApplication rec {
     parted
   ];
 
+  passthru = {
+    inherit checkInputs nativeCheckInputs;
+    py = python.pkgs;
+  };
+
   checkInputs = [
     mock
     freezegun
     pytest_patterns
+    pytest-cov
+    pytest-timeout
   ];
 
   nativeCheckInputs = [
@@ -53,7 +63,10 @@ buildPythonApplication rec {
 
   meta = with lib; {
     description = "fc-ceph";
-    maintainers = [ maintainers.theuni ];
+    maintainers = [
+      maintainers.theuni
+      maintainers.osnyx
+    ];
     platforms = platforms.unix;
   };
 
