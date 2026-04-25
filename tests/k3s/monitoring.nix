@@ -31,7 +31,7 @@ import ../make-test-python.nix (
     name = "k3s-monitoring";
     nodes = {
 
-      master =
+      k3sserver =
         { lib, ... }:
         {
           imports = [ (testlib.fcConfig { }) ];
@@ -68,7 +68,7 @@ import ../make-test-python.nix (
     testScript =
       { nodes, ... }:
       let
-        masterSensuCheck = testlib.sensuCheckCmd nodes.master;
+        k3sserverSensuCheck = testlib.sensuCheckCmd nodes.k3sserver;
       in
       ''
 
@@ -82,8 +82,8 @@ import ../make-test-python.nix (
 
         with subtest("sensu should be able to access the API server endpoint"):
           k3sserver.wait_for_file("/var/lib/k3s/tokens/sensuclient")
-          k3sserver.wait_until_succeeds("${masterSensuCheck "kube-apiserver"}")
-          k3sserver.wait_until_succeeds("${masterSensuCheck "kube-nodes-ready"}")
+          k3sserver.wait_until_succeeds("${k3sserverSensuCheck "kube-apiserver"}")
+          k3sserver.wait_until_succeeds("${k3sserverSensuCheck "kube-nodes-ready"}")
 
         with subtest("telegraf should be running on server"):
           k3sserver.wait_for_unit("telegraf.service")
