@@ -114,6 +114,20 @@ Please migrate to structured config with `services.postfix.settings.main`.
 
 SMTP with STARTTLS over port 587 is no longer allowed. Please use SMTP with SSL/TLS over port 465.i
 
+(nixos-upgrade-percona)=
+
+### Percona / MySQL
+
+We removed the `percona80` role, as MySQL 8.0 is end-of-life and Percona 8.0 is likely not receiving security updates anymore.
+
+Please upgrade to `percona84` before upgrading.
+
+Percona Server 8.4 now has `caching_sha2_password` as default authentication plugin.
+This means that new user passwords are hashed with this mechanism and clients need to support this.
+We still support the old hashes up to Percona Server 9.7 when these will be removed.
+Please read the [Percona Server Upgrade Guide](https://docs.percona.com/percona-server/8.4/upgrade.html) for more
+information about the upgrade.
+
 ### RabbitMQ
 
 Metrics for RabbitMQ are now only provided by the `rabbitmq_prometheus` exporter,

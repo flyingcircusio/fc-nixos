@@ -638,7 +638,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     '';
   });
 
-  percona80 = self.percona-server_8_0;
   percona84 = self.percona-server_8_4;
 
   # Has been renamed upstream, backy-extract still wants to use it.

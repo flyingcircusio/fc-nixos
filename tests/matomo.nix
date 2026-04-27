@@ -36,7 +36,7 @@ import ./make-test-python.nix (
           };
         };
 
-        flyingcircus.roles.percona80 = {
+        flyingcircus.roles.percona84 = {
           enable = true;
         };
 

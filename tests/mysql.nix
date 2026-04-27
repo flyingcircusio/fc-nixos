@@ -1,6 +1,6 @@
 import ./make-test-python.nix (
   {
-    rolename ? "percona80",
+    rolename ? "percona84",
     lib,
     pkgs,
     testlib,

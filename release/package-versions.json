@@ -679,8 +679,6 @@
     "pname": "percona-xtrabackup",
     "version": "8.4.0-4"
   },
-  "percona57": {},
-  "percona80": {},
   "php72": {
     "name": "php-with-extensions-7.2.34",
     "pname": "php-with-extensions",
