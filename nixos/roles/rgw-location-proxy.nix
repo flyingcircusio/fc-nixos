@@ -68,7 +68,7 @@ in
 
       security.acme.certs.${cfg.domain} = {
         dnsProvider = fclib.mkPlatform "pdns";
-        credentialsFile = cfg.dns01CredFile;
+        environmentFile = cfg.dns01CredFile;
         webroot = lib.mkForce null;
         group = "nginx";
       };

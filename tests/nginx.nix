@@ -307,7 +307,7 @@ import ./make-test-python.nix (
           };
           security.acme.certs.server = {
             dnsProvider = "pdns";
-            credentialsFile = pkgs.writeText "pdns-cred" "";
+            environmentFile = pkgs.writeText "pdns-cred" "";
             group = "nginx";
           };
         };
