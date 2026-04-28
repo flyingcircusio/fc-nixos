@@ -36,6 +36,7 @@ import ../make-test-python.nix (
 
         flyingcircus.roles.router = {
           enable = true;
+          routerUplinkNetworks = [ "tr" ];
 
           birdConfig = builtins.readFile ./bird.conf;
           routerId = builtins.head fclib.network.tr.v4.addresses;
