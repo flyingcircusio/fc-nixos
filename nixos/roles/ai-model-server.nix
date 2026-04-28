@@ -212,6 +212,67 @@ in
             Restart = "always";
           };
         };
+
+        flyingcircus.services.sensu-client.checks.nvidia_gpu_reset_required = {
+          notification = "NVIDIA GPU requires reset (GSP hang or bus fault)";
+          # Exits 2 (critical) if any GPU has gpu_recovery_action=Reset.
+          # This is the post-fault state: driver has given up and needs either
+          # nvidia-smi --gpu-reset or a full reboot to recover.
+          # nvidia-smi comes from hardware.nvidia (local config) via /run/current-system/sw.
+          command = ''
+            nvidia_smi=''${NVIDIA_SMI:-/run/current-system/sw/bin/nvidia-smi}
+            output=$($nvidia_smi -q -x 2>&1)
+            smi_status=$?
+            if [ "$smi_status" -ne 0 ]; then
+              echo "CRITICAL: nvidia-smi -q -x failed: $output"
+              exit 2
+            fi
+            count=$(printf '%s\n' "$output" \
+              | ${pkgs.gnugrep}/bin/grep -c '<gpu_recovery_action>Reset</gpu_recovery_action>' \
+              || true)
+            if [ "$count" -gt 0 ]; then
+              echo "CRITICAL: $count GPU(s) require reset (run: nvidia-smi --gpu-reset -i <id>)"
+              exit 2
+            fi
+            echo "OK: no GPUs require reset"
+          '';
+          interval = 60;
+        };
+
+        flyingcircus.services.sensu-client.checks.nvidia_gpu_smi_sane = {
+          notification = "NVIDIA GPU nvidia-smi returning N/A or ERR! (possible GSP firmware hang)";
+          # Query a set of fields that must always have real values on a healthy GPU.
+          # N/A or ERR! on any of these indicates the driver has lost contact with
+          # the GPU — the same state seen on ike01 after the Xid 119/154 GSP hang.
+          # Fields deliberately chosen: all are non-optional on Blackwell under normal
+          # operation regardless of power state (unlike e.g. memory_temp which is N/A
+          # when the sensor is absent).
+          command = ''
+            nvidia_smi=''${NVIDIA_SMI:-/run/current-system/sw/bin/nvidia-smi}
+            output=$($nvidia_smi \
+              --query-gpu=index,gpu_uuid,power.draw,temperature.gpu,utilization.gpu \
+              --format=csv,noheader 2>&1)
+            smi_status=$?
+            if [ "$smi_status" -ne 0 ]; then
+              echo "CRITICAL: nvidia-smi query failed: $output"
+              exit 2
+            fi
+            bad=$(printf '%s\n' "$output" \
+              | ${pkgs.gawk}/bin/awk -F', ' '{
+                  for (i=2; i<=NF; i++)
+                    if ($i == "[N/A]" || $i == "N/A" || $i == "ERR!" || $i ~ /^\[[^]]*ERR[^]]*\]$/) {
+                      print "GPU"$1": field "i" = "$i; found=1
+                    }
+                } END { exit 0 }')
+            if [ -n "$bad" ]; then
+              echo "CRITICAL: nvidia-smi fields N/A or ERR!: $bad"
+              exit 2
+            fi
+            echo "OK: all GPU nvidia-smi fields sane"
+          '';
+          interval = 60;
+        };
+
         users = {
           users.skvaider = {
             description = "Skvaider user";

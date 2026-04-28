@@ -31,6 +31,27 @@ import ./make-test-python.nix (
         cp ${fetch "pytorch_model.bin" "1rh4bk5fqjy74k5r1dwmm6ax40fj0djapmfycpkxyaq36i0b41mp"} $out/pytorch_model.bin
       '';
 
+    fakeNvidiaOk = pkgs.writeShellScriptBin "nvidia-smi" ''
+      case "$*" in
+        *"-q -x"*) printf '%s\n' '<nvidia_smi_log><gpu><gpu_recovery_action>None</gpu_recovery_action></gpu></nvidia_smi_log>' ;;
+        *) printf '%s\n' '0, GPU-healthy, 16 W, 31, 0 %' ;;
+      esac
+    '';
+
+    fakeNvidiaReset = pkgs.writeShellScriptBin "nvidia-smi" ''
+      case "$*" in
+        *"-q -x"*) printf '%s\n' '<nvidia_smi_log><gpu><gpu_recovery_action>Reset</gpu_recovery_action></gpu></nvidia_smi_log>' ;;
+        *) printf '%s\n' '0, GPU-reset, 16 W, 31, 0 %' ;;
+      esac
+    '';
+
+    fakeNvidiaNa = pkgs.writeShellScriptBin "nvidia-smi" ''
+      case "$*" in
+        *"-q -x"*) printf '%s\n' '<nvidia_smi_log><gpu><gpu_recovery_action>None</gpu_recovery_action></gpu></nvidia_smi_log>' ;;
+        *) printf '%s\n' '0, GPU-bad, [N/A], ERR!, 0 %' ;;
+      esac
+    '';
+
     # All functional assertions run inside this script on the gateway node.
     # The testScript handles only cross-node readiness ordering (wait_for_unit,
     # wait_for_open_port) before invoking this.
@@ -116,6 +137,10 @@ import ./make-test-python.nix (
             }
           ];
         };
+
+        flyingcircus.services.sensu-client.enable = true;
+        flyingcircus.services.sensu-client.server = "sensu.example.invalid";
+        flyingcircus.services.sensu-client.password = "testpass";
       };
 
     nodes.gateway =
@@ -191,6 +216,20 @@ import ./make-test-python.nix (
           " -H 'Authorization: Bearer testtoken'",
           timeout=120,
       )
+
+      with subtest("NVIDIA health checks should detect reset/N/A state"):
+          checks = model.succeed("sensu-client-show-config")
+          assert "nvidia_gpu_reset_required" in checks, checks
+          assert "nvidia_gpu_smi_sane" in checks, checks
+
+          model.succeed(
+              "sensu-client-show-config | python3 -c 'import json, sys; print(json.load(sys.stdin)[\"checks\"][\"nvidia_gpu_reset_required\"][\"command\"])' > /tmp/check-nvidia-reset-required && "
+              "sensu-client-show-config | python3 -c 'import json, sys; print(json.load(sys.stdin)[\"checks\"][\"nvidia_gpu_smi_sane\"][\"command\"])' > /tmp/check-nvidia-smi-sane"
+          )
+          model.succeed("NVIDIA_SMI=${fakeNvidiaOk}/bin/nvidia-smi sh /tmp/check-nvidia-reset-required")
+          model.succeed("NVIDIA_SMI=${fakeNvidiaOk}/bin/nvidia-smi sh /tmp/check-nvidia-smi-sane")
+          model.fail("NVIDIA_SMI=${fakeNvidiaReset}/bin/nvidia-smi sh /tmp/check-nvidia-reset-required")
+          model.fail("NVIDIA_SMI=${fakeNvidiaNa}/bin/nvidia-smi sh /tmp/check-nvidia-smi-sane")
 
       with subtest("Run tests"):
           gateway.succeed("run-tests", timeout=120)
