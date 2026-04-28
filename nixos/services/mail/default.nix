@@ -285,10 +285,10 @@ in
           systemd.services.rspamd.restartTriggers = [ config.mailserver.localDnsResolver ];
 
           services.dovecot2.settings = {
-            passdb = [
+            "passdb imperative" = [
               {
                 driver = "passwd-file";
-                args = role.passwdFile;
+                passwd_file_path = role.passwdFile;
               }
             ];
 
