@@ -291,14 +291,6 @@ in
                 passwd_file_path = role.passwdFile;
               }
             ];
-
-            plugin = {
-              mail_plugins = "$mail_plugins expire";
-              expire = "Trash";
-              expire2 = "Trash/*";
-              expire3 = "Junk";
-              expire_cache = "yes";
-            };
           };
 
           services.nginx.virtualHosts =
