@@ -174,7 +174,6 @@
   "python3",
   "python311",
   "python312",
-  "python38",
   "python3Packages.boto3",
   "python3Packages.click",
   "python3Packages.lxml",
