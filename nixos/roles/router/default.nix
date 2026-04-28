@@ -141,16 +141,6 @@ in
         description = "IPv6 address to prefer as source address for outgoing connections";
       };
 
-      dnsForwarders = mkOption {
-        type = types.listOf types.str;
-        default = [
-          "9.9.9.9"
-          "149.112.112.112"
-          "2620:fe::fe"
-          "2620:fe::9"
-        ];
-        description = "IP addresses to be used as upstream DNS resolvers (default Quad9)";
-      };
     };
   };
 
