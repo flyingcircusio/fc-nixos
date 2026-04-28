@@ -194,23 +194,6 @@ with lib;
         ul = 10000;
       };
 
-      # Derivation of router IDs for BGP.
-      routerIdSources = {
-        # Either the first IPv4 addrress on a given network in a
-        # location
-        location = {
-          dev = "tr";
-          whq = "tr";
-          test = "tr";
-          dev2 = "tr2";
-        };
-        # Or a per-host override
-        host = {
-          kenny08 = "185.105.253.72";
-          kenny09 = "185.105.253.74";
-        };
-      };
-
       adminKeys = {
         directory = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDSejGFORJ7hlFraV3caVir3rWlo/QcsWptWrukk2C7eaGu/8tXMKgPtBHYdk4DYRi7EcPROllnFVzyVTLS/2buzfIy7XDjn7bwHzlHoBHZ4TbC9auqW3j5oxTDA4s2byP6b46Dh93aEP9griFideU/J00jWeHb27yIWv+3VdstkWTiJwxubspNdDlbcPNHBGOE+HNiAnRWzwyj8D0X5y73MISC3pSSYnXJWz+fI8IRh5LSLYX6oybwGX3Wu+tlrQjyN1i0ONPLxo5/YDrS6IQygR21j+TgLXaX8q8msi04QYdvnOqk1ntbY4fU8411iqoSJgCIG18tOgWTTOcBGcZX directory@directory.fcio.net";
         ctheune = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA/lhMiMJBednrahZUJvb+dZVhLysbcuGf4p2J4D6MU/ ctheune@fourteen-3.local";
