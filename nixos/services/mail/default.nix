@@ -239,8 +239,8 @@ in
                 (if lib.versionOlder config.system.stateVersion "25.11" then 1 else 3);
             inherit domains;
             fqdn = role.mailHost;
-            loginAccounts = fclib.jsonFromFile "/etc/local/mail/users.json" "{}";
-            extraVirtualAliases = fclib.jsonFromFile "/etc/local/mail/local_valiases.json" "{}";
+            accounts = fclib.jsonFromFile "/etc/local/mail/users.json" "{}";
+            aliases = fclib.jsonFromFile "/etc/local/mail/local_valiases.json" "{}";
             x509.useACMEHost = role.mailHost;
             enableImapSsl = true;
             enableManageSieve = true;
@@ -248,7 +248,6 @@ in
             # platform, so a bland unconfigured kresd is counterproductive.
             localDnsResolver = false;
             lmtpSaveToDetailMailbox = "no";
-            mailDirectory = vmailDir;
             mailboxes = {
               "Trash" = {
                 auto = "create";
@@ -271,8 +270,11 @@ in
                 special_use = "\\Archive";
               };
             };
-            vmailGroupName = "vmail";
-            vmailUserName = "vmail";
+            storage = {
+              path = vmailDir;
+              owner = "vmail";
+              group = "vmail";
+            };
             srs.enable = true;
           };
 
