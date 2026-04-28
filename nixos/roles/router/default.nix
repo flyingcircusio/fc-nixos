@@ -158,8 +158,8 @@ in
 
   imports = [
     ./bind
-    ./bird2
-    ./keepalived
+    ./bird2.nix
+    ./keepalived.nix
     ./bird2-vrf-bridge.nix
     ./chrony.nix
     ./kea.nix
