@@ -145,7 +145,7 @@ in
   };
 
   imports = [
-    ./bind
+    ./bind.nix
     ./bird2.nix
     ./keepalived.nix
     ./bird2-vrf-bridge.nix
