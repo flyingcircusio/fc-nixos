@@ -98,12 +98,12 @@ in
 
       routerUplinkNetworks = mkOption {
         type = types.listOf types.str;
-        default = static.routerUplinkNetworks."${location}" or [ ];
+        default = [ ];
         description = "Names of VLANs on which this router accepts connectivity to the outside world";
       };
       routerDownlinkNetworks = mkOption {
         type = types.listOf types.str;
-        default = static.routerDownlinkNetworks."${location}" or [ ];
+        default = [ ];
         description = "Names of VLANs on which this router provides external connectivity to other routers";
       };
       routerGatewayNetworks = mkOption {
@@ -112,14 +112,12 @@ in
           "mgm"
           "srv"
           "fe"
-        ]
-        ++ (static.additionalDhcpNetworks."${location}" or [ ]);
+        ];
         description = "Names of VLANs on which this router provides gateway services";
       };
       floatingGatewayNetworks = mkOption {
         type = types.listOf types.str;
-        # TODO: in the future this should be a superset of routerGatewayNetworks
-        default = static.floatingGatewayNetworks."${location}" or [ ];
+        default = role.routerGatewayNetworks;
         description = "Names of VLANs on which there are floating addresses shared between multiple routers";
       };
 
@@ -173,10 +171,6 @@ in
       {
         assertion = (location != "standalone") -> (role.routerUplinkNetworks != [ ]);
         message = "Router must have uplink networks configured";
-      }
-      {
-        assertion = (location != "standalone") -> (role.floatingGatewayNetworks != [ ]);
-        message = "Router must have floating gateway networks configured";
       }
     ];
 

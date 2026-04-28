@@ -194,27 +194,6 @@ with lib;
         ul = 10000;
       };
 
-      # VLANs on which we accept connectivity to the outside world
-      routerUplinkNetworks = {
-        dev = [ "tr" ];
-        whq = [
-          "tr-up-a"
-          "tr-up-b"
-        ];
-        rzob = [
-          "tr-kamp-a"
-          "tr-kamp-b"
-        ];
-        test = [ "tr" ];
-        dev2 = [ "tr2" ];
-      };
-
-      # VLANs on which we provide connectivity to the outside world to others
-      routerDownlinkNetworks = {
-        whq = [ "tr" ];
-        dev = [ "tr2" ];
-      };
-
       # Derivation of router IDs for BGP.
       routerIdSources = {
         # Either the first IPv4 addrress on a given network in a
@@ -230,44 +209,6 @@ with lib;
           kenny08 = "185.105.253.72";
           kenny09 = "185.105.253.74";
         };
-      };
-
-      # Networks which have floating gateways shared between routers
-      floatingGatewayNetworks = {
-        test = [
-          "mgm"
-          "srv"
-          "fe"
-        ];
-        dev = [
-          "mgm"
-          "srv"
-          "fe"
-        ];
-        whq = [
-          "mgm"
-          "srv"
-          "fe"
-          "access"
-        ];
-        rzob = [
-          "mgm"
-          "srv"
-          "fe"
-          "tr-kamp-dhp"
-        ];
-        dev2 = [
-          "mgm"
-          "srv"
-          "fe"
-        ];
-      };
-
-      # Additional networks for which the routers provide DHCP service
-      additionalDhcpNetworks = {
-        whq = [
-          "access"
-        ];
       };
 
       adminKeys = {
