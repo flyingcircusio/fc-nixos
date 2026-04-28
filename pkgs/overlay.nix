@@ -626,7 +626,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   opensearch-dashboards = super.callPackage ./opensearch-dashboards { };
 
-  opensearch_3_5 = lib.warnOnInstantiate "'openserach_3_5' has been replaced by 'opensearch'." super.opensearch;
+  opensearch_3_5 = lib.warnOnInstantiate "'opensearch_3_5' has been replaced by 'opensearch'." super.opensearch;
 
   percona = self.percona84;
   percona-toolkit = super.perlPackages.PerconaToolkit.overrideAttrs (oldAttrs: {
@@ -742,5 +742,4 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       in
       if dependencies == [ ] then python3Writer else pathWrapper;
   };
-  xtrabackup = lib.warn "The `xtrabackup` package has been renamed to `percona-xtrabackup`." self.percona-xtrabackup;
 }
