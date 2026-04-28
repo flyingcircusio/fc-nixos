@@ -47,6 +47,22 @@ let
       use_symlink_paths true
     }
 
+    track_file fcio_check_stop_file {
+      # Allow admins to locally send keepalive into FAIL state by adding
+      # a non "0" entry
+      file /etc/keepalived/stop
+      # 0 as default causes FAIL if anything != 0 is in the file
+      weight 0
+      init_file 0
+    }
+
+    track_file fcio_check_maint_file {
+      # Used by fc-keepalived enter-maintenance
+      file /etc/keepalived/fcio_maintenance
+      weight -20
+      init_file 0
+    }
+
     ${role.keepalivedConfig}
   '';
 
