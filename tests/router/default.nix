@@ -34,7 +34,14 @@ import ../make-test-python.nix (
           <fc/nixos/roles>
         ];
 
-        flyingcircus.roles.router.enable = true;
+        flyingcircus.roles.router = {
+          enable = true;
+
+          birdConfig = builtins.readFile ./bird.conf;
+          routerId = builtins.head fclib.network.tr.v4.addresses;
+
+          keepalivedConfig = builtins.readFile ./keepalived.conf;
+        };
 
         environment.etc."networks/tr".source = pkgs.writers.writeJSON "tr" fclib.network.tr.dualstack;
         environment.etc."networks/srv".source = pkgs.writers.writeJSON "srv" fclib.network.tr.dualstack;
