@@ -112,7 +112,10 @@ Configuring postfix via `services.postfix.extraConfig` or `/etc/local/postfix/ma
 is not allowed anymore.
 Please migrate to structured config with `services.postfix.settings.main`.
 
-SMTP with STARTTLS over port 587 is no longer allowed. Please use SMTP with SSL/TLS over port 465.i
+SMTP with STARTTLS over port 587 (also known as Submission) is deprecated and
+scheduled for deactivation in fc-nixos 26.11.
+We will provide a migration check that checks for remaining usages of SMTP
+over STARTTLS soon. Please already migrate your applications to use SMTP over SSL/TLS via port 465.
 
 (nixos-upgrade-percona)=
 
