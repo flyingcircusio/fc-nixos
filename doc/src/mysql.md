@@ -13,13 +13,9 @@ which provides useful improvements over the standard Oracle MySQL/MariaDB implem
 
 There's a role for each supported version, currently:
 
-- percona80: Percona 8.0.x (*LTS* release)
-- percona84: Percona 8.4.x
+- percona84: Percona 8.4.x (*LTS* release)
 
-We recommend the use of `percona84`, as this is the most up to date LTS release.
-You might also use `percona80` if you are unable to use 8.4.
-All other versions don't receive security updates and are only included to allow
-the upgrade of existing machines to this platform version.
+Percona 9.7 will be the next version added as soon as it's released.
 
 ## Configuration
 

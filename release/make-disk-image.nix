@@ -136,15 +136,17 @@ let
           # mkfs.xfs does not support --offset, so we must place a separately
           # generated XFS image into the main disk image.
           truncate -s ''${sizeMB}M rootfs.img
-          # TODO: nrext64 can be enabled again once we are at kernel >= 6.5 in the VMs
-          mkfs.xfs -i nrext64=0 -L ${rootLabel} rootfs.img
+          # TODO: exchange-range and parent pointers
+          # can be enabled again once we are at kernel >= 6.18 in the VMs.
+          # It's supported from 6.10, but only recommended with 6.18 and later
+          mkfs.xfs -i exchange=0 -n parent=0 -L ${rootLabel} rootfs.img
           dd if=rootfs.img of=$diskImage bs=1M seek=$startMB count=$sizeMB \
             conv=sparse,notrunc iflag=direct
           rm rootfs.img
         ''
       else
         ''
-          mkfs.xfs -i nrext64=0 -L ${rootLabel} $diskImage
+          mkfs.xfs -i exchange=0 -n parent=0 -L ${rootLabel} $diskImage
         ''
     }
 

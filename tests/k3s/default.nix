@@ -79,7 +79,7 @@ import ../make-test-python.nix (
     name = "k3s";
     nodes = {
 
-      master =
+      k3sserver =
         { lib, ... }:
         {
           imports = [
@@ -142,7 +142,7 @@ import ../make-test-python.nix (
           };
         };
 
-      nodeA =
+      k3snodeA =
         { config, ... }:
         {
           imports = [
@@ -175,7 +175,7 @@ import ../make-test-python.nix (
           };
         };
 
-      nodeB =
+      k3snodeB =
         { config, ... }:
         {
           imports = [
@@ -236,7 +236,7 @@ import ../make-test-python.nix (
     testScript =
       { nodes, ... }:
       let
-        masterSensuCheck = testlib.sensuCheckCmd nodes.master;
+        k3sserverSensuCheck = testlib.sensuCheckCmd nodes.k3sserver;
         testscript = pkgs.writeShellScript "test-podlog-in-loki.sh" ''
           test $(logcli -q query '{container="redis"} |= `Redis is starting`' | wc -l) -gt 0
         '';
@@ -271,7 +271,7 @@ import ../make-test-python.nix (
         with subtest("dashboard sensu check should be green"):
           k3sserver.wait_for_unit("kube-dashboard")
           k3sserver.wait_until_succeeds("${
-            lib.strings.escape [ "\"" ] (masterSensuCheck "kube-dashboard")
+            lib.strings.escape [ "\"" ] (k3sserverSensuCheck "kube-dashboard")
           }")
 
         frontend.start()
@@ -317,7 +317,7 @@ import ../make-test-python.nix (
 
         with subtest("dashboard sensu check should be red after shutting down dashboard"):
           k3sserver.systemctl("stop kube-dashboard")
-          k3sserver.fail("${lib.strings.escape [ "\"" ] (masterSensuCheck "kube-dashboard")}")
+          k3sserver.fail("${lib.strings.escape [ "\"" ] (k3sserverSensuCheck "kube-dashboard")}")
       '';
   }
 )

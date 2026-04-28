@@ -36,8 +36,10 @@ import ./make-test-python.nix (
         };
         flyingcircus.initrd = {
           formatXFS = {
+            # nrext64 requires kernel 6.5+
+            # exchange-range, parent pointers requires kernel 6.10+ and is not recommended until kernel 6.18+
             "/dev/disk/by-partlabel/tmp" =
-              "-L tmp -q -K -m crc=1,finobt=1,bigtime=1 -i nrext64=0 -d su=4m,sw=1";
+              "-L tmp -q -K -m crc=1,finobt=1,bigtime=1 -i nrext64=0,exchange=0 -n parent=0 -d su=4m,sw=1";
           };
           collectQemuData = true;
         };

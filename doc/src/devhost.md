@@ -119,8 +119,8 @@ $ cat >> environments/dev/provision.nix <<__EOF__
 {
   flyingcircus.roles.webgateway.enable = true;
   flyingcircus.roles.redis.enable = true;
-  flyingcircus.roles.percona80.enable = true;
-  flyingcircus.roles.postgresql12.enable = true;
+  flyingcircus.roles.percona84.enable = true;
+  flyingcircus.roles.postgresql17.enable = true;
 }
 __EOF__
 

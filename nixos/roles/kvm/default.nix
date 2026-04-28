@@ -49,7 +49,7 @@ in
           each VM later enables the features it supports at boot time.
           (See flyingcircus.initrd.formatXFS/upgradeXFS for more info.)
         '';
-        default = "-q -f -K -m crc=1,finobt=1 -i nrext64=0 -d su=4m,sw=1";
+        default = "-q -f -K -m crc=1,finobt=1 -i nrext64=0,exchange=0 -d su=4m,sw=1 -n parent=0";
       };
       migrationBandwidth = lib.mkOption {
         type = lib.types.int;
