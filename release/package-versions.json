@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-147.0.7727.101",
+    "name": "chromedriver-unwrapped-147.0.7727.116",
     "pname": "chromedriver-unwrapped",
-    "version": "147.0.7727.101"
+    "version": "147.0.7727.116"
   },
   "chromium": {
-    "name": "chromium-147.0.7727.101",
+    "name": "chromium-147.0.7727.116",
     "pname": "chromium",
-    "version": "147.0.7727.101"
+    "version": "147.0.7727.116"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.5",
@@ -180,9 +180,9 @@
     "version": "1.12.14"
   },
   "erlang": {
-    "name": "erlang-28.4.3",
+    "name": "erlang-28.5",
     "pname": "erlang",
-    "version": "28.4.3"
+    "version": "28.5"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -235,9 +235,9 @@
     "version": "2.53.0"
   },
   "gitaly": {
-    "name": "gitaly-18.10.3",
+    "name": "gitaly-18.11.1",
     "pname": "gitaly",
-    "version": "18.10.3"
+    "version": "18.11.1"
   },
   "github-runner": {
     "name": "github-runner-2.333.1",
@@ -245,9 +245,9 @@
     "version": "2.333.1"
   },
   "gitlab": {
-    "name": "gitlab-18.10.3",
+    "name": "gitlab-18.11.1",
     "pname": "gitlab",
-    "version": "18.10.3"
+    "version": "18.11.1"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.39.0",
@@ -255,24 +255,24 @@
     "version": "4.39.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.10.3",
+    "name": "gitlab-ee-18.11.1",
     "pname": "gitlab-ee",
-    "version": "18.10.3"
+    "version": "18.11.1"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.10.3",
+    "name": "gitlab-pages-18.11.1",
     "pname": "gitlab-pages",
-    "version": "18.10.3"
+    "version": "18.11.1"
   },
   "gitlab-runner": {
-    "name": "gitlab-runner-18.10.1",
+    "name": "gitlab-runner-18.11.1",
     "pname": "gitlab-runner",
-    "version": "18.10.1"
+    "version": "18.11.1"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.10.3",
+    "name": "gitlab-workhorse-18.11.1",
     "pname": "gitlab-workhorse",
-    "version": "18.10.3"
+    "version": "18.11.1"
   },
   "glibc": {
     "name": "glibc-2.42-61",
@@ -295,9 +295,9 @@
     "version": "1.26.2"
   },
   "grafana": {
-    "name": "grafana-12.4.2",
+    "name": "grafana-13.0.1",
     "pname": "grafana",
-    "version": "12.4.2"
+    "version": "13.0.1"
   },
   "grub2": {
     "name": "grub-2.12.1",
@@ -540,9 +540,9 @@
     "version": "2.9.1"
   },
   "nginx": {
-    "name": "nginx-1.28.3",
+    "name": "nginx-1.30.0",
     "pname": "nginx",
-    "version": "1.28.3"
+    "version": "1.30.0"
   },
   "nginxMainline": {
     "name": "nginx-1.29.7",
@@ -550,9 +550,9 @@
     "version": "1.29.7"
   },
   "nginxStable": {
-    "name": "nginx-1.28.3",
+    "name": "nginx-1.30.0",
     "pname": "nginx",
-    "version": "1.28.3"
+    "version": "1.30.0"
   },
   "nix": {
     "name": "nix-2.34.6",
@@ -580,9 +580,9 @@
     "version": "4.38.2"
   },
   "nss_latest": {
-    "name": "nss-3.123",
+    "name": "nss-3.123.1",
     "pname": "nss",
-    "version": "3.123"
+    "version": "3.123.1"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.16",
@@ -590,9 +590,9 @@
     "version": "2.16"
   },
   "ollama-rocm": {
-    "name": "ollama-0.21.0",
+    "name": "ollama-0.21.1",
     "pname": "ollama",
-    "version": "0.21.0"
+    "version": "0.21.1"
   },
   "openjdk": {
     "name": "openjdk-21.0.10+7",
@@ -660,9 +660,9 @@
     "version": "10.46"
   },
   "pdns": {
-    "name": "pdns-5.0.3",
+    "name": "pdns-5.0.4",
     "pname": "pdns",
-    "version": "5.0.3"
+    "version": "5.0.4"
   },
   "percona-server": {
     "name": "percona-server-8.4.8-8",
@@ -1030,9 +1030,9 @@
     "version": "6.19"
   },
   "strongswan": {
-    "name": "strongswan-6.0.5",
+    "name": "strongswan-6.0.6",
     "pname": "strongswan",
-    "version": "6.0.5"
+    "version": "6.0.6"
   },
   "subversion": {
     "name": "subversion-1.14.5",
@@ -1080,9 +1080,9 @@
     "version": "9.0.115"
   },
   "unifi": {
-    "name": "unifi-controller-10.1.89",
+    "name": "unifi-controller-10.2.105",
     "pname": "unifi-controller",
-    "version": "10.1.89"
+    "version": "10.2.105"
   },
   "unzip": {
     "name": "unzip-6.0",
