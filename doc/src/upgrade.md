@@ -114,8 +114,8 @@ for more information about the upgrade.
 The NixOS option `services.dovecot2.extraConfig` has been removed.
 Configuration for dovecot in NixOS now works via `services.dovecot2.settings`.
 
-Configuring postfix via `services.postfix.extraConfig` or `/etc/local/postfix/main.cf`
-is not allowed anymore.
+Configuring postfix via `services.postfix.extraConfig`, `/etc/local/mail/main.cf`,
+`/etc/local/postfix/main.cf` is not allowed anymore.
 Please migrate to structured config with `services.postfix.settings.main`.
 
 SMTP with STARTTLS over port 587 is no longer allowed. Please use SMTP with SSL/TLS over port 465.i

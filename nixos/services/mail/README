@@ -57,4 +57,3 @@ Further Configuration Files
 
 - dns.zone: Copy-and-paste DNS records for inclusion in zone files.
 - local_valiases.json: Additional aliases which are not mentioned in users.json.
-- main.cf: Additional Postfix postconf(5) settings.

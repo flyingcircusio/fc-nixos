@@ -442,7 +442,6 @@ in
             "d /etc/local/mail 02775 postfix service"
             "f /etc/local/mail/local_valiases.json 0664 postfix service - {}"
             "f /etc/local/mail/users.json 0664 postfix service - {}"
-            "f /etc/local/mail/main.cf 0664 postfix service"
           ];
 
           systemd.services.mailserver-update-stateversion = lib.mkIf (config.mailserver.stateVersion < 3) {
