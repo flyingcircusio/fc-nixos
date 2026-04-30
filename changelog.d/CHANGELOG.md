@@ -1,3 +1,13 @@
+# Release 2026_016
+
+## NixOS XX.XX platform
+
+- ceph: Introduce support for ceph-16.2.x "Pacific" (PL-131408)
+
+  clusters need to be updated manually, Ceph Nautilus remains the default
+
+
+
 # Release 2026_015
 
 ## Impact
