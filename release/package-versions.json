@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-147.0.7727.116",
+    "name": "chromedriver-unwrapped-147.0.7727.137",
     "pname": "chromedriver-unwrapped",
-    "version": "147.0.7727.116"
+    "version": "147.0.7727.137"
   },
   "chromium": {
-    "name": "chromium-147.0.7727.116",
+    "name": "chromium-147.0.7727.137",
     "pname": "chromium",
-    "version": "147.0.7727.116"
+    "version": "147.0.7727.137"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -210,9 +210,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-150.0",
+    "name": "firefox-150.0.1",
     "pname": "firefox",
-    "version": "150.0"
+    "version": "150.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-14.3.0",
@@ -235,9 +235,9 @@
     "version": "2.51.2"
   },
   "gitaly": {
-    "name": "gitaly-18.10.3",
+    "name": "gitaly-18.11.1",
     "pname": "gitaly",
-    "version": "18.10.3"
+    "version": "18.11.1"
   },
   "github-runner": {
     "name": "github-runner-2.333.1",
@@ -245,9 +245,9 @@
     "version": "2.333.1"
   },
   "gitlab": {
-    "name": "gitlab-18.10.3",
+    "name": "gitlab-18.11.1",
     "pname": "gitlab",
-    "version": "18.10.3"
+    "version": "18.11.1"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.39.0",
@@ -255,14 +255,14 @@
     "version": "4.39.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.10.3",
+    "name": "gitlab-ee-18.11.1",
     "pname": "gitlab-ee",
-    "version": "18.10.3"
+    "version": "18.11.1"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.10.3",
+    "name": "gitlab-pages-18.11.1",
     "pname": "gitlab-pages",
-    "version": "18.10.3"
+    "version": "18.11.1"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-18.11.1",
@@ -270,9 +270,9 @@
     "version": "18.11.1"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.10.3",
+    "name": "gitlab-workhorse-18.11.1",
     "pname": "gitlab-workhorse",
-    "version": "18.10.3"
+    "version": "18.11.1"
   },
   "glibc": {
     "name": "glibc-2.40-218",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.83",
+    "name": "linux-6.12.84",
     "pname": "linux",
-    "version": "6.12.83"
+    "version": "6.12.84"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.83",
+    "name": "linux-6.12.84",
     "pname": "linux",
-    "version": "6.12.83"
+    "version": "6.12.84"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -600,9 +600,9 @@
     "version": "2.15"
   },
   "ollama-rocm": {
-    "name": "ollama-0.12.11",
+    "name": "ollama-0.21.1",
     "pname": "ollama",
-    "version": "0.12.11"
+    "version": "0.21.1"
   },
   "openjdk": {
     "name": "openjdk-21.0.10+7",
