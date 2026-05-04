@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.84",
+    "name": "linux-6.12.85",
     "pname": "linux",
-    "version": "6.12.84"
+    "version": "6.12.85"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.84",
+    "name": "linux-6.12.85",
     "pname": "linux",
-    "version": "6.12.84"
+    "version": "6.12.85"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -505,9 +505,9 @@
     "version": "5.8.0"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.151.0",
+    "name": "matrix-synapse-wrapped-1.152.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.151.0"
+    "version": "1.152.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.2",
