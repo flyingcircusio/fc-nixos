@@ -35,6 +35,7 @@ in
     ./solr.nix
     ./telegraf
     ./varnish
+    ./vinyl-cache
 
     (mkRemovedOptionModule [
       "flyingcircus"

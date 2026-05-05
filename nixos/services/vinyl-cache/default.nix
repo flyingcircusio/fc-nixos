@@ -7,15 +7,15 @@
 }:
 let
   inherit (config) fclib;
-  cfg = config.flyingcircus.services.varnish;
-  vcfg = config.services.varnish;
-  vadm = "${vcfg.package}/bin/varnishadm";
+  cfg = config.flyingcircus.services.vinyl-cache;
+  vcfg = config.services.vinyl-cache;
+  vadm = "${vcfg.package}/bin/vinyladm";
 
   inherit (lib)
     mkOption
     mkEnableOption
-    mkPackageOption
     types
+    mkPackageOption
     ;
 
   sanitizeConfigName =
@@ -29,12 +29,12 @@ let
       # otherwise there is no reliable way to tell that we need to reload the file
       includefile = pkgs.writeText "${hcfg.host}.vcl" hcfg.config;
 
-      # Varnish uses a two-step approach with config names and labels, that we
+      # Vinyl Cache uses a two-step approach with config names and labels, that we
       # leverage in this way:
       # 1. Every vhost received a config file that is written as a VCL config
       #    in the nix store, so every vhost's config file name changes when
       #    the config changes. We reflect this change in the config name within
-      #    Varnish so that we can load multiple configs for the same vhost
+      #    Vinyl Cache so that we can load multiple configs for the same vhost
       #    at the same time to facilitate graceful switchover.
       # 2. The label for every vhost stays the same, independent of any changes
       #    in the config. The label is then pointed to a new (versioned) name
@@ -75,8 +75,10 @@ let
     }
   '';
 
+  allVirtualHosts = lib.recursiveUpdate config.flyingcircus.services.varnish.virtualHosts cfg.virtualHosts;
+
   vhosts = map mkHostSelection (
-    (builtins.attrValues cfg.virtualHosts)
+    (builtins.attrValues allVirtualHosts)
     ++ (lib.optionals (cfg.fallbackConfig != "") [
       {
         config = cfg.fallbackConfig;
@@ -92,7 +94,7 @@ let
       name = mkVclName mainConfig;
       vhostActivationCommands = lib.concatStringsSep "\n" (builtins.catAttrs "command" vhosts);
     in
-    pkgs.writeShellScript "varnishd-commands.sh" ''
+    pkgs.writeShellScript "vinyld-commands.sh" ''
       set -e
       vadm="${vadm}"
 
@@ -139,16 +141,16 @@ let
     '';
 in
 {
-  options.flyingcircus.services.varnish = {
-    enable = mkEnableOption "varnish";
+  options.flyingcircus.services.vinyl-cache = {
+    enable = mkEnableOption "Vinyl-cache Cache";
+    package = mkPackageOption pkgs "varnish" { };
     extraCommandLine = mkOption {
       type = types.separatedString " ";
       default = "";
     };
-    package = mkPackageOption pkgs "varnish" { };
     # cfg.fallbackConfig is defined seperately to ensure proper ordering when assembling the final configuration.
     # Unlike lists dictionaries do not have a defined ordering, which is why the fallback config is defined seperately.
-    # This ensures that it comes last in the finished varnish configuration - just as the name implies
+    # This ensures that it comes last in the finished Vinyl-cache Cache configuration - just as the name implies
     fallbackConfig = mkOption {
       type = types.lines;
       description = ''
@@ -169,22 +171,11 @@ in
         }
       '';
     };
-    http_address = mkOption {
-      type = types.nullOr types.str;
-      default = null;
-      description = ''
-        The http address for the varnish service to listen on.
-        Unix sockets can technically be used for varnish, but are not currently supported on the FCIO platform due to monitoring constraints.
-        Multiple addressess can be specified in a comma-separated fashion in the form of `address[:port][,address[:port][...]`.
-        See `varnishd(1)` for details.
-      '';
-      visible = false;
-    };
     listen = mkOption {
-      type = options.services.varnish.listen.type;
+      type = options.services.vinyl-cache.listen.type;
       description = ''
-        Addresses varnish should listen on.
-        Unix sockets can technically be used for varnish, but are not currently supported on the FCIO platform due to monitoring constraints.
+        Addresses Vinyl Cache should listen on.
+        Unix sockets can technically be used for Vinyl Cache, but are not currently supported on the FCIO platform due to monitoring constraints.
       '';
       default = [
         {
@@ -225,22 +216,22 @@ in
       {
         assertion =
           cfg.package == config.flyingcircus.roles.webproxy.package && cfg.package == vcfg.package;
-        message = "Please modify the Varnish/Vinyl Cache package with the option `flyingcircus.roles.webproxy.package`.";
+        message = "Please modify the Vinyl Cache package with the option `flyingcircus.roles.webproxy.package`.";
       }
     ];
-    warnings = lib.optionals (cfg.http_address != null) [
-      "The option `flyingcircus.services.varnish.http_address` is deprecated. Use `flyingcircus.services.varnish.listen` instead."
+    warnings = lib.optionals (config.flyingcircus.services.varnish.virtualHosts != { }) [
+      "Vinyl Cache is still configured using flyingcircus.services.varnish.virtualHosts. Please migrate to flyingcircus.services.vinyl-cache"
     ];
-    services.varnish = {
+    services.vinyl-cache = {
       inherit (cfg)
         enable
         package
         extraCommandLine
-        http_address
         listen
         ;
 
       enableConfigCheck = false;
+      enableFileLogging = true;
       config = ''
         vcl 4.0;
         import std;
@@ -251,22 +242,22 @@ in
         }
 
         sub vcl_recv {
-          return (synth(503, "Varnish is starting up"));
+          return (synth(503, "vinyl is starting up"));
         }
       '';
     };
 
-    environment.etc."varnish/startup.sh".source = startupscript;
+    environment.etc."vinyl-cache/startup.sh".source = startupscript;
 
-    systemd.services.varnish = {
+    systemd.services.vinyl-cache = {
       postStart = ''
-        /etc/varnish/startup.sh
+        /etc/vinyl-cache/startup.sh
       '';
 
       stopIfChanged = false;
       reloadTriggers = [ startupscript ];
       reload = ''
-        /etc/varnish/startup.sh
+        /etc/vinyl-cache/startup.sh
 
         coldvcls=$(${vadm} vcl.list | grep " cold " | ${pkgs.gawk}/bin/awk {'print $5'})
 
