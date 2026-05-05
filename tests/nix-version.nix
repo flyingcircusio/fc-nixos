@@ -64,16 +64,19 @@ import ./make-test-python.nix (
       import os.path
       import re
 
+      # All released Nix versions available in NixOS 26.05
       relevant_nix_versions = [
-        # default Nix in 25.05
         "2.28",
+        "2.30",
+        "2.31",
+        "2.34",
       ]
 
       def strip_hash(store_path):
           basename = os.path.basename(store_path)
           return basename.split("-", 1)[1]
 
-      def verify_nix_versions(vm, expected_nix="2.28", expect_slurm=False):
+      def verify_nix_versions(vm, expected_nix="2.34", expect_slurm=False):
           vm.start()
           version = vm.succeed("nix --version")
           assert version.startswith(f"nix (Nix) {expected_nix}."), f"""
@@ -116,28 +119,28 @@ import ./make-test-python.nix (
 
 
       with subtest("rzob production vm"):
-          verify_nix_versions(production, "2.28")
+          verify_nix_versions(production, "2.34")
 
       with subtest("rzob non-prod vm"):
-          verify_nix_versions(nonProd, "2.28")
+          verify_nix_versions(nonProd, "2.34")
 
       with subtest("rzob prod vm with slurm"):
-          verify_nix_versions(slurmOnProduction, "2.28", expect_slurm=True)
+          verify_nix_versions(slurmOnProduction, "2.34", expect_slurm=True)
 
       with subtest("rzob non-prod vm with slurm"):
-          verify_nix_versions(slurmOnNonProd, "2.28", expect_slurm=True)
+          verify_nix_versions(slurmOnNonProd, "2.34", expect_slurm=True)
 
       with subtest("whq vm"):
-          verify_nix_versions(whqVM, "2.28")
+          verify_nix_versions(whqVM, "2.34")
 
       with subtest("whq vm with non-prod flag"):
-          verify_nix_versions(whqVMNonProd, "2.28")
+          verify_nix_versions(whqVMNonProd, "2.34")
 
       with subtest("dev vm prod"):
-          verify_nix_versions(devVM, "2.28")
+          verify_nix_versions(devVM, "2.34")
 
       with subtest("dev vm non-prod"):
-          verify_nix_versions(devVMNonProd, "2.28")
+          verify_nix_versions(devVMNonProd, "2.34")
     '';
   }
 )

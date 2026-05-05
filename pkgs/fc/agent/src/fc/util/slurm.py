@@ -587,7 +587,7 @@ def check_controller(log, hostname):
     warnings = []
 
     try:
-        pyslurm.slurm_ping(0)
+        pyslurm.slurmctld.ping_primary()
     except ValueError as e:
         log.error("slurm-controller-ping-failed", exc_info=True)
         errors.append(f"Failed - {e.args[0]}")
@@ -655,13 +655,13 @@ def check_controller(log, hostname):
             + "."
         )
 
-    stats = pyslurm.statistics().get()
+    stats = pyslurm.slurmctld.diag()
 
     info = [
         f"All {num_nodes} nodes are operational.",
-        f"Running jobs: {stats['jobs_running']}.",
-        f"Pending jobs: {stats['jobs_pending']}.",
-        f"Total started jobs: {stats['jobs_started']}.",
+        f"Running jobs: {stats.jobs_running}.",
+        f"Pending jobs: {stats.jobs_pending}.",
+        f"Total started jobs: {stats.jobs_started}.",
         f"Slurm version: {pyslurm.version.__version__}",
     ]
 
@@ -818,41 +818,41 @@ def get_node_metrics(nodes) -> dict:
 
 
 def get_queue_metrics(jobs) -> dict:
-    state_counter = Counter(j["job_state"].lower() for j in jobs)
+    state_counter = Counter(j.state.lower() for j in jobs)
     return {"name": "slurm_queue", **state_counter}
 
 
 def get_scheduler_metrics(stats) -> dict:
-    sched_count = stats["schedule_cycle_counter"]
-    bf_count = stats["bf_cycle_counter"]
+    sched_count = stats.schedule_cycle_counter
+    bf_count = stats.backfill_cycle_counter
     mean_cycle = (
-        stats["schedule_cycle_sum"] / sched_count if sched_count > 0 else 0
+        stats.schedule_cycle_sum / sched_count if sched_count > 0 else 0
     )
     backfill_mean_cycle = (
-        stats["bf_cycle_sum"] / bf_count if bf_count > 0 else 0
+        stats.backfill_cycle_sum / bf_count if bf_count > 0 else 0
     )
     backfill_depth_mean = (
-        stats["bf_depth_sum"] / bf_count if bf_count > 0 else 0
+        stats.backfill_depth_sum / bf_count if bf_count > 0 else 0
     )
 
     return {
         "name": "slurm_scheduler",
-        "threads": stats["server_thread_count"],
-        "queue_size": stats["schedule_queue_len"],
-        "last_cycle": stats["schedule_cycle_last"],
+        "threads": stats.server_thread_count,
+        "queue_size": stats.schedule_queue_length,
+        "last_cycle": stats.schedule_cycle_last,
         "mean_cycle": mean_cycle,
-        "backfill_last_cycle": stats["bf_cycle_last"],
+        "backfill_last_cycle": stats.backfill_cycle_last,
         "backfill_mean_cycle": backfill_mean_cycle,
         "backfill_depth_mean": backfill_depth_mean,
-        "backfilled_jobs_since_start_total": stats["bf_backfilled_jobs"],
-        "backfilled_jobs_since_cycle_total": stats["bf_last_backfilled_jobs"],
+        "backfilled_jobs_since_start_total": stats.backfilled_jobs,
+        "backfilled_jobs_since_cycle_total": stats.last_backfilled_jobs,
     }
 
 
 def get_metrics(log) -> list[dict]:
-    stats = pyslurm.statistics().get()
+    stats = pyslurm.slurmctld.diag()
     nodes = pyslurm.Nodes.load().values()
-    jobs = pyslurm.job().get().values()
+    jobs = pyslurm.Jobs.load()
 
     return [
         *get_accounts_metrics(log, jobs),
