@@ -1,5 +1,6 @@
 import time
 from subprocess import CalledProcessError
+from unittest.mock import MagicMock
 
 import pkg_resources
 import pytest
@@ -218,6 +219,60 @@ class TestPool(object):
                 "32",
             ],
         ]
+
+    def test_get_pg_num_min(self, cluster, monkeypatch):
+        monkeypatch.setattr(
+            "fc.ceph.api.pools.run.json.ceph",
+            lambda *args: {
+                "pool": "test",
+                "pool_id": 161,
+                "pg_num": 512,
+                "pg_num_min": 1,
+            },
+        )
+        assert 1 == Pool("test", cluster).pg_num_min
+
+        def raiser(*args):
+            raise CalledProcessError(
+                returncode=2,
+                cmd="ceph -c /etc/ceph/ceph.conf osd pool get test1 pg_num_min",
+                stderr=b"Error ENOENT: option 'pg_num_min' is not set on pool 'test1'",
+            )
+
+        monkeypatch.setattr("fc.ceph.api.pools.run.json.ceph", raiser)
+        assert Pool("test1", cluster).pg_num_min is None
+
+    def test_set_pg_num_min(self, cluster, monkeypatch):
+        mock_ceph = MagicMock()
+        monkeypatch.setattr("fc.ceph.api.pools.run.ceph", mock_ceph)
+
+        p = Pool("test", cluster)
+        p.pg_num_min = 1
+        mock_ceph.assert_called_with(
+            "-c",
+            cluster.ceph_conf,
+            "osd",
+            "pool",
+            "set",
+            "test",
+            "pg_num_min",
+            "1",
+        )
+        assert p._pg_num_min == 1
+
+        mock_ceph.reset_mock()
+        p.pg_num_min = None
+        mock_ceph.assert_called_with(
+            "-c",
+            cluster.ceph_conf,
+            "osd",
+            "pool",
+            "set",
+            "test",
+            "pg_num_min",
+            "0",
+        )
+        assert p._pg_num_min is None
 
     def test_get_pgp_num(self, cluster, monkeypatch):
         monkeypatch.setattr(
