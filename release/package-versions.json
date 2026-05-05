@@ -864,11 +864,6 @@
     "pname": "python3",
     "version": "3.12.13"
   },
-  "python38": {
-    "name": "python3-3.8.11",
-    "pname": "python3",
-    "version": "3.8.11"
-  },
   "python3Packages.boto3": {
     "name": "python3.13-boto3-1.42.31",
     "pname": "boto3",

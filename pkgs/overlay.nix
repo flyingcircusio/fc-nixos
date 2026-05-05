@@ -626,7 +626,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   opensearch-dashboards = super.callPackage ./opensearch-dashboards { };
 
-  opensearch_3_5 = super.callPackage ./opensearch_3_5.nix { };
+  opensearch_3_5 = lib.warnOnInstantiate "'opensearch_3_5' has been replaced by 'opensearch'." super.opensearch;
 
   percona = self.percona84;
   percona-toolkit = super.perlPackages.PerconaToolkit.overrideAttrs (oldAttrs: {
@@ -658,12 +658,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       "LIBS=-L${super.libxcrypt-legacy}/lib"
     ];
   });
-
-  python38 = builtins.trace "using 21.05 python38" (lib.dontRecurseIntoAttrs fc-nixos-21_05.python38);
-  python38Packages = builtins.trace "using 21.05 python38Packages" (
-    lib.dontRecurseIntoAttrs fc-nixos-21_05.python38Packages
-  );
-  py38_pytest_patterns = fc-nixos-21_05.py_pytest_patterns;
 
   qemu-ceph-nautilus = fc-nixos-21_05.qemu-ceph-nautilus;
   # pacific: let's also try a qemu version update from 6.0 to 10.1, because
@@ -748,5 +742,4 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       in
       if dependencies == [ ] then python3Writer else pathWrapper;
   };
-  xtrabackup = lib.warn "The `xtrabackup` package has been renamed to `percona-xtrabackup`." self.percona-xtrabackup;
 }
