@@ -197,6 +197,15 @@ in
                 notification = "Postfix listening on SMTP port 25";
                 command = "${plug}/check_smtp -H ${role.mailHost} -S -F ${fqdn} " + "-w 5 -c 30";
               };
+              postfix_smtps = {
+                notification = "Postfix listening on SMTPs port 465";
+                command = "${plug}/check_smtp -H ${role.mailHost} -s -F ${fqdn} " + "-w 5 -c 30";
+              };
+              postfix_submission = {
+                enable = config.mailserver.enableSubmission;
+                notification = "Postfix listening on submission port 587";
+                command = "${plug}/check_smtp -H ${role.mailHost} -p 587 -S " + "-F ${fqdn} -w 5 -c 30";
+              };
               dovecot_imaps = {
                 notification = "Dovecot listening on IMAPs port 993";
                 command = "${plug}/check_imap -H ${role.mailHost} -p 993 -S -w 5 -c 30";
@@ -244,6 +253,7 @@ in
             x509.useACMEHost = role.mailHost;
             enableImapSsl = true;
             enableManageSieve = true;
+            enableSubmission = true;
             # FC-38677 - we have a properly configured local resolver in our
             # platform, so a bland unconfigured kresd is counterproductive.
             localDnsResolver = false;
