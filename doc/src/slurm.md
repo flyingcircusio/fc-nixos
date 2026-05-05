@@ -15,7 +15,7 @@ documented below.
 The remainder of this documentation assumes that you are aware of the basics of
 Slurm and understand the general terminology as described in [Slurm Quickstart](https://slurm.schedmd.com/quickstart.html).
 
-We provide version 25.05.x.x of Slurm.
+We provide version 25.11.x.x of Slurm.
 
 ## Command Cheat sheet
 
