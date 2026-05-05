@@ -1,4 +1,3 @@
-import json
 import random
 import time
 from subprocess import CalledProcessError
@@ -82,8 +81,9 @@ class Pool(object):
         self.name = poolname
         self.cluster = cluster
         self._images = None
-        self._pg_num = None
-        self._pgp_num = None
+        self._pg_num: int | None = None
+        self._pg_num_min: int | None = None
+        self._pgp_num: int | None = None
 
     def get(self, imagename):
         """Deprecated. Use pool[imagename] instead."""
@@ -173,6 +173,48 @@ class Pool(object):
         # XXX: Since Ceph Nautilus: as long as pgp_num and pg_num currently match, pgp_num will automatically track any pg_num changes
         # We might be able to simplfy this here. Letting Ceph itself track the pgp changes is even preferrable, as this is done in smaller steps.
         self.pgp_num = value
+
+    @property
+    def pg_num_min(self) -> int | None:
+        if self._pg_num_min:
+            return self.pg_num_min
+        try:
+            pginfo = run.json.ceph(
+                "-c",
+                self.cluster.ceph_conf,
+                "osd",
+                "pool",
+                "get",
+                self.name,
+                "pg_num_min",
+            )
+            self._pg_num_min = int(pginfo["pg_num_min"])
+        except CalledProcessError as e:
+            if e.returncode == 2 and b"is not set on pool" in e.stderr:
+                # still the default value
+                self._pg_num_min = None
+            else:
+                raise
+
+        return self._pg_num_min
+
+    @pg_num_min.setter
+    def pg_num_min(self, value: int | None):
+        """Sets the minimum number of PGs assigned by the pg_autoscaler."""
+        value_numerical = (
+            value if value else 0
+        )  # setting `0` unsets the property back to default
+        run.ceph(
+            "-c",
+            self.cluster.ceph_conf,
+            "osd",
+            "pool",
+            "set",
+            self.name,
+            "pg_num_min",
+            str(value_numerical),
+        )
+        self._pg_num_min = int(value) if value else None
 
     @property
     def pgp_num(self):
