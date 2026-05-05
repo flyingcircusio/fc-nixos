@@ -27,6 +27,10 @@ class Node:
     def modify(self, *args):
         pass
 
+class Statistics:
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
+
 # We cannot import pyslurm, as it just exits with error 1 when it has no slurm cluster
 pyslurm = type(sys)("pyslurm")
 pyslurm.Nodes = MagicMock()
@@ -35,13 +39,15 @@ pyslurm.get_controllers = MagicMock()
 pyslurm.NODE_STATE_DRAIN = 1
 pyslurm.NODE_STATE_DOWN = 2
 pyslurm.NODE_RESUME = 3
-pyslurm.slurm_ping = MagicMock()
-pyslurm.statistics = MagicMock()
-pyslurm.statistics.return_value.get.return_value = {
-    "jobs_running": 1,
-    "jobs_pending": 2,
-    "jobs_started": 3,
-}
+pyslurm.slurmctld = type(sys)(name="pyslurm.slurmctld")
+pyslurm.slurmctld.ping_primary = MagicMock()
+pyslurm.slurmctld.Statistics = Statistics
+pyslurm.slurmctld.diag = MagicMock()
+pyslurm.slurmctld.diag.return_value = Statistics(
+    jobs_running=1,
+    jobs_pending=2,
+    jobs_started=3
+)
 pyslurm.version = type(sys)("pyslurm.version")
 pyslurm.version.__version__ = "24.11.0"
 sys.modules["pyslurm"] = pyslurm

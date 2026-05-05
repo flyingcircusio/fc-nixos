@@ -308,7 +308,11 @@ in
         '')
       ];
 
-      flyingcircus.agent.package = pkgs.fc.agentWithSlurm;
+      flyingcircus.agent.package =
+        if (lib.versions.majorMinor config.services.slurm.package.version == "25.11") then
+          pkgs.fc.agentWithSlurm-25_11
+        else
+          pkgs.fc.agentWithSlurm;
 
       flyingcircus.passwordlessSudoRules = [
         {
@@ -433,7 +437,7 @@ in
           notification = "Slurm is unable to process jobs.";
           interval = 10;
           command = ''
-            sudo -u slurm ${pkgs.fc.agentWithSlurm}/bin/fc-slurm check
+            sudo -u slurm ${config.flyingcircus.agent.package}/bin/fc-slurm check
           '';
         };
       };

@@ -14,6 +14,7 @@
   util-linux,
   xfsprogs,
   enableSlurm ? false,
+  slurmVersion ? "25.05",
 }:
 
 let
@@ -106,8 +107,11 @@ pyPackages.buildPythonPackage rec {
     pyPackages.systemd-python
     xfsprogs
   ]
-  ++ lib.optionals enableSlurm [
+  ++ lib.optionals (enableSlurm && slurmVersion == "25.05") [
     pyPackages.pyslurm
+  ]
+  ++ lib.optionals (enableSlurm && slurmVersion == "25.11") [
+    pyPackages.pyslurm-25_11
   ];
   dontStrip = true;
   doCheck = true;

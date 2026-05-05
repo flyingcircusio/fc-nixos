@@ -12,6 +12,10 @@ rec {
     pyPackages = pyPackages;
   };
   agentWithSlurm = agent.override { enableSlurm = true; };
+  agentWithSlurm-25_11 = agent.override {
+    enableSlurm = true;
+    slurmVersion = "25.11";
+  };
 
   blockdev = callPackage ./blockdev { };
 
