@@ -32,6 +32,7 @@ in
     ./loki.nix
     ./mailout.nix
     ./mailserver.nix
+    ./mariadb.nix
     ./matomo.nix
     ./memcached.nix
     ./mongodb.nix

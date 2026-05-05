@@ -42,6 +42,7 @@ kubernetes
 lamp
 mailserver
 mailstub
+mariadb
 matomo
 memcached
 mongodb
