@@ -157,9 +157,7 @@ class Pool(object):
         """Sets the number of PGs.
 
         This may take a while as pgp_num (the effective number) can only
-        be changed after the PGs have been created in the cluster. Note
-        that you can only increase the number of PGs and never decrease
-        it again. Note that this method may take a while to complete.
+        be changed after the PGs have been created in the cluster.
         """
         run.ceph(
             "-c",
@@ -172,6 +170,8 @@ class Pool(object):
             str(value),
         )
         self._pg_num = int(value)
+        # XXX: Since Ceph Nautilus: as long as pgp_num and pg_num currently match, pgp_num will automatically track any pg_num changes
+        # We might be able to simplfy this here. Letting Ceph itself track the pgp changes is even preferrable, as this is done in smaller steps.
         self.pgp_num = value
 
     @property
