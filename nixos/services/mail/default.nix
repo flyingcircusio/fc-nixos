@@ -248,8 +248,8 @@ in
                 (if lib.versionOlder config.system.stateVersion "25.11" then 1 else 3);
             inherit domains;
             fqdn = role.mailHost;
-            loginAccounts = fclib.jsonFromFile "/etc/local/mail/users.json" "{}";
-            extraVirtualAliases = fclib.jsonFromFile "/etc/local/mail/local_valiases.json" "{}";
+            accounts = fclib.jsonFromFile "/etc/local/mail/users.json" "{}";
+            aliases = fclib.jsonFromFile "/etc/local/mail/local_valiases.json" "{}";
             x509.useACMEHost = role.mailHost;
             enableImapSsl = true;
             enableManageSieve = true;
@@ -258,7 +258,6 @@ in
             # platform, so a bland unconfigured kresd is counterproductive.
             localDnsResolver = false;
             lmtpSaveToDetailMailbox = "no";
-            mailDirectory = vmailDir;
             mailboxes = {
               "Trash" = {
                 auto = "create";
@@ -281,8 +280,11 @@ in
                 special_use = "\\Archive";
               };
             };
-            vmailGroupName = "vmail";
-            vmailUserName = "vmail";
+            storage = {
+              path = vmailDir;
+              owner = "vmail";
+              group = "vmail";
+            };
             srs.enable = true;
           };
 
@@ -293,20 +295,12 @@ in
           systemd.services.rspamd.restartTriggers = [ config.mailserver.localDnsResolver ];
 
           services.dovecot2.settings = {
-            passdb = [
+            "passdb imperative" = [
               {
                 driver = "passwd-file";
-                args = role.passwdFile;
+                passwd_file_path = role.passwdFile;
               }
             ];
-
-            plugin = {
-              mail_plugins = "$mail_plugins expire";
-              expire = "Trash";
-              expire2 = "Trash/*";
-              expire3 = "Junk";
-              expire_cache = "yes";
-            };
           };
 
           services.nginx.virtualHosts =
@@ -458,7 +452,6 @@ in
             "d /etc/local/mail 02775 postfix service"
             "f /etc/local/mail/local_valiases.json 0664 postfix service - {}"
             "f /etc/local/mail/users.json 0664 postfix service - {}"
-            "f /etc/local/mail/main.cf 0664 postfix service"
           ];
 
           systemd.services.mailserver-update-stateversion = lib.mkIf (config.mailserver.stateVersion < 3) {

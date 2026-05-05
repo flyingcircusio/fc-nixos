@@ -22,10 +22,10 @@ let
   readme = ''
     Mail server stub is a minimally pre-configured Postfix instance.
 
-    Put local Postfix configuration into this directory.
+    Put local Postfix files into this directory, configuration is possible in Nix configuration files.
+    It's possible to configure Postfix `master.cf` here:
 
-    - Postfix configuration statements should go into `main.cf`
-    - Postfix service definitions should go into `master.cf`
+    - Postfix service definitions should go into the `master.cf` file
 
     If you need to send mails to the outside world, this role needs quite an
     amount of manual configuration. Consider switching to the more
@@ -49,6 +49,13 @@ in
 
   config = (
     lib.mkIf config.flyingcircus.services.postfix.enable {
+      warnings = lib.optionals (builtins.pathExists "/etc/local/postfix/master.cf") [
+        ''
+          Configuring postfix via /etc/local/postfix/master.cf is deprecated.
+          Please migrate to structured config with services.postfix.settings.master.
+          This option of configuring Postfix will be removed with fc-nixos 26.11.
+        ''
+      ];
       services.postfix = {
         enable = true;
         enableSubmission = true;

@@ -406,10 +406,6 @@ sieveScript
 : Additional aliases which are not mentioned in users.json. Expected to be a
   dict with the alias as key and the receiving address as value.
 
-/etc/local/mail/main.cf
-
-: Additional Postfix {manpage}`postconf(5)` settings.
-
 /etc/local/mail/dns.zone
 
 : Copy-and-paste DNS records for inclusion in zone files. Adapt if necessary.

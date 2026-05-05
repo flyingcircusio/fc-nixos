@@ -108,8 +108,14 @@ time-window.
 
 ### Mailserver / Mailstub
 
-Configuring postfix via `services.postfix.extraConfig` or `/etc/local/postfix/main.cf`
-is not allowed anymore.
+Dovecot was updated from 2.3 to 2.4. This update contains a full rewrite of the configuration.
+Please read the [dovecot upgrade documentation](https://doc.dovecot.org/2.4.3/installation/upgrade/2.3-to-2.4.html)
+for more information about the upgrade.
+The NixOS option `services.dovecot2.extraConfig` has been removed.
+Configuration for dovecot in NixOS now works via `services.dovecot2.settings`.
+
+Configuring postfix via `services.postfix.extraConfig`, `/etc/local/mail/main.cf`,
+`/etc/local/postfix/main.cf` is not allowed anymore.
 Please migrate to structured config with `services.postfix.settings.main`.
 
 SMTP with STARTTLS over port 587 (also known as Submission) is deprecated and

@@ -81,11 +81,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1774959120,
-        "narHash": "sha256-Pzk6UbueeWy9WFiDY6iA1aHid+2AMzkS6gg2x2cSkz4=",
+        "lastModified": 1775585728,
+        "narHash": "sha256-8Psjt+TWvE4thRKktJsXfR6PA/fWWsZ04DVaY6PUhr4=",
         "owner": "cachix",
         "repo": "git-hooks.nix",
-        "rev": "c06f90f1eb6569bdaf6a4a10cb7e66db4454ac2a",
+        "rev": "580633fa3fe5fc0379905986543fd7495481913d",
         "type": "github"
       },
       "original": {
@@ -148,11 +148,11 @@
       },
       "locked": {
         "host": "gitlab.flyingcircus.io",
-        "lastModified": 1776350529,
-        "narHash": "sha256-1kbYCGp/neP+CTCqfqLILxiDMAsqondFFsiIBSK9fJg=",
+        "lastModified": 1777372307,
+        "narHash": "sha256-sod7JTzpLPEcfHEyBT+r2PKh2Uvw0Zc0d1s5RFUw+cU=",
         "owner": "flyingcircus",
         "repo": "nixos-mailserver",
-        "rev": "88e8c8066304be5e010c403c32a9ba9d38abb556",
+        "rev": "07bac55316468a372e120bedae9a38c5f8715dd8",
         "type": "gitlab"
       },
       "original": {
