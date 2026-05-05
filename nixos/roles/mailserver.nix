@@ -106,7 +106,7 @@ let
     };
 
     dynamicMaps = mkOption {
-      description = '''';
+      description = "";
       type = with types; attrsOf (listOf path);
       default = { };
       example = {
@@ -304,6 +304,17 @@ in
   config = lib.mkMerge [
 
     (lib.mkIf roles.mailserver.enable {
+      warnings = lib.optionals (config.flyingcircus.platform.version == "25.05") [
+        ''
+          Be aware that in the next release the default ports and protocols for IMAP and SMTP will change to now be:
+
+          - Incoming: IMAP with SSL/TLS, mailHost port 993
+          - Outgoing: SMTP with SSL/TLS, mailHost port 465.
+
+          See also the changes in https://doc.flyingcircus.io/roles/fc-25.11-production/upgrade.html#mail-server
+        ''
+      ];
+
       flyingcircus.services.mail.enable =
         assert !roles.mailstub.enable;
         true;
