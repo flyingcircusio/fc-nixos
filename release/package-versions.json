@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.63",
+    "name": "linux-6.12.85",
     "pname": "linux",
-    "version": "6.12.63"
+    "version": "6.12.85"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.63",
+    "name": "linux-6.12.85",
     "pname": "linux",
-    "version": "6.12.63"
+    "version": "6.12.85"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -570,9 +570,9 @@
     "version": "1.28.0"
   },
   "nix": {
-    "name": "nix-2.28.6",
+    "name": "nix-2.28.7",
     "pname": "nix",
-    "version": "2.28.6"
+    "version": "2.28.7"
   },
   "nodejs": {
     "name": "nodejs-22.21.1",
