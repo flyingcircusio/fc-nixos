@@ -60,9 +60,9 @@
     "version": "2.7.2"
   },
   "cacert": {
-    "name": "nss-cacert-3.121",
+    "name": "nss-cacert-3.123",
     "pname": "nss-cacert",
-    "version": "3.121"
+    "version": "3.123"
   },
   "calibre": {
     "name": "calibre-8.14.0",
@@ -275,7 +275,7 @@
     "version": "18.11.1"
   },
   "glibc": {
-    "name": "glibc-2.40-218",
+    "name": "glibc-2.40-224",
     "pname": "glibc",
     "version": "2.40"
   },
@@ -290,9 +290,9 @@
     "version": "2.4.9"
   },
   "go": {
-    "name": "go-1.25.8",
+    "name": "go-1.25.9",
     "pname": "go",
-    "version": "1.25.8"
+    "version": "1.25.9"
   },
   "grafana": {
     "name": "grafana-12.3.6",
@@ -310,9 +310,9 @@
     "version": "3.2.9"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.2-18",
+    "name": "imagemagick-7.1.2-19",
     "pname": "imagemagick",
-    "version": "7.1.2-18"
+    "version": "7.1.2-19"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.13-38",
@@ -415,9 +415,9 @@
     "version": "1.11.2"
   },
   "libjpeg": {
-    "name": "libjpeg-turbo-3.1.2",
+    "name": "libjpeg-turbo-3.1.4",
     "pname": "libjpeg-turbo",
-    "version": "3.1.2"
+    "version": "3.1.4"
   },
   "libmodsecurity": {
     "name": "libmodsecurity-3.0.14",
@@ -565,9 +565,9 @@
     "version": "1.28.3"
   },
   "nix": {
-    "name": "nix-2.31.4",
+    "name": "nix-2.31.5",
     "pname": "nix",
-    "version": "2.31.4"
+    "version": "2.31.5"
   },
   "nodejs": {
     "name": "nodejs-22.22.2",
@@ -630,14 +630,14 @@
     "version": "2.19.2"
   },
   "openssh": {
-    "name": "openssh-10.2p1",
+    "name": "openssh-10.3p1",
     "pname": "openssh",
-    "version": "10.2p1"
+    "version": "10.3p1"
   },
   "openssl": {
-    "name": "openssl-3.6.1",
+    "name": "openssl-3.6.2",
     "pname": "openssl",
-    "version": "3.6.1"
+    "version": "3.6.2"
   },
   "openssl_1_1": {
     "name": "openssl-1.1.1w",
@@ -645,9 +645,9 @@
     "version": "1.1.1w"
   },
   "openssl_3": {
-    "name": "openssl-3.0.19",
+    "name": "openssl-3.0.20",
     "pname": "openssl",
-    "version": "3.0.19"
+    "version": "3.0.20"
   },
   "openvpn": {
     "name": "openvpn-2.6.19",
@@ -946,9 +946,9 @@
     "version": "6.0.3"
   },
   "python3Packages.requests": {
-    "name": "python3.13-requests-2.32.5",
+    "name": "python3.13-requests-2.33.1",
     "pname": "requests",
-    "version": "2.32.5"
+    "version": "2.33.1"
   },
   "python3Packages.rich": {
     "name": "python3.13-rich-14.1.0",
@@ -1091,9 +1091,9 @@
     "version": "12.7.7"
   },
   "systemd": {
-    "name": "systemd-258.5",
+    "name": "systemd-258.7",
     "pname": "systemd",
-    "version": "258.5"
+    "version": "258.7"
   },
   "tcpdump": {
     "name": "tcpdump-vxlan-4.99.5",
@@ -1131,9 +1131,9 @@
     "version": "018"
   },
   "util-linux": {
-    "name": "util-linux-2.41.3",
+    "name": "util-linux-2.41.4",
     "pname": "util-linux",
-    "version": "2.41.3"
+    "version": "2.41.4"
   },
   "uv": {
     "name": "uv-0.9.30",
@@ -1151,9 +1151,9 @@
     "version": "8.0.1"
   },
   "vim": {
-    "name": "vim-9.1.2148",
+    "name": "vim-9.2.0340",
     "pname": "vim",
-    "version": "9.1.2148"
+    "version": "9.2.0340"
   },
   "wget": {
     "name": "wget-1.25.0",
@@ -1176,9 +1176,9 @@
     "version": "1.8.12"
   },
   "xz": {
-    "name": "xz-5.8.1",
+    "name": "xz-5.8.3",
     "pname": "xz",
-    "version": "5.8.1"
+    "version": "5.8.3"
   },
   "zip": {
     "name": "zip-3.0",
