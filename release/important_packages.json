@@ -119,7 +119,6 @@
   "nspr",
   "nss_latest",
   "nvme-cli",
-  "ollama-rocm",
   "openjdk",
   "openjpeg",
   "openldap",
