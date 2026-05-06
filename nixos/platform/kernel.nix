@@ -77,7 +77,6 @@ in
       VLAN_8021Q_GVRP y
       XFS_POSIX_ACL y
       XFS_QUOTA y
-      WARN_ALL_UNSEEDED_RANDOM n
       ## Crash-debugging related options
       IPMI_PANIC_EVENT y
       IPMI_PANIC_STRING y
