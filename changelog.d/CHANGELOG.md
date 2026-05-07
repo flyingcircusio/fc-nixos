@@ -1,3 +1,18 @@
+# Release 2026_017
+
+## Impact
+
+- Machines will reboot to enable a changed kernel.
+
+
+## NixOS XX.XX platform
+
+- linux kernel: fix copy.fail kernel vulnerability (CVE-2026-31431) (PL-135348)
+
+- nix: fix privilege escalation (GHSA-vh5x-56v6-4368) (PL-135360)
+
+
+
 # Release 2026_013
 
 ## NixOS XX.XX platform
