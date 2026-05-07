@@ -469,6 +469,62 @@ storage or NFS.
 We also recommend to consider using our S3-compatible API for storing object
 data.
 
+## Updates and version management
+
+We provide multiple versions of k3s within each release of our managed
+platform. Unless explicitly configured, the k3s roles will use the default
+version of k3s given at the top of this page. A different version of k3s can be
+configured by setting the `services.k3s.package` NixOS option, for example:
+
+```nix
+# /etc/local/nixos/k3s-version.nix
+{ pkgs, ... }:
+{
+
+  # Each minor version of k3s is available as a separate versioned package,
+  # e.g. k3s_1_33 provides the latest patch release of 1.33.x, k3s_1_34
+  # provides 1.34.x, etc.
+
+  services.k3s.package = pkgs.k3s_1_33;
+}
+```
+
+:::{warning}
+Outside of upgrade scenarios, all nodes in the cluster should be running the
+same version of k3s.
+:::
+
+
+### Updating k3s
+
+When upgrading a cluster to a newer version of k3s, the **server VM must always
+be updated to the new version first**. After the server VM has been updated, the
+remaining VM's in the cluster can be updated freely.
+
+Note that k3s only supports updating from one minor version to the immediately
+following minor version. This means, for example, that in order to update from
+1.32.x to 1.34.x the entire cluster must first be updated to 1.33.x as an
+intermediate step.
+
+The upstream [upgrade documentation](https://docs.k3s.io/upgrades) and release
+notes should also be checked in case there are further version-specific update
+steps required.
+
+### Platform upgrades
+
+New versions of the Flying Circus platform include different versions of
+k3s. This affects the default version of k3s used when k3s roles are enabled,
+but this also means that the default k3s version provided in the previous
+platform may no longer be available in the new platform.
+
+Before upgrading a k3s cluster to a new version of the platform, you should
+ensure that the cluster is running a version of k3s which is available in both
+the current platfrom and the new platform, updating k3s as described above if
+necessary. The desired version of k3s should also be explictly configured on the
+cluster VM's during platform upgrades to prevent the new default k3s version
+taking effect unintentionally.
+
+
 ## Known limitations
 
 - Due to our high security requirements for user passwords accessing the
