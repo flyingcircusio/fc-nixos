@@ -1,7 +1,9 @@
 import datetime
+import grp
 import os
 import pwd
 import subprocess
+from collections import defaultdict
 from pathlib import Path
 
 import structlog
@@ -25,6 +27,8 @@ This runs in two phases:
 If something goes wrong in step 1, garbage collection will not run to protect
 Nix store paths that may be still referenced from home dirs.
 """
+
+GCROOTS = Path("/nix/var/nix/gcroots/per-user/")
 
 
 @app.command(help=HELP)
@@ -171,3 +175,30 @@ def collect_garbage(
         "collect-garbage-succeeded",
         _replace_msg="fc-collect-garbage finished without problems.",
     )
+
+
+def check():
+    users_gid = grp.getgrnam("users").gr_gid
+    human_users = {user for user in pwd.getpwall() if user.pw_gid == users_gid}
+    known_usernames = {u.pw_name for u in pwd.getpwall()}
+    unknown_usernames = {p.name for p in GCROOTS.glob("*")} - known_usernames
+
+    gcpaths = [
+        (
+            user.pw_name,
+            "human",
+            GCROOTS / user.pw_name / user.pw_dir.removeprefix("/"),
+        )
+        for user in human_users
+    ] + [(name, "unknown", GCROOTS / name) for name in unknown_usernames]
+    users_with_roots = defaultdict(lambda: 0)
+    for username, type_, gcpath in gcpaths:
+        roots = [f for f in gcpath.glob("**/*") if f.is_symlink()]
+        if not roots:
+            continue
+        users_with_roots[type_] += 1
+        print(f"Found {len(roots)} gcroots for {type_} user {username}")
+
+    for type_, count in users_with_roots.items():
+        print(f"Found {count} {type_} users with gcroots")
+    return int(bool(users_with_roots))

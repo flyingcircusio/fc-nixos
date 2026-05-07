@@ -43,10 +43,14 @@ in
 
     (lib.mkIf cfg.agent.collect-garbage {
 
-      flyingcircus.services.sensu-client = {
-        checks.fc-collect-garbage = {
+      flyingcircus.services.sensu-client.checks = {
+        fc-collect-garbage = {
           notification = "nix-collect-garbage stamp recent";
           command = "${pkgs.monitoring-plugins}/bin/check_file_age" + " -f ${log} -w 216000 -c 432000";
+        };
+        fc-collect-garbage-gcroots = {
+          notification = "nix-collect-garbage no human user gcroots";
+          command = "${config.flyingcircus.agent.package}/bin/fc-collect-garbage-check";
         };
       };
 
