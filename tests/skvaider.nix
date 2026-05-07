@@ -35,10 +35,12 @@ import ./make-test-python.nix (
     # The testScript handles only cross-node readiness ordering (wait_for_unit,
     # wait_for_open_port) before invoking this.
     runTestsScript = pkgs.writeShellScriptBin "run-tests" ''
-      set -euo pipefail
+      set -exuo pipefail
 
       # gateway ↔ model network connectivity
       ping -c1 ${modelServerIp}
+
+      cat /var/lib/skvaider/config.toml
 
       # gateway has discovered the model server and written its config
       grep '${modelServerIp}:8000' /var/lib/skvaider/config.toml
@@ -46,7 +48,7 @@ import ./make-test-python.nix (
         /var/lib/skvaider/config.toml
 
       # inference API is reachable from gateway
-      curl -sf http://${modelServerIp}:8000/models
+      curl -v -sf http://${modelServerIp}:8000/manager/health
 
       # gateway proxies model list through to a bearer-authenticated caller
       curl -sf http://127.0.0.1:23211/openai/v1/models \

@@ -32,7 +32,7 @@ in
   # When in doubt, it's better to write our own test or copy&paste from nixpkgs.
   # inherit (pkgs.nixosTests)
 
-  #skvaider = callTest ./skvaider.nix { };
+  skvaider = callTest ./skvaider.nix { };
   #skvaider-pytest = callTest ./skvaider-pytest.nix { };
   alloy = callTest ./alloy.nix { };
   antivirus = callTest ./antivirus.nix { };
