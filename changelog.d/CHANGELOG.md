@@ -1,3 +1,13 @@
+# Release 2026_017
+
+## NixOS XX.XX platform
+
+- slurm: add slurm 25.11 package and make fc-agent compatible with pyslurm 25.11 (PL-135105)
+
+  The default slurm version for the NixOS 25.11 platform is still 25.05. This change allows it, to move customers to slurm 25.11.
+
+
+
 # Release 2026_016
 
 ## NixOS XX.XX platform
