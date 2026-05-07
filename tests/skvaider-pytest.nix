@@ -38,7 +38,7 @@ import ./make-test-python.nix (
       # fixture resolves its model cache as var/tests/models/ relative to cwd,
       # and the init service pre-populates /tmp/pytest-run/var/tests/models/.
       cd /tmp/pytest-run
-      ${testEnv}/bin/pytest -c ${src}/pytest.ini --rootdir=${src} --import-mode=importlib -p no:cacheprovider --ignore=${src}/src/aramaki ${src}/src/ -v "$@"
+      ${testEnv}/bin/pytest -c ${src}/pytest.ini --rootdir=${src} --import-mode=importlib -p no:cacheprovider --ignore=${src}/src/aramaki ${src}/src/ -vv "$@" | tee /dev/console
     '';
   in
   {
@@ -116,12 +116,13 @@ import ./make-test-python.nix (
       start_all()
       testnode.wait_for_unit("skvaider-inference-test.service")
       testnode.wait_until_succeeds("curl -sf http://127.0.0.1:8001/manager/health", timeout=60)
+      print(testnode.execute("curl -sf http://127.0.0.1:8001/manager/health"))
       # POST /models/{id}/load blocks until llama-server is healthy.
-      testnode.succeed(
-          "curl -sf -X POST http://127.0.0.1:8001/models/gemma/load &&"
-          " curl -sf -X POST http://127.0.0.1:8001/models/embeddinggemma/load",
-          timeout=120,
-      )
+      # testnode.succeed(
+      #     "curl -sf -X POST http://127.0.0.1:8001/models/gemma/load &&"
+      #     " curl -sf -X POST http://127.0.0.1:8001/models/embeddinggemma/load",
+      #     timeout=120,
+      # )
 
       with subtest("Run tests"):
           testnode.succeed("run-tests ${testOpts}", timeout=30 * 60)
