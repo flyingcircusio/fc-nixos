@@ -12,7 +12,6 @@ let
   inherit (config.networking) hostName;
   inherit (config.flyingcircus) location static;
   role = config.flyingcircus.roles.router;
-  defaultLocationConfig = readFile (./. + "/${location}.conf");
   routerId = "${hostName}.gocept.net";
 
   checkDefaultRoute4 = pkgs.writeShellApplication {
@@ -43,13 +42,25 @@ let
     global_defs {
       enable_script_security
       config_save_dir /var/lib/keepalived/saved_config
-      notification_email { admin+${hostName}@flyingcircus.io }
-      notification_email_from admin+${hostName}@flyingcircus.io
-      smtp_server mail.gocept.net
-      smtp_connect_timeout 30
       router_id ${routerId}
       script_user root
       use_symlink_paths true
+    }
+
+    track_file fcio_check_stop_file {
+      # Allow admins to locally send keepalive into FAIL state by adding
+      # a non "0" entry
+      file /etc/keepalived/stop
+      # 0 as default causes FAIL if anything != 0 is in the file
+      weight 0
+      init_file 0
+    }
+
+    track_file fcio_check_maint_file {
+      # Used by fc-keepalived enter-maintenance
+      file /etc/keepalived/fcio_maintenance
+      weight -20
+      init_file 0
     }
 
     ${role.keepalivedConfig}
@@ -68,18 +79,18 @@ in
     keepalivedConfig = mkOption {
       type = types.lines;
       description = "Keepalived configuration (will be appended to static global defaults)";
-      default = lib.optionalString (location != "standalone") defaultLocationConfig;
+      default = "";
     };
   };
 
   config = lib.mkIf role.enable {
 
     environment.etc."keepalived/check-default-route-v4".source =
-      fclib.mkPlatform "${checkDefaultRoute4}/bin/check-default-route-v4";
+      "${checkDefaultRoute4}/bin/check-default-route-v4";
     environment.etc."keepalived/check-default-route-v6".source =
-      fclib.mkPlatform "${checkDefaultRoute6}/bin/check-default-route-v6";
+      "${checkDefaultRoute6}/bin/check-default-route-v6";
     environment.etc."keepalived/check-zebra-liveness".source =
-      fclib.mkPlatform "${checkZebraLiveness}/bin/check-zebra-liveness";
+      "${checkZebraLiveness}/bin/check-zebra-liveness";
     environment.etc."keepalived/fc-keepalived".source = "${pkgs.fc.agent}/bin/fc-keepalived";
     environment.etc."keepalived/keepalived.conf".source = keepalivedConf;
 
