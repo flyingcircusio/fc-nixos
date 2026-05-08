@@ -98,12 +98,12 @@ in
 
       routerUplinkNetworks = mkOption {
         type = types.listOf types.str;
-        default = static.routerUplinkNetworks."${location}" or [ ];
+        default = [ ];
         description = "Names of VLANs on which this router accepts connectivity to the outside world";
       };
       routerDownlinkNetworks = mkOption {
         type = types.listOf types.str;
-        default = static.routerDownlinkNetworks."${location}" or [ ];
+        default = [ ];
         description = "Names of VLANs on which this router provides external connectivity to other routers";
       };
       routerGatewayNetworks = mkOption {
@@ -112,14 +112,12 @@ in
           "mgm"
           "srv"
           "fe"
-        ]
-        ++ (static.additionalDhcpNetworks."${location}" or [ ]);
+        ];
         description = "Names of VLANs on which this router provides gateway services";
       };
       floatingGatewayNetworks = mkOption {
         type = types.listOf types.str;
-        # TODO: in the future this should be a superset of routerGatewayNetworks
-        default = static.floatingGatewayNetworks."${location}" or [ ];
+        default = role.routerGatewayNetworks;
         description = "Names of VLANs on which there are floating addresses shared between multiple routers";
       };
 
@@ -143,23 +141,13 @@ in
         description = "IPv6 address to prefer as source address for outgoing connections";
       };
 
-      dnsForwarders = mkOption {
-        type = types.listOf types.str;
-        default = [
-          "9.9.9.9"
-          "149.112.112.112"
-          "2620:fe::fe"
-          "2620:fe::9"
-        ];
-        description = "IP addresses to be used as upstream DNS resolvers (default Quad9)";
-      };
     };
   };
 
   imports = [
-    ./bind
-    ./bird2
-    ./keepalived
+    ./bind.nix
+    ./bird2.nix
+    ./keepalived.nix
     ./bird2-vrf-bridge.nix
     ./chrony.nix
     ./kea.nix
@@ -173,10 +161,6 @@ in
       {
         assertion = (location != "standalone") -> (role.routerUplinkNetworks != [ ]);
         message = "Router must have uplink networks configured";
-      }
-      {
-        assertion = (location != "standalone") -> (role.floatingGatewayNetworks != [ ]);
-        message = "Router must have floating gateway networks configured";
       }
     ];
 

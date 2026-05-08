@@ -11,7 +11,6 @@ let
   inherit (config) fclib;
   role = config.flyingcircus.roles.router;
   inherit (config.flyingcircus) location static;
-  locationConfig = readFile (./. + "/${location}.conf");
 
   primaryConfig = ''
     # Config for a primary router.
@@ -25,16 +24,6 @@ let
     define UPLINK_MED=500;
   '';
 
-  defaultRouterId =
-    static.routerIdSources.host."${config.networking.hostName}" or (
-      let
-        network = static.routerIdSources.location."${location}";
-      in
-      head fclib.network."${network}".v4.addresses
-    );
-
-  hostConfig = role.extraBirdConfig;
-
   commonConfig = ''
     log syslog all;
 
@@ -43,23 +32,9 @@ let
     ipv4 table master4;
     ipv6 table master6;
   '';
-
-  migrationCompatConfig = ''
-    # Flag for operating BGP session migration from NixOS config
-    define MIGRATION_STATE=${toString role.migrationState};
-  '';
 in
 {
   options.flyingcircus.roles.router = with lib; {
-    migrationState = mkOption {
-      type = types.ints.unsigned;
-      default = 0;
-    };
-    extraBirdConfig = mkOption {
-      type = types.lines;
-      default = "";
-    };
-
     birdConfig = mkOption {
       type = types.lines;
       description = ''
@@ -73,18 +48,13 @@ in
         - The router ID.
         - Routing tables for IPv4 and IPv6 unicast routes.
       '';
-      default = lib.concatStringsSep "\n\n" [
-        migrationCompatConfig
-        hostConfig
-        # evaluate to empty string if location not set
-        (lib.optionalString (location != "standalone") locationConfig)
-      ];
+      default = "";
     };
 
     routerId = mkOption {
       type = types.addCheck types.str fclib.isIp4;
       description = "Router ID for this router";
-      default = if location == "standalone" then "0.0.0.0" else defaultRouterId;
+      default = if location == "standalone" then "0.0.0.0" else null;
     };
   };
 

@@ -34,7 +34,67 @@ import ../make-test-python.nix (
           <fc/nixos/roles>
         ];
 
-        flyingcircus.roles.router.enable = true;
+        flyingcircus.roles.router = {
+          enable = true;
+          routerUplinkNetworks = [ "tr" ];
+
+          birdConfig = builtins.readFile ./bird.conf;
+          routerId = builtins.head fclib.network.tr.v4.addresses;
+
+          keepalivedConfig = builtins.readFile ./keepalived.conf;
+
+          zoneGeneratorConfig = "";
+          # minimal test config
+          bindConfig = ''
+            acl "gocept.net" {
+                127.0.0.0/8;
+                ::/64;
+                ${lib.concatStringsSep "\n" (map (n: "    ${n};") fclib.networks.all)}
+            };
+
+            options {
+              directory "/var/cache/named";
+              pid-file "/run/named/named.pid";
+
+              listen-on-v6 { any; };
+              allow-query { any; };
+              allow-query-cache { "gocept.net"; };
+              allow-recursion { "gocept.net"; };
+              allow-transfer { "gocept.net"; };
+              allow-update { none; };
+
+              dnssec-validation auto;
+            };
+
+            include "/etc/bind/rndc.key";
+            controls {
+              inet 127.0.0.1 port 953 allow { 127.0.0.1/32; ::1/128; } keys { "rndc-key"; };
+            };
+
+            view "internal" {
+              match-clients { "gocept.net"; };
+              include "/etc/bind/internal-zones.conf";
+
+              zone "localhost" IN {
+                type master;
+                file "/etc/bind/pri/localhost.zone";
+                allow-update { none; };
+                notify no;
+              };
+
+              zone "127.in-addr.arpa" IN {
+                type master;
+                file "/etc/bind/pri/127.zone";
+                notify no;
+              };
+            };
+
+            view "external" {
+              match-clients { any; };
+              include "/etc/bind/external-zones.conf";
+            };
+          '';
+        };
 
         environment.etc."networks/tr".source = pkgs.writers.writeJSON "tr" fclib.network.tr.dualstack;
         environment.etc."networks/srv".source = pkgs.writers.writeJSON "srv" fclib.network.tr.dualstack;
@@ -71,6 +131,33 @@ import ../make-test-python.nix (
                                           NS      ns.dev.gocept.net.
           $TTL 7200
           1                               PTR     rzob-router.fe.rzob.gocept.net.
+        '';
+
+        environment.etc."bind/pri/127.zone".text = ''
+          $TTL 1W
+          @ IN  SOA 127.in-addr.arpa. root.localhost. (
+                                                  1
+                                                  28800
+                                                  14400
+                                                  604800
+                                                  86400 )
+              NS  localhost.
+
+          1.0.0   PTR localhost.
+        '';
+
+        environment.etc."bind/pri/localhost.zone".text = ''
+          $TTL 1W
+          @       IN      SOA     localhost. root.localhost.  (
+                                                2008122601 ; Serial
+                                                28800      ; Refresh
+                                                14400      ; Retry
+                                                604800     ; Expire - 1 week
+                                                86400 )    ; Minimum
+          @   IN      NS      localhost.
+          @   IN  A 127.0.0.1
+
+          @   IN  AAAA  ::1
         '';
 
         environment.etc."bind/external-zones.conf".text = ''
