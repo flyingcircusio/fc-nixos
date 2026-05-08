@@ -11,7 +11,7 @@
     "hash": "sha256-nrxDRlXq1TIRJsZTVsgO2WETOYE91iaSI4r1QJzk7ho=",
     "owner": "flyingcircusio",
     "repo": "nixpkgs",
-    "rev": "e8de33cd41dfe5631a723dc5adffb997e84396d8"
+    "rev": "e618f4b6fcd8d5f569b63af77484cf92883abe7a"
   },
   "poetry2nix": {
     "hash": "sha256-nzgO/ZCSBzWjbMkYDxG+yl9Z2eGbCgQu06Oku3ir5D4=",
