@@ -18,14 +18,6 @@ in
       enable = lib.mkEnableOption "Enable GPU server role with AI inference capabilities";
       supportsContainers = fclib.mkDisableDevhostSupport;
 
-      # Enabled by default, can be disabled for running in VMs or
-      # tests.
-      enableRocm = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-        description = "Enable ROCM for AMD GPU acceleration";
-      };
-
       # Model configuration
       models = lib.mkOption {
         type = lib.types.attrsOf (
@@ -90,7 +82,6 @@ in
 
   config = lib.mkIf cfg.enable (
     lib.mkMerge [
-      # Fixed shared config for CPU and AMD
       {
         # Settings defaults at lib.mkDefault priority (1000) rather than the
         # option's default priority (1500). This ensures that when a caller
@@ -187,8 +178,6 @@ in
               ${lib.getExe' pkgs.fc.skvaider "skvaider-inference"} -c ${configfile}
             '';
           path = [
-            pkgs.llama-cpp-rocm
-            pkgs.rocmPackages.rocm-smi
             "/run/current-system/sw" # for nvidia-x11 giving us nvidia-smi, which is used for GPU monitoring in Skvaider
           ];
 
@@ -213,10 +202,6 @@ in
               "char-nvidia-caps"
               "char-nvidia-frontend"
               "char-nvidia-uvm"
-              # ROCm
-              "char-drm"
-              "char-fb"
-              "char-kfd"
             ];
             PrivateDevices = false; # unhides acceleration devices
             SupplementaryGroups = [
@@ -241,68 +226,6 @@ in
         ];
 
       }
-
-      # ROCM specific config
-      (lib.mkIf cfg.enableRocm {
-        # Allow unfree packages for GPU drivers and AI models
-        nixpkgs.config = {
-          allowUnfree = true;
-          rocmSupport = true;
-        };
-
-        # GPU hardware and driver configuration
-        hardware.graphics = {
-          enable = true;
-          enable32Bit = true;
-        };
-        services.xserver.videoDrivers = [ "amdgpu" ];
-
-        # Environment packages for AMD ROCM
-        environment.systemPackages = [
-          pkgs.rocmPackages.rocminfo
-          pkgs.rocmPackages.rocm-smi
-          (pkgs.writeShellScriptBin "nvtop-amd" ''
-            exec ${pkgs.nvtopPackages.amd}/bin/nvtop "$@"
-          '')
-        ];
-
-        systemd.services.rocm-runtime-config = {
-          description = "Perform rocm runtime configuration";
-          wantedBy = [ "multi-user.target" ];
-          serviceConfig.Type = "oneshot";
-          script = ''
-            ${pkgs.rocmPackages.rocm-smi}/bin/rocm-smi --setprofile 4  # compute optimized
-            ${pkgs.rocmPackages.rocm-smi}/bin/rocm-smi --showprofile   # record the updated settings in the log file
-          '';
-        };
-
-        systemd.tmpfiles.rules =
-          let
-            rocmEnv = pkgs.symlinkJoin {
-              name = "rocm-combined";
-              paths = with pkgs.rocmPackages; [
-                rocblas
-                hipblas
-                clr
-              ];
-            };
-          in
-          [
-            "L+  /opt/rocm  - - - -  ${rocmEnv}"
-          ];
-
-        services.telegraf.extraConfig.inputs.amd_rocm_smi = [
-          {
-            # Exclude the GPU uuid to avoid excess label cardinality
-            taginclude = [
-              "name"
-            ];
-            # see https://docs.influxdata.com/telegraf/v1/input-plugins/amd_rocm_smi/ for fields
-          }
-        ];
-        services.telegraf.extraConfig.agent.always_include_global_tags = true;
-        systemd.services.telegraf.path = [ pkgs.rocmPackages.rocm-smi ];
-      })
 
       {
         flyingcircus.services.telegraf.inputs.prometheus = lib.mkIf cfg.skvaider-inference.enable [

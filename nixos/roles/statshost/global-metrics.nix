@@ -10,7 +10,6 @@ let
   # Replaces flyingcircus.statshost.globalAllowedMetrics in role code.
   # This also includes the host metrics from telegraf defined in platform/monitoring.nix.
   globalAllowedMetrics = [
-    "amd_rocm_smi"
     "apache"
     "ceph"
     "conntrack"
