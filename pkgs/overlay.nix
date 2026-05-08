@@ -38,11 +38,6 @@ let
     rev = "0182a361324364ae3f436a63005877674cf45efb";
   };
 
-  nixpkgs-nixos-unstable-rocm = import nixpkgs-nixos-unstable-src {
-    inherit (self) config;
-    nixpkgs = nixpkgs-nixos-unstable-src;
-  };
-
   nixpkgs-nixos-unstable-cuda = import nixpkgs-nixos-unstable-src {
     nixpkgs = nixpkgs-nixos-unstable-src;
     # Prevent cuda_compat being enabled when building in Hydra due to
@@ -382,16 +377,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   # TODO: re-evaluate whether this still needs to be vendored without lmdb support (#PL-130446)
   libmodsecurity = super.callPackage ./libmodsecurity { };
 
-  llama-cpp-rocm-force-mmq = self.llama-cpp-rocm.overrideAttrs (
-    a:
-    a
-    // {
-      cmakeFlags = a.cmakeFlags ++ [
-        (lib.cmakeBool "GGML_CUDA_FORCE_MMQ" true)
-      ];
-    }
-  );
-
   linuxKernelGPU = self.linux_6_18.override {
     argsOverride = rec {
       src = super.fetchurl {
@@ -400,12 +385,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       };
       version = "6.18.15";
       modDirVersion = version;
-      kernelPatches = self.linux_6_18.kernelPatches ++ [
-        {
-          name = "amd-w7900-crash-preview";
-          patch = ./linux-amd-w7900-crash-preview.patch;
-        }
-      ];
+      kernelPatches = self.linux_6_18.kernelPatches ++ [ ];
     };
     ignoreConfigErrors = true;
   };
@@ -627,9 +607,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     '';
   });
 
-  llama-cpp = nixpkgs-nixos-unstable-rocm.llama-cpp;
-  llama-cpp-rocm = nixpkgs-nixos-unstable-rocm.llama-cpp-rocm;
-  llama-cpp-vulkan = nixpkgs-nixos-unstable-rocm.llama-cpp-vulkan;
+  llama-cpp = nixpkgs-nixos-unstable.llama-cpp;
 
   mysql = super.mariadb;
 
