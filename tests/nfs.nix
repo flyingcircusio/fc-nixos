@@ -140,6 +140,7 @@ import ./make-test-python.nix (
             import queue
             import re
             import time
+            import difflib
 
             server.start()
             server.wait_for_unit("nfs-server")

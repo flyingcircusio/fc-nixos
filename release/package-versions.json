@@ -190,9 +190,9 @@
     "version": "0.6.22"
   },
   "fetchmail": {
-    "name": "fetchmail-6.6.2",
+    "name": "fetchmail-6.6.3",
     "pname": "fetchmail",
-    "version": "6.6.2"
+    "version": "6.6.3"
   },
   "ffmpeg": {
     "name": "ffmpeg-8.0.1",
@@ -305,9 +305,9 @@
     "version": "2.12.1"
   },
   "haproxy": {
-    "name": "haproxy-3.3.6",
+    "name": "haproxy-3.3.8",
     "pname": "haproxy",
-    "version": "3.3.6"
+    "version": "3.3.8"
   },
   "imagemagick": {
     "name": "imagemagick-7.1.2-19",
@@ -370,19 +370,19 @@
     "version": "21.0.10+7"
   },
   "k3s": {
-    "name": "k3s-1.35.2+k3s1",
+    "name": "k3s-1.35.4+k3s1",
     "pname": "k3s",
-    "version": "1.35.2+k3s1"
+    "version": "1.35.4+k3s1"
   },
   "k3s_1_33": {
-    "name": "k3s-1.33.9+k3s1",
+    "name": "k3s-1.33.11+k3s1",
     "pname": "k3s",
-    "version": "1.33.9+k3s1"
+    "version": "1.33.11+k3s1"
   },
   "k3s_1_34": {
-    "name": "k3s-1.34.5+k3s1",
+    "name": "k3s-1.34.7+k3s1",
     "pname": "k3s",
-    "version": "1.34.5+k3s1"
+    "version": "1.34.7+k3s1"
   },
   "keycloak": {
     "name": "keycloak-26.6.1",
@@ -500,9 +500,9 @@
     "version": "5.8.0"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-1.151.0",
+    "name": "matrix-synapse-1.152.0",
     "pname": "matrix-synapse",
-    "version": "1.151.0"
+    "version": "1.152.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.3",
@@ -555,9 +555,9 @@
     "version": "1.30.0"
   },
   "nix": {
-    "name": "nix-2.34.6",
+    "name": "nix-2.34.7",
     "pname": "nix",
-    "version": "2.34.6"
+    "version": "2.34.7"
   },
   "nodejs": {
     "name": "nodejs-24.14.1",
@@ -588,11 +588,6 @@
     "name": "nvme-cli-2.16",
     "pname": "nvme-cli",
     "version": "2.16"
-  },
-  "ollama-rocm": {
-    "name": "ollama-0.21.1",
-    "pname": "ollama",
-    "version": "0.21.1"
   },
   "openjdk": {
     "name": "openjdk-21.0.10+7",
@@ -950,9 +945,9 @@
     "version": "4.2.5"
   },
   "rclone": {
-    "name": "rclone-1.73.5",
+    "name": "rclone-1.74.0",
     "pname": "rclone",
-    "version": "1.73.5"
+    "version": "1.74.0"
   },
   "re2c": {
     "name": "re2c-4.5.1",
