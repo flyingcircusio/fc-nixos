@@ -33,7 +33,6 @@ let
     hash = "sha256-0NBlEBKkN3lufyvFegY4TYv5mCNHbi5OmBDrzihbBMQ=";
     owner = "NixOS";
     repo = "nixpkgs";
-    # nixos-unstable for newer llama-cpp (which version?)
     # vllm (0.15.1+)
     rev = "0182a361324364ae3f436a63005877674cf45efb";
   };
@@ -606,8 +605,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
         --replace mem=100M mem=500M
     '';
   });
-
-  llama-cpp = nixpkgs-nixos-unstable.llama-cpp;
 
   mysql = super.mariadb;
 
