@@ -165,8 +165,8 @@ in
       ''
         [qemu]
         accelerator = kvm
-        ; qemu 4.1 compatibility
-        machine-type = pc-i440fx-4.1
+        ; qemu 6.0 compatibility
+        machine-type = pc-i440fx-6.0
         vhost = true
         ; The 127.0.0.1 is important. Turning this to "localhost" confuses Qemu's
         ; VNC ACL because it gets mixed up with ::1.
@@ -177,8 +177,8 @@ in
         migration-ctl-address = ${migration_ctl_address}:0
         migration-bandwidth = ${toString cfg.migrationBandwidth}
         max-downtime = 4.0
-        ; generation 2 = #23965 upgrade to 2.7 due to security issues
-        binary-generation = 2
+        ; generation 3 = #PL-135374 in preparation for qemu-10.1 upgrade
+        binary-generation = 3
         vm-max-total-memory = ${toString enc.parameters.kvm_net_memory}
         vm-expected-overhead = 512
 
