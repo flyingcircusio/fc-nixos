@@ -2,16 +2,6 @@
 
 # MongoDB
 
-:::{warning}
-The currently supported MongoDB
-versions are outdated and are only provided for the purpose of upgrading
-older machines to 25.11.
-
-Instead of MongoDB, we also offer a {ref}`FerretDB role <nixos-ferretdb>` which is currently in beta.
-[FerretDB](https://www.ferretdb.com) which builds on PostgreSQL and is compatible
-to MongoDB for many use cases.
-:::
-
 Managed instance of [MongoDB](https://www.mongodb.com).
 There's a role for each supported major version:
 
@@ -20,6 +10,8 @@ There's a role for each supported major version:
 - mongodb36
 - mongodb40
 - mongodb42
+- mongodb70
+- mongodb80
 
 ## Configuration
 
@@ -29,7 +21,7 @@ It will be joined with the basic config.
 
 ## Command Line Interface
 
-You can use the {command}`mongo` Shell to query and update data as well
+You can use the {command}`mongo` (up to mongodb 4.2) or {command}`mongosh` (starting at 7.0) Shell to query and update data as well
 as perform administrative operations.
 
 (nixos-mongodb-upgrade)=

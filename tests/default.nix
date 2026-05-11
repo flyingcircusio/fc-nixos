@@ -102,6 +102,8 @@ in
   mongodb36 = callTest ./mongodb.nix { version = "3.6"; };
   mongodb40 = callTest ./mongodb.nix { version = "4.0"; };
   mongodb42 = callTest ./mongodb.nix { version = "4.2"; };
+  mongodb70 = callTest ./mongodb.nix { version = "7.0"; };
+  mongodb80 = callTest ./mongodb.nix { version = "8.0"; };
   network = callSubTests ./network { };
   nfs = callSubTests ./nfs.nix { };
   nginx = callTest ./nginx.nix { };

@@ -16,17 +16,31 @@ let
   # Needed when we are upgrading from systems that don't have fetch-closure enabled
   # as experimental feature (or even don't support it at all).
   # Result is the same on a normal system but `fetchClosure` also works in restricted-mode
-  # which we use in CI.
-  getPkg =
-    path:
-    if hasAttr "fetchClosure" builtins then
-      fetchClosure {
-        fromStore = "https://s3.whq.fcio.net/hydra";
-        fromPath = path;
-        inputAddressed = true;
-      }
-    else
-      storePath path;
+  # which we use in CI. Also wrapped in a derivation so that lib.getExe works.
+  getPkg = path: {
+    type = "derivation";
+    meta.mainProgram = "mongo";
+    outPath =
+      if hasAttr "fetchClosure" builtins then
+        fetchClosure {
+          fromStore = "https://s3.whq.fcio.net/hydra";
+          fromPath = path;
+          inputAddressed = true;
+        }
+      else
+        storePath path;
+  };
+
+  versionedMongodbCe =
+    version: hash:
+    pkgs.mongodb-ce.overrideAttrs ({
+      inherit version;
+      src = pkgs.fetchurl {
+        url = "https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu2204-${version}.tgz";
+        inherit hash;
+      };
+      meta.platforms = [ "x86_64-linux" ];
+    });
 
   listenAddresses = fclib.network.lo.dualstack.addresses ++ fclib.network.srv.dualstack.addresses;
 
@@ -56,13 +70,19 @@ let
     ${localConfig}
   '';
 
-  mongodbPkgs = mapAttrs (n: v: getPkg v) {
-    mongodb-3_2 = /nix/store/vjnfmrs99qn0q69d1jlyh1df9jprhsld-mongodb-3.2.22; # 2022_006/19.03
-    mongodb-3_4 = /nix/store/shzvfx7bpn804n53igfz053m0y6836ly-mongodb-3.4.24; # 2023_006/21.11
-    mongodb-3_6 = /nix/store/wkia38wf48z5x1fy6j06ivldc7qj3h7v-mongodb-3.6.23; # 2024_001/22.11
-    mongodb-4_0 = /nix/store/jg8mgbfkyg9vbc68dwizy7vj92gzzsvs-mongodb-4.0.27; # 2024_001/22.11
-    mongodb-4_2 = /nix/store/86f2ff9w16whjmq3y0c6aywmxxd27mva-mongodb-4.2.24; # 2024_002/23.05
-  };
+  mongodbPkgs =
+    mapAttrs (n: v: getPkg v) {
+      mongodb-3_2 = /nix/store/vjnfmrs99qn0q69d1jlyh1df9jprhsld-mongodb-3.2.22; # 2022_006/19.03
+      mongodb-3_4 = /nix/store/shzvfx7bpn804n53igfz053m0y6836ly-mongodb-3.4.24; # 2023_006/21.11
+      mongodb-3_6 = /nix/store/wkia38wf48z5x1fy6j06ivldc7qj3h7v-mongodb-3.6.23; # 2024_001/22.11
+      mongodb-4_0 = /nix/store/jg8mgbfkyg9vbc68dwizy7vj92gzzsvs-mongodb-4.0.27; # 2024_001/22.11
+      mongodb-4_2 = /nix/store/86f2ff9w16whjmq3y0c6aywmxxd27mva-mongodb-4.2.24; # 2024_002/23.05
+    }
+    // {
+      #      mongodb-7_0 = versionedMongodbCe "7.0.32" "sha256-0OvqM4v+fy5uzP5Vh7Bba5Oy/yED3xGQVbUCXP9hnKk=";
+      mongodb-7_0 = pkgs.mongodb-7_0;
+      mongodb-8_0 = versionedMongodbCe "8.0.21" "sha256-9/O6yjHSdoPo+QXXJTmQIPAoa7xvDRJPFtPiZBWzhbc=";
+    };
 
   mongodbRoles = with config.flyingcircus.roles; {
     "3.2" = mongodb32;
@@ -70,6 +90,8 @@ let
     "3.6" = mongodb36;
     "4.0" = mongodb40;
     "4.2" = mongodb42;
+    "7.0" = mongodb70;
+    "8.0" = mongodb80;
   };
   enabledRoles = lib.filterAttrs (n: v: v.enable) mongodbRoles;
   enabledRolesCount = length (lib.attrNames enabledRoles);
@@ -109,6 +131,8 @@ in
         mongodb36 = mkRole "3.6";
         mongodb40 = mkRole "4.0";
         mongodb42 = mkRole "4.2";
+        mongodb70 = mkRole "7.0";
+        mongodb80 = mkRole "8.0";
       };
     };
 
@@ -120,12 +144,15 @@ in
           assertion = enabledRolesCount == 1;
           message = "MongoDB roles are mutually exclusive. Only one may be enabled.";
         }
+        {
+          assertion = !mcfg.enableAuth;
+          message = "services.mongodb.enableAuth is not supported at the moment.";
+        }
       ];
 
       environment.systemPackages = [
         pkgs.mongodb-tools
-        # the nixpkgs service has moved towards `mongosh`, but we continue to provide the legacy `mongo` in PATH
-        mcfg.package
+        mcfg.mongoshPackage
       ];
 
       services.mongodb.enable = true;
@@ -133,6 +160,8 @@ in
       services.mongodb.bind_ip = fclib.mkPlatform (lib.concatStringsSep "," listenAddresses);
       services.mongodb.pidFile = "/run/mongodb.pid";
       services.mongodb.package = mongodbPkgs."mongodb-${lib.replaceStrings [ "." ] [ "_" ] majorVersion}";
+      services.mongodb.mongoshPackage =
+        if lib.versionAtLeast majorVersion "6.0" then pkgs.mongosh else mcfg.package;
 
       systemd.services.mongodb = {
         preStart = "echo never > /sys/kernel/mm/transparent_hugepage/defrag";

@@ -1,6 +1,6 @@
 import ./make-test-python.nix (
   {
-    version ? "4.2",
+    version ? "8.0",
     lib,
     pkgs,
     testlib,
@@ -21,7 +21,14 @@ import ./make-test-python.nix (
           (testlib.fcConfig { net.fe = false; })
         ];
         flyingcircus.roles.${rolename}.enable = true;
-        flyingcircus.allowedUnfreePackageNames = [ "mongodb" ];
+        services.mongodb.initialScript = pkgs.writeScript "nixtest.js" ''
+          db.greetings.insert({ "greeting": "hello" });
+          print(db.greetings.findOne().greeting);
+        '';
+        flyingcircus.allowedUnfreePackageNames = [
+          "mongodb"
+          "mongodb-ce"
+        ];
       };
 
     testScript =
@@ -35,17 +42,19 @@ import ./make-test-python.nix (
 
         check = ipaddr: ''
           with subtest(f"connect to ${ipaddr}"):
-            machine.succeed('mongo --ipv6 ${ipaddr}:27017/test ${testJs} | grep hellomongo');
+            machine.succeed('${mongosh} --ipv6 mongodb://${ipaddr}:27017/test ${testJs} | grep hellomongo');
         '';
 
         sensuCheck = testlib.sensuCheckCmd nodes.machine;
+
+        mongosh = nodes.machine.services.mongodb.mongoshPackage.meta.mainProgram;
       in
       ''
         machine.wait_for_unit("mongodb.service")
         machine.wait_for_open_port(27017)
-        machine.wait_until_succeeds('mongo --eval db')
+        machine.wait_until_succeeds('${mongosh} --eval db')
         with subtest("Check if we are using the correct version"):
-          machine.succeed("systemctl show mongodb --property ExecStart --value | grep -q mongodb-${version}")
+          machine.succeed("systemctl show mongodb --property ExecStart --value | grep -q -E 'mongodb(-ce)?-${version}'")
       ''
       + lib.concatMapStringsSep "\n" check [
         "127.0.0.1"
@@ -54,6 +63,9 @@ import ./make-test-python.nix (
         "[${ipv6}]"
       ]
       + ''
+        with subtest("initial script ran"):
+          machine.succeed('${mongosh} admin --eval "db.greetings.findOne().greeting"')
+
         with subtest("service user should be able to write to local config dir"):
           machine.succeed('sudo -u mongodb touch /etc/local/mongodb/mongodb.yaml')
 
