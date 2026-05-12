@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 from sys import argv
 
@@ -42,24 +43,46 @@ def test_main_subcommand_usage(capsys):
 
 
 def test_main_locks_memory(capsys):
-    """An overview of subcommand actions is shown when providing no action."""
+    """All mapped memory regions are locked, except [vdso] and MAP_DROPPABLE regions."""
+    # smaps header format: <addr_start>-<addr_end> <perms> <offset> <dev> <inode> [name]
+    # e.g.: 75be8cb90000-75be8cb92000 r-xp 00000000 00:00 0  [vdso]
+    smaps_header = re.compile(
+        r"^[0-9a-f]+-[0-9a-f]+ \S+ \S+ \S+ \d+\s*(?P<path>.*)"
+    )
+
     with pytest.raises(SystemExit):
         fc.ceph.main.ceph([])
+
     pid = os.getpid()
-    file, size, locked = None, 0, -1
-    with open(f"/proc/{pid}/smaps", "r") as f:
+    path = None
+    pss = locked = "0 kB"
+
+    with open(f"/proc/{pid}/smaps") as f:
         for line in f:
             print(line)
-            if "-" in line:
-                if file not in ["[vdso]", None]:
-                    assert (
-                        size == locked
-                    ), f"{file}, locked={locked}, size={size}"
-                    print(file, size, locked)
-                file = line.split()[-1]
-                size = locked = 0
-                print(file)
+            if mapping_header := smaps_header.match(line):
+                # path is optional, e.g. for anonymous mappings, but even then
+                # we take it as a string to signal we're in a segment now
+                path = mapping_header.group("path").strip()
+                pss = locked = "0 kB"
+            assert path is not None, (
+                "Invalid segment rollover - expected `path` to be set - missing segment header?"
+            )
             if line.startswith("Pss:"):
-                size = line.split(":")[1].strip()
-            if line.startswith("Locked:"):
+                pss = line.split(":")[1].strip()
+            elif line.startswith("Locked:"):
                 locked = line.split(":")[1].strip()
+            elif line.startswith("VmFlags:"):
+                vm_flags = line.split()[1:]
+                if "dp" in vm_flags:
+                    pass
+                    # "dp" means MAP_DROPPABLE: pages are dropped rather than paged out,
+                    # and do not count as mlocked.
+                elif path == "[vdso]":
+                    # kernel-owned memory space is safe, too.
+                    pass
+                else:
+                    assert pss == locked, (
+                        f"{path!r}: pss={pss}, locked={locked}"
+                    )
+                path = None
