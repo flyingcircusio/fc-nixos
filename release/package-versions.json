@@ -5,9 +5,9 @@
     "version": "1.6.1"
   },
   "apacheHttpd": {
-    "name": "apache-httpd-2.4.66",
+    "name": "apache-httpd-2.4.67",
     "pname": "apache-httpd",
-    "version": "2.4.66"
+    "version": "2.4.67"
   },
   "asterisk": {
     "name": "asterisk-22.8.2",
@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-147.0.7727.137",
+    "name": "chromedriver-unwrapped-148.0.7778.96",
     "pname": "chromedriver-unwrapped",
-    "version": "147.0.7727.137"
+    "version": "148.0.7778.96"
   },
   "chromium": {
-    "name": "chromium-147.0.7727.137",
+    "name": "chromium-148.0.7778.96",
     "pname": "chromium",
-    "version": "147.0.7727.137"
+    "version": "148.0.7778.96"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -210,9 +210,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-150.0.1",
+    "name": "firefox-150.0.2",
     "pname": "firefox",
-    "version": "150.0.1"
+    "version": "150.0.2"
   },
   "gcc": {
     "name": "gcc-wrapper-14.3.0",
@@ -235,9 +235,9 @@
     "version": "2.51.2"
   },
   "gitaly": {
-    "name": "gitaly-18.11.1",
+    "name": "gitaly-18.11.2",
     "pname": "gitaly",
-    "version": "18.11.1"
+    "version": "18.11.2"
   },
   "github-runner": {
     "name": "github-runner-2.333.1",
@@ -245,9 +245,9 @@
     "version": "2.333.1"
   },
   "gitlab": {
-    "name": "gitlab-18.11.1",
+    "name": "gitlab-18.11.2",
     "pname": "gitlab",
-    "version": "18.11.1"
+    "version": "18.11.2"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.39.0",
@@ -255,24 +255,24 @@
     "version": "4.39.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.11.1",
+    "name": "gitlab-ee-18.11.2",
     "pname": "gitlab-ee",
-    "version": "18.11.1"
+    "version": "18.11.2"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.11.1",
+    "name": "gitlab-pages-18.11.2",
     "pname": "gitlab-pages",
-    "version": "18.11.1"
+    "version": "18.11.2"
   },
   "gitlab-runner": {
-    "name": "gitlab-runner-18.11.1",
+    "name": "gitlab-runner-18.11.2",
     "pname": "gitlab-runner",
-    "version": "18.11.1"
+    "version": "18.11.2"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.11.1",
+    "name": "gitlab-workhorse-18.11.2",
     "pname": "gitlab-workhorse",
-    "version": "18.11.1"
+    "version": "18.11.2"
   },
   "glibc": {
     "name": "glibc-2.40-224",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.85",
+    "name": "linux-6.12.87",
     "pname": "linux",
-    "version": "6.12.85"
+    "version": "6.12.87"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.85",
+    "name": "linux-6.12.87",
     "pname": "linux",
-    "version": "6.12.85"
+    "version": "6.12.87"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -505,9 +505,9 @@
     "version": "5.8.0"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.152.0",
+    "name": "matrix-synapse-wrapped-1.152.1",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.152.0"
+    "version": "1.152.1"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.2",
@@ -721,24 +721,24 @@
     "version": "8.0.30"
   },
   "php82": {
-    "name": "php-with-extensions-8.2.30",
+    "name": "php-with-extensions-8.2.31",
     "pname": "php-with-extensions",
-    "version": "8.2.30"
+    "version": "8.2.31"
   },
   "php83": {
-    "name": "php-with-extensions-8.3.30",
+    "name": "php-with-extensions-8.3.31",
     "pname": "php-with-extensions",
-    "version": "8.3.30"
+    "version": "8.3.31"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.20",
+    "name": "php-with-extensions-8.4.21",
     "pname": "php-with-extensions",
-    "version": "8.4.20"
+    "version": "8.4.21"
   },
   "php85": {
-    "name": "php-with-extensions-8.5.5",
+    "name": "php-with-extensions-8.5.6",
     "pname": "php-with-extensions",
-    "version": "8.5.5"
+    "version": "8.5.6"
   },
   "phpPackages.composer": {
     "name": "composer-2.9.7",
@@ -1001,9 +1001,9 @@
     "version": "4.3.1"
   },
   "redis": {
-    "name": "redis-8.2.3",
+    "name": "redis-8.6.3",
     "pname": "redis",
-    "version": "8.2.3"
+    "version": "8.6.3"
   },
   "rich-cli": {
     "name": "rich-cli-1.8.0",
