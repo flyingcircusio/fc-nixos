@@ -89,6 +89,11 @@ import ./make-test-python.nix (
         flyingcircus.roles.ai-model-server.skvaider-inference.hf_token = "";
         flyingcircus.roles.ai-model-server.skvaider-inference.enable = true;
 
+        # qemu-vm.nix overrides videoDrivers to "modesetting" for VM builds,
+        # so the nvidia-container-toolkit driver assertion cannot see the
+        # role's services.xserver.videoDrivers = [ "nvidia" ] here.
+        hardware.nvidia-container-toolkit.suppressNvidiaDriverAssertion = true;
+
         systemd.services.skvaider-inference.path = lib.mkAfter [ vllm-cpu ];
 
         flyingcircus.roles.ai-model-server.skvaider-inference.settings = {

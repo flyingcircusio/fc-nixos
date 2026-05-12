@@ -36,6 +36,40 @@ let
     # vllm (0.15.1+)
     rev = "0182a361324364ae3f436a63005877674cf45efb";
   };
+  nvidiaUnfreePackageNames = [
+    # lib.licenses.nvidiaCudaRedist — CUDA Toolkit End User License Agreement
+    "cuda-merged"
+    "cuda_cuobjdump"
+    "cuda_gdb"
+    "cuda_nvcc"
+    "cuda_nvdisasm"
+    "cuda_nvprune"
+    "cuda_cccl"
+    "cuda_cudart"
+    "cuda_cupti"
+    "cuda_cuxxfilt"
+    "cuda_nvml_dev"
+    "cuda_nvrtc"
+    "cuda_nvtx"
+    "cuda_profiler_api"
+    "cuda_sanitizer_api"
+    "libcublas"
+    "libcufft"
+    "libcurand"
+    "libcusolver"
+    "libnvjitlink"
+    "libcusparse"
+    "libnpp"
+    "libcufile"
+    # lib.licenses.cudnnCuSPARSELt — cuSPARSELt EULA (different from CUDA EULA)
+    "libcusparse_lt"
+    # lib.licenses.cudnn — cuDNN SUPPLEMENT TO SOFTWARE LICENSE AGREEMENT
+    # (different from CUDA EULA; redistributable = false — internal use only)
+    "cudnn"
+    # lib.licenses.unfreeRedistributable — NVIDIA Software License
+    "nvidia-settings"
+    "nvidia-x11"
+  ];
 
   nixpkgs-nixos-unstable-cuda = import nixpkgs-nixos-unstable-src {
     nixpkgs = nixpkgs-nixos-unstable-src;
@@ -54,38 +88,7 @@ let
       cudaSupport = true;
       rocmSupport = false;
       allowUnfreePredicate =
-        pkg:
-        builtins.elem (pkg.pname or (builtins.parseDrvName pkg.name).name) [
-          # lib.licenses.nvidiaCudaRedist — CUDA Toolkit End User License Agreement
-          "cuda-merged"
-          "cuda_cuobjdump"
-          "cuda_gdb"
-          "cuda_nvcc"
-          "cuda_nvdisasm"
-          "cuda_nvprune"
-          "cuda_cccl"
-          "cuda_cudart"
-          "cuda_cupti"
-          "cuda_cuxxfilt"
-          "cuda_nvml_dev"
-          "cuda_nvrtc"
-          "cuda_nvtx"
-          "cuda_profiler_api"
-          "cuda_sanitizer_api"
-          "libcublas"
-          "libcufft"
-          "libcurand"
-          "libcusolver"
-          "libnvjitlink"
-          "libcusparse"
-          "libnpp"
-          "libcufile"
-          # lib.licenses.cudnnCuSPARSELt — cuSPARSELt EULA (different from CUDA EULA)
-          "libcusparse_lt"
-          # lib.licenses.cudnn — cuDNN SUPPLEMENT TO SOFTWARE LICENSE AGREEMENT
-          # (different from CUDA EULA; redistributable = false — internal use only)
-          "cudnn"
-        ];
+        pkg: builtins.elem (pkg.pname or (builtins.parseDrvName pkg.name).name) nvidiaUnfreePackageNames;
     };
   };
 
@@ -817,4 +820,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       in
       if dependencies == [ ] then python3Writer else pathWrapper;
   };
+}
+// {
+  inherit nvidiaUnfreePackageNames;
 }

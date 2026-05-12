@@ -96,34 +96,17 @@ in
           embedding_verification_file = lib.mkDefault ./embeddings-reference.json;
         };
 
-        # nvtopPackages.nvidia links against the CUDA toolkit. All packages
-        # below carry lib.licenses.nvidiaCudaRedist (CUDA Toolkit EULA,
-        # redistributable). Listed explicitly instead of allowUnfree = true.
-        flyingcircus.allowedUnfreePackageNames = [
-          # lib.licenses.nvidiaCudaRedist — CUDA Toolkit End User License Agreement (redistributable)
-          "cuda-merged"
-          "cuda_cuobjdump"
-          "cuda_gdb"
-          "cuda_nvcc"
-          "cuda_nvdisasm"
-          "cuda_nvprune"
-          "cuda_cccl"
-          "cuda_cudart"
-          "cuda_cupti"
-          "cuda_cuxxfilt"
-          "cuda_nvml_dev"
-          "cuda_nvrtc"
-          "cuda_nvtx"
-          "cuda_profiler_api"
-          "cuda_sanitizer_api"
-          "libcublas"
-          "libcufft"
-          "libcurand"
-          "libcusolver"
-          "libnvjitlink"
-          "libcusparse"
-          "libnpp"
-        ];
+        # NVIDIA driver, CUDA toolkit, cuDNN and nvtopPackages.nvidia pull
+        # unfree packages. Keep the allow-list in pkgs/overlay.nix so the
+        # unstable CUDA package set and the NixOS role use the same names.
+        flyingcircus.allowedUnfreePackageNames = pkgs.nvidiaUnfreePackageNames;
+
+        nixpkgs.config.cudaSupport = true;
+        hardware.graphics.enable = true;
+        hardware.nvidia.open = true;
+        hardware.nvidia.nvidiaSettings = false;
+        services.xserver.videoDrivers = [ "nvidia" ];
+        hardware.nvidia-container-toolkit.enable = true;
 
         environment.systemPackages = [
           (pkgs.writeShellScriptBin "nvtop-nvidia" ''
