@@ -227,6 +227,7 @@
   "vinyl-cache",
   "vinyl-cache_9",
   "vim",
+  "vllm-cuda",
   "wget",
   "wireguard-tools",
   "xfsprogs",
