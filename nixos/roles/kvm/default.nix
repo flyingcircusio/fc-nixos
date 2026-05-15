@@ -194,12 +194,6 @@ in
           vm-expected-overhead = 512;
         };
 
-        # compatibility section, can be thrown out once fc.qemu has been updated
-        "qemu-throttle-by-pool" = {
-          "rbd.hdd" = 250;
-          "rbd.ssd" = 10000;
-        };
-
         "block-throttle-rbd.hdd" = {
           iops = 250;
           # 250 mib/s
