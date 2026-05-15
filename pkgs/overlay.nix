@@ -1,6 +1,6 @@
 self: super:
 let
-  poetry2nixSrc = (import ../release/versions.nix { pkgs = super; }).poetry2nix;
+  poetry2nixSrc = (import ../versions.nix { pkgs = super; }).poetry2nix;
   poetry2nix = import poetry2nixSrc { pkgs = self; };
 
   # import fossar/nix-phps overlay with nixpkgs-unstable's generic.nix copied in
@@ -14,81 +14,26 @@ let
     rev = "a467063b4abb8bd7636d9bb2475edbd2f0e6c6b6";
   };
 
-  nixpkgs-ceph-pacific =
-    # we build ceph pacific from a nixpkgs-23.11 branch which also holds
-    # a few additional modifications and updates to the original upstream packaging
-    import
-      (fetchFromGitHub {
-        hash = "sha256-+LDp5xGdQlxu0xA7PgO7imZ+TKh2Eu/sSi7eRmAVizM=";
-        owner = "flyingcircusio";
-        repo = "nixpkgs";
-        rev = "db221fbbc6089ae73024ec29b3cd4748c3b52923";
-        # branch = "fc-ceph-pacific"
-      })
-      {
-        inherit (self) config;
-      };
-
   nixpkgs-nixos-unstable-src = fetchFromGitHub {
     hash = "sha256-0NBlEBKkN3lufyvFegY4TYv5mCNHbi5OmBDrzihbBMQ=";
     owner = "NixOS";
     repo = "nixpkgs";
+    # nixos-unstable for newer llama-cpp (which version?)
     # vllm (0.15.1+)
     rev = "0182a361324364ae3f436a63005877674cf45efb";
   };
-  nvidiaUnfreePackageNames = [
-    # lib.licenses.nvidiaCudaRedist — CUDA Toolkit End User License Agreement
-    "cuda-merged"
-    "cuda_cuobjdump"
-    "cuda_gdb"
-    "cuda_nvcc"
-    "cuda_nvdisasm"
-    "cuda_nvprune"
-    "cuda_cccl"
-    "cuda_cudart"
-    "cuda_cupti"
-    "cuda_cuxxfilt"
-    "cuda_nvml_dev"
-    "cuda_nvrtc"
-    "cuda_nvtx"
-    "cuda_profiler_api"
-    "cuda_sanitizer_api"
-    "libcublas"
-    "libcufft"
-    "libcurand"
-    "libcusolver"
-    "libnvjitlink"
-    "libcusparse"
-    "libnpp"
-    "libcufile"
-    # lib.licenses.cudnnCuSPARSELt — cuSPARSELt EULA (different from CUDA EULA)
-    "libcusparse_lt"
-    # lib.licenses.cudnn — cuDNN SUPPLEMENT TO SOFTWARE LICENSE AGREEMENT
-    # (different from CUDA EULA; redistributable = false — internal use only)
-    "cudnn"
-    # lib.licenses.unfreeRedistributable — NVIDIA Software License
-    "nvidia-settings"
-    "nvidia-x11"
-  ];
+
+  nixpkgs-nixos-unstable-rocm = import nixpkgs-nixos-unstable-src {
+    inherit (self) config;
+    nixpkgs = nixpkgs-nixos-unstable-src;
+  };
 
   nixpkgs-nixos-unstable-cuda = import nixpkgs-nixos-unstable-src {
     nixpkgs = nixpkgs-nixos-unstable-src;
-    # Prevent cuda_compat being enabled when building in Hydra due to
-    # allowUnsupportedSystem = true.
-    overlays = [
-      (unstableSelf: unstableSuper: {
-        _cuda = unstableSuper._cuda.extend (
-          _: prevAttrs: {
-            extensions = prevAttrs.extensions ++ [ (_: _: { cuda_compat = null; }) ];
-          }
-        );
-      })
-    ];
     config = super.lib.recursiveUpdate self.config {
       cudaSupport = true;
       rocmSupport = false;
-      allowUnfreePredicate =
-        pkg: builtins.elem (pkg.pname or (builtins.parseDrvName pkg.name).name) nvidiaUnfreePackageNames;
+      allowUnfree = true;
     };
   };
 
@@ -286,26 +231,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   inherit (self.ceph-nautilus) ceph ceph-client libceph;
   # upstream ceph packaging switched to offering a reduced client tooling set, let's see how that works
   ceph-nautilus = lib.dontRecurseIntoAttrs fc-nixos-21_05.ceph-nautilus;
-  ceph-pacific =
-    let
-      applyBaselinePatches =
-        cephPkg:
-        cephPkg.overrideAttrs (oldAttrs: {
-          patches = (oldAttrs.patches or [ ]) ++ [
-            ./ceph/pacific/rgw-reduce-log-verbosity.patch
-            ./ceph/pacific/rbd-migration-status-poolname.patch
-          ];
-        });
-      patchedCeph = builtins.mapAttrs (_: applyBaselinePatches) {
-        inherit (nixpkgs-ceph-pacific) ceph ceph-client;
-      };
-    in
-    rec {
-      inherit (patchedCeph) ceph ceph-client;
-      # XXX: ceph-client for now also contains *our* rbd-locktool executable.
-      # We should reconsider this once we are able to use ceph from the current nixpkgs.
-      libceph = ceph.lib;
-    };
 
   consul = builtins.trace "using 21.05 consul" (
     fc-nixos-21_05.consul.overrideAttrs (old: {
@@ -379,6 +304,16 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   # TODO: re-evaluate whether this still needs to be vendored without lmdb support (#PL-130446)
   libmodsecurity = super.callPackage ./libmodsecurity { };
 
+  llama-cpp-rocm-force-mmq = self.llama-cpp-rocm.overrideAttrs (
+    a:
+    a
+    // {
+      cmakeFlags = a.cmakeFlags ++ [
+        (lib.cmakeBool "GGML_CUDA_FORCE_MMQ" true)
+      ];
+    }
+  );
+
   linuxKernelGPU = self.linux_6_18.override {
     argsOverride = rec {
       src = super.fetchurl {
@@ -387,7 +322,12 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       };
       version = "6.18.15";
       modDirVersion = version;
-      kernelPatches = self.linux_6_18.kernelPatches ++ [ ];
+      kernelPatches = self.linux_6_18.kernelPatches ++ [
+        {
+          name = "amd-w7900-crash-preview";
+          patch = ./linux-amd-w7900-crash-preview.patch;
+        }
+      ];
     };
     ignoreConfigErrors = true;
   };
@@ -609,6 +549,10 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     '';
   });
 
+  llama-cpp = nixpkgs-nixos-unstable-rocm.llama-cpp;
+  llama-cpp-rocm = nixpkgs-nixos-unstable-rocm.llama-cpp-rocm;
+  llama-cpp-vulkan = nixpkgs-nixos-unstable-rocm.llama-cpp-vulkan;
+
   mysql = super.mariadb;
 
   monitoring-plugins =
@@ -695,8 +639,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   opensearch-dashboards = super.callPackage ./opensearch-dashboards { };
 
-  opensearch_3_5 = super.callPackage ./opensearch_3_5.nix { };
-
   percona = self.percona84;
   percona-toolkit = super.perlPackages.PerconaToolkit.overrideAttrs (oldAttrs: {
     # The script uses usr/bin/env perl and the Perl builder adds PERL5LIB to it.
@@ -736,12 +678,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   py38_pytest_patterns = fc-nixos-21_05.py_pytest_patterns;
 
   qemu-ceph-nautilus = fc-nixos-21_05.qemu-ceph-nautilus;
-  # pacific: let's also try a qemu version update from 6.0 to 10.1, because
-  # pacific does not compile against old qemu
-  qemu-ceph-pacific = super.qemu.override {
-    cephSupport = true;
-    ceph = self.ceph-pacific.ceph;
-  };
 
   # Ruby 2.7 is EOL but we still need it for Sensu until Aramaki takes over ;)
   #ruby_2_7 = getClosureFromStore /nix/store/qqc6v89xn0g2w123wx85blkpc4pz2ags-ruby-2.7.8;
@@ -772,6 +708,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
         pname = "tcpdump-vxlan";
       });
 
+  varnish = lib.warn "varnish-7.x is end-of-life and still default for the `webproxy` role but has known vulnerabilities. Consider updating to varnish-8.0 by setting `services.varnish.package = varnish80;`. Note the breaking changes in https://vinyl-cache.org/docs/8.0/whats-new/upgrading-8.0.html" super.varnish;
+  varnish77 = lib.warn "varnish-7.x is end-of-life and still default for the `webproxy` role but has known vulnerabilities. Consider updating to varnish-8.0 by setting `services.varnish.package = varnish80;`. Note the breaking changes in https://vinyl-cache.org/docs/8.0/whats-new/upgrading-8.0.html" super.varnish77;
   vllm-cuda = nixpkgs-nixos-unstable-cuda.vllm;
 
   xtrabackup = lib.warn "The `xtrabackup` package has been renamed to `percona-xtrabackup`." self.percona-xtrabackup;
@@ -782,6 +720,3 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     "${pkgname}: imagemagick6 has known vulnerabilites. From platform 26.05 on this package is not permitted by default anymore. Update your applications to work with a current version of imagemagick, or add this to `flyingcircus.permittedInsecurePackages`."
     super."${pkgname}"
 )
-// {
-  inherit nvidiaUnfreePackageNames;
-}

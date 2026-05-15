@@ -10,6 +10,38 @@ with builtins;
 let
   fclib = config.fclib;
   cfg = config.flyingcircus.roles.ai-model-server;
+  scfg = config.services.ollama;
+
+  checkOllamaCpuOffload = pkgs.writeShellApplication {
+    name = "check_ollama_cpu_offload";
+    runtimeInputs = [
+      pkgs.curl
+      pkgs.jq
+    ];
+    text = ''
+      url="http://${scfg.host}:${toString scfg.port}/api/ps"
+
+      if ! response=$(curl -s --fail "$url"); then
+        echo "CRITICAL: Failed to connect to Ollama at $url"
+        exit 2
+      fi
+
+      # Check for models loaded into CPU
+      # We look for models where size > size_vram
+      # We output the names of such models
+
+      offloaded_models=$(echo "$response" | jq -r '.models[] | select(.size > .size_vram) | "\(.name) (size: \(.size), vram: \(.size_vram))"')
+
+      if [ -n "$offloaded_models" ]; then
+        echo "WARNING: Some models are partially or fully loaded into CPU:"
+        echo "$offloaded_models"
+        exit 1
+      else
+        echo "OK: All models are fully loaded into GPU"
+        exit 0
+      fi
+    '';
+  };
 
 in
 {
@@ -17,6 +49,14 @@ in
     flyingcircus.roles.ai-model-server = {
       enable = lib.mkEnableOption "Enable GPU server role with AI inference capabilities";
       supportsContainers = fclib.mkDisableDevhostSupport;
+
+      # Enabled by default, can be disabled for running in VMs or
+      # tests.
+      enableRocm = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Enable ROCM for AMD GPU acceleration";
+      };
 
       # Model configuration
       models = lib.mkOption {
@@ -31,7 +71,7 @@ in
 
               name = lib.mkOption {
                 type = lib.types.str;
-                description = "Model name";
+                description = "Model name for ollama";
               };
             };
           }
@@ -64,14 +104,15 @@ in
           options = {
             enable = lib.mkEnableOption "Enable Skvaider inference service";
 
-            hf_token = lib.mkOption {
-              type = lib.types.str;
-              description = "huggingface token";
-            };
-
             settings = lib.mkOption {
               type = lib.types.attrsOf lib.types.anything;
-              default = { };
+              default = {
+                models_dir = "/var/lib/skvaider/model";
+                server = {
+                  port = 8000;
+                  host = "0.0.0.0";
+                };
+              };
               description = "Additional Skvaider inference settings";
             };
           };
@@ -82,32 +123,8 @@ in
 
   config = lib.mkIf cfg.enable (
     lib.mkMerge [
+      # Fixed shared config for CPU and AMD
       {
-        # Settings defaults at lib.mkDefault priority (1000) rather than the
-        # option's default priority (1500). This ensures that when a caller
-        # sets other keys in settings = { ... } (at priority 100), these
-        # per-key defaults are not silently dropped by attrsOf's priority
-        # resolution — they survive as long as the caller's definition
-        # doesn't explicitly include the same key.
-        flyingcircus.roles.ai-model-server.skvaider-inference.settings = lib.mkDefault {
-          models_dir = "/var/lib/skvaider/model";
-          server.port = 8000;
-          server.host = "0.0.0.0";
-          embedding_verification_file = lib.mkDefault ./embeddings-reference.json;
-        };
-
-        # NVIDIA driver, CUDA toolkit, cuDNN and nvtopPackages.nvidia pull
-        # unfree packages. Keep the allow-list in pkgs/overlay.nix so the
-        # unstable CUDA package set and the NixOS role use the same names.
-        flyingcircus.allowedUnfreePackageNames = pkgs.nvidiaUnfreePackageNames;
-
-        nixpkgs.config.cudaSupport = true;
-        hardware.graphics.enable = true;
-        hardware.nvidia.open = true;
-        hardware.nvidia.nvidiaSettings = false;
-        services.xserver.videoDrivers = [ "nvidia" ];
-        hardware.nvidia-container-toolkit.enable = true;
-
         environment.systemPackages = [
           (pkgs.writeShellScriptBin "nvtop-nvidia" ''
             exec ${pkgs.nvtopPackages.nvidia}/bin/nvtop "$@"
@@ -118,49 +135,55 @@ in
           pkgs.nvtopPackages.full
         ];
 
+        environment.variables.OLLAMA_HOST = "${scfg.host}:${toString scfg.port}";
+
         boot.kernelPackages = lib.mkForce (pkgs.linuxPackagesFor pkgs.linuxKernelGPU);
 
         boot.kernelModules = [ "nvidia" ];
 
-        flyingcircus.passwordlessSudoPackages = [
-          # Allow applying config and restarting services to service users
-          {
-            commands = [
-              "bin/systemctl start"
-              "bin/systemctl stop"
-            ];
-            package = pkgs.systemd;
-            users = [
-              "skvaider"
-            ];
-          }
-        ];
+        services.ollama = {
+          enable = false;
+          host = fclib.mkPlatform config.networking.hostName;
+          environmentVariables = {
+            OLLAMA_DEBUG = "1";
+            OLLAMA_NUM_PARALLEL = "10";
+            OLLAMA_FLASH_ATTENTION = "1";
+            OLLAMA_SCHED_SPREAD = "0";
+            OLLAMA_MULTIUSER_CACHE = "1";
+            OLLAMA_NEW_ENGINE = "1";
+            OLLAMA_NEW_ESTIMATES = "1";
+            OLLAMA_KEEP_ALIVE = "-1"; # infinite, expire if needed
+          };
+          loadModels =
+            let
+              enabledModels = lib.filterAttrs (n: v: v.enable) cfg.models;
+            in
+            lib.mapAttrsToList (n: v: v.name) enabledModels;
+        };
+
+        flyingcircus.roles.ai-model-server.skvaider-inference.settings.embedding_verification_file =
+          lib.mkDefault pkgs.fc.skvaider.embeddings-reference-json;
 
         systemd.services.skvaider-inference = lib.mkIf cfg.skvaider-inference.enable {
           description = "Skvaider inference service";
           wantedBy = [ "multi-user.target" ];
           environment = {
             HF_HUB_DISABLE_PROGRESS_BARS = "1";
-            HF_TOKEN = cfg.skvaider-inference.hf_token;
+            HF_TOKEN = "xxx";
             HOME = cfg.skvaider-inference.settings.models_dir;
           };
           script =
             let
               configfile =
                 (pkgs.formats.toml { }).generate "skvaider_inference_settings.toml"
-                  # log_dir is module-owned (ties to tmpfiles + logrotate);
-                  # inject after user settings so it is never clobbered by a
-                  # partial logging = { ... } override in /etc/local/nixos/.
-                  (
-                    lib.recursiveUpdate cfg.skvaider-inference.settings {
-                      logging.log_dir = "/var/log/skvaider";
-                    }
-                  );
+                  cfg.skvaider-inference.settings;
             in
             ''
               ${lib.getExe' pkgs.fc.skvaider "skvaider-inference"} -c ${configfile}
             '';
           path = [
+            pkgs.llama-cpp-rocm
+            pkgs.rocmPackages.rocm-smi
             "/run/current-system/sw" # for nvidia-x11 giving us nvidia-smi, which is used for GPU monitoring in Skvaider
           ];
 
@@ -170,13 +193,7 @@ in
             User = "skvaider";
             Group = "service";
             StateDirectoryMode = "0755";
-            CapabilityBoundingSet = [
-              # sudo needs those:
-              "CAP_SETUID"
-              "CAP_SETGID"
-              "CAP_DAC_READ_SEARCH"
-              "CAP_SYS_RESOURCE"
-            ];
+            CapabilityBoundingSet = [ "" ];
             DeviceAllow = [
               # CUDA
               # https://docs.nvidia.com/dgx/pdf/dgx-os-5-user-guide.pdf
@@ -185,6 +202,10 @@ in
               "char-nvidia-caps"
               "char-nvidia-frontend"
               "char-nvidia-uvm"
+              # ROCm
+              "char-drm"
+              "char-fb"
+              "char-kfd"
             ];
             PrivateDevices = false; # unhides acceleration devices
             SupplementaryGroups = [
@@ -204,32 +225,104 @@ in
         };
         systemd.tmpfiles.rules = [
           "d /var/lib/skvaider 0755 skvaider service -"
-          "d /var/log/skvaider 0755 skvaider service -"
           "d ${cfg.skvaider-inference.settings.models_dir} 0755 skvaider service -"
         ];
 
+        systemd.services.ollama.serviceConfig.Restart = "always";
+
+        flyingcircus.services.sensu-client.checks = lib.mkIf scfg.enable {
+          ollama_health = {
+            notification = "Ollama service health check";
+            command = "check_http -H ${scfg.host} -p ${toString scfg.port} -u /api/tags";
+            interval = 300;
+          };
+
+          ollama_cpu_offload = {
+            notification = "Ollama CPU offload check";
+            command = "${checkOllamaCpuOffload}/bin/check_ollama_cpu_offload";
+            interval = 300;
+          };
+        };
       }
+
+      # ROCM specific config
+      (lib.mkIf cfg.enableRocm {
+        # Allow unfree packages for GPU drivers and AI models
+        nixpkgs.config = {
+          allowUnfree = true;
+          rocmSupport = true;
+        };
+
+        # GPU hardware and driver configuration
+        hardware.graphics = {
+          enable = true;
+          enable32Bit = true;
+        };
+        services.xserver.videoDrivers = [ "amdgpu" ];
+
+        # Environment packages for AMD ROCM
+        environment.systemPackages = [
+          pkgs.rocmPackages.rocminfo
+          pkgs.rocmPackages.rocm-smi
+          (pkgs.writeShellScriptBin "nvtop-amd" ''
+            exec ${pkgs.nvtopPackages.amd}/bin/nvtop "$@"
+          '')
+        ];
+
+        systemd.services.rocm-runtime-config = {
+          description = "Perform rocm runtime configuration";
+          wantedBy = [ "multi-user.target" ];
+          serviceConfig.Type = "oneshot";
+          script = ''
+            ${pkgs.rocmPackages.rocm-smi}/bin/rocm-smi --setprofile 4  # compute optimized
+            ${pkgs.rocmPackages.rocm-smi}/bin/rocm-smi --showprofile   # record the updated settings in the log file
+          '';
+        };
+
+        systemd.tmpfiles.rules =
+          let
+            rocmEnv = pkgs.symlinkJoin {
+              name = "rocm-combined";
+              paths = with pkgs.rocmPackages; [
+                rocblas
+                hipblas
+                clr
+              ];
+            };
+          in
+          [
+            "L+  /opt/rocm  - - - -  ${rocmEnv}"
+          ];
+
+        # AMD specific ollama setup
+        services.ollama = {
+          package = pkgs.ollama-rocm;
+          acceleration = "rocm";
+          # Pin to gfx1100 LLVM target for Radeon PRO W7900 GPUs
+          rocmOverrideGfx = "11.0.0";
+        };
+
+        services.telegraf.extraConfig.inputs.amd_rocm_smi = [
+          {
+            # Exclude the GPU uuid to avoid excess label cardinality
+            taginclude = [
+              "name"
+            ];
+            # see https://docs.influxdata.com/telegraf/v1/input-plugins/amd_rocm_smi/ for fields
+          }
+        ];
+        services.telegraf.extraConfig.agent.always_include_global_tags = true;
+        systemd.services.telegraf.path = [ pkgs.rocmPackages.rocm-smi ];
+      })
 
       {
         flyingcircus.services.telegraf.inputs.prometheus = lib.mkIf cfg.skvaider-inference.enable [
           {
             urls = [
-              "http://${cfg.skvaider-inference.settings.server.host}:${toString cfg.skvaider-inference.settings.server.port}/metrics"
+              "http://{cfg.skvaider-inference.settings.server.host}:${toString cfg.skvaider-inference.settings.server.port}/metrics"
             ];
           }
         ];
-        services.logrotate.settings.skvaider-inference = {
-          create = "0640 skvaider service";
-          files = [
-            "/var/log/skvaider/inference.log"
-            "/var/log/skvaider/inference-*.log"
-          ];
-          frequency = "daily";
-          su = "skvaider service";
-          rotate = 7;
-          copytruncate = true;
-        };
-
       }
     ]
   );
