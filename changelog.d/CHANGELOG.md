@@ -1,3 +1,11 @@
+# Release 2026_018
+
+## NixOS XX.XX platform
+
+- linux kernel: mitigate "dirty frag" vulnerabilities (CVE-2026-43500, CVE-2026-4328)
+
+
+
 # Release 2026_017
 
 ## Impact
