@@ -1,3 +1,19 @@
+# Release 2026_018
+
+## NixOS XX.XX platform
+
+- linux kernel: mitigate "dirty frag" vulnerabilities (CVE-2026-43500, CVE-2026-4328)
+
+- fc-collect-garbage: warn about unknown/human users with gcroots. (PL-134227)
+
+- router: remove various deprecated and obsolete role options. (PL-135248)
+
+- nix: use redundant object storage gateways as binary cache while removing superfluous old binary cache (PL-135325)
+
+  This change leads to a better performance for Nix invocations that are not in any binary cache.
+
+
+
 # Release 2026_017
 
 ## NixOS XX.XX platform
