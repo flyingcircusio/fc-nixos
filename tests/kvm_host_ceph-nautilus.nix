@@ -63,6 +63,11 @@ import ./make-test-python.nix (
         flyingcircus.static.mtus.sto = 1500;
         flyingcircus.static.mtus.stb = 1500;
 
+        # Override some fc-qemu.conf values to match the values expected by tests
+        flyingcircus.roles.kvm_host.settings = {
+          qemu.binary-generation = lib.mkForce 2;
+        };
+
         systemd.timers.fc-ceph-load-vm-images.enable = lib.mkForce false;
         systemd.timers.fc-ceph-mon-update-client-keys.enable = lib.mkForce false;
         systemd.timers.fc-ceph-clean-deleted-vms.enable = lib.mkForce false;
