@@ -234,6 +234,7 @@
   "varnish",
   "varnish80",
   "vim",
+  "vllm-cuda",
   "wget",
   "wireguard-tools",
   "xfsprogs",
