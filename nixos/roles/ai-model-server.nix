@@ -206,6 +206,8 @@ in
           "d /var/lib/skvaider 0755 skvaider service -"
           "d /var/log/skvaider 0755 skvaider service -"
           "d ${cfg.skvaider-inference.settings.models_dir} 0755 skvaider service -"
+          # Clean up debug/access logs older than 4 days
+          "e /var/lib/skvaider 4 -"
         ];
 
       }
