@@ -462,6 +462,8 @@ suggest migration paths tailored to the VMs' specific situation.
 
 - `services.dovecot2.extraConfig` was removed. Migrate configuration to `services.dovecot2.settings`.
 
+- `services.dhparams` has been deprecated. Remove any uses of DHE and migrate to ECDHE (RFC 8422, 2018) and Hybrid PQ (draft-ietf-tls-ecdhe-mlkem, 2026) key exchange algorithms. `services.dhparams` will be removed in fc-nixos 26.11
+
 ## Known issues
 
 None.

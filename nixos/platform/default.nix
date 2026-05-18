@@ -416,8 +416,6 @@ in
       // (filterAttrs (n: v: n != "commands" && n != "package") e)
     ) cfg.passwordlessSudoPackages;
 
-    security.dhparams.enable = true;
-
     services = {
       # upstream uses cron.enable = mkDefault ... (prio 1000), mkPlatform
       # overrides it
