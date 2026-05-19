@@ -62,10 +62,11 @@ let
     "TLS-DHE-RSA-WITH-AES-256-CBC-SHA256"
   ];
 
+  # https://openvpn.net/as-docs/tutorials/tutorial--change-encryption-cipher.html
   allowedCiphers = [
     "AES-256-GCM"
-    # for 2.3.x clients
     "AES-256-CBC"
+    "CHACHA20-POLY1305"
   ];
 
   #

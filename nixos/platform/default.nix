@@ -30,6 +30,7 @@ in
     ./alloy.nix
     ./audit.nix
     ./auditbeat.nix
+    ./dhparams.nix
     ./go-audit.nix
     ./beats.nix
     ./filebeat.nix
@@ -416,8 +417,6 @@ in
       // (filterAttrs (n: v: n != "commands" && n != "package") e)
     ) cfg.passwordlessSudoPackages;
 
-    security.dhparams.enable = true;
-
     services = {
       # upstream uses cron.enable = mkDefault ... (prio 1000), mkPlatform
       # overrides it
@@ -451,6 +450,8 @@ in
         KbdInteractiveAuthentication = false;
         PasswordAuthentication = false;
         KexAlgorithms = [
+          "mlkem768x25519-sha256"
+          "sntrup761x25519-sha512"
           "sntrup761x25519-sha512@openssh.com"
           "curve25519-sha256"
           "curve25519-sha256@libssh.org"

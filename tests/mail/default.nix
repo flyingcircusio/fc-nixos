@@ -81,21 +81,6 @@ import ../make-test-python.nix (
                 };
               };
 
-              # avoid time-consuming generation
-              systemd.services.dhparams-gen-dovecot2.script = lib.mkForce ''
-                mkdir -p /var/lib/dhparams
-                cat > /var/lib/dhparams/dovecot2.pem <<_EOT_
-                -----BEGIN DH PARAMETERS-----
-                MIIBCAKCAQEA46Obr4INGWek+Ngo+f3Pew34jsXHMPI5gaLwf901wbm18FGgp0Nu
-                f91t6beKYJrc+2E63R3E6E26+jY8fo6R4hh7wXtMEb94MyAJ8+fdyNpOGgNko2gf
-                c+kuTqgw/wGXZo2k9Zbd/vqTUS1rFR6GuqL6Urb6VAqi2aSFiJfbuE5XJrne9SP4
-                j+zSYwtr9mJZHikes6wOs1v5Fkt/ZvKEvlUEfn/nWNnr9xVqBQp7amZullkEHh4r
-                F5V/qvJRsppwxaWQWWhcTP/u7GnJBrpQXaQKgDwH9uOwy/hleuRGtfhgIADuWDma
-                GT0F+r7c94IjRNKnMd5PdJybaH3xAj+aSwIBAg==
-                -----END DH PARAMETERS-----
-                _EOT_
-              '';
-
               systemd.services.mailserver-selfsigned-certificate = {
                 after = [ "local-fs.target" ];
                 wantedBy = [ "multi-user.target" ];
