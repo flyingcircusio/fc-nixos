@@ -30,6 +30,7 @@ in
     ./alloy.nix
     ./audit.nix
     ./auditbeat.nix
+    ./dhparams.nix
     ./go-audit.nix
     ./beats.nix
     ./filebeat.nix
