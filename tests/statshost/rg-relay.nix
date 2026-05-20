@@ -2,6 +2,11 @@ import ../make-test-python.nix (
   { pkgs, testlib, ... }:
   let
     inherit (testlib) fcConfig fcIP;
+
+    relay_v4 = fcIP.srv4 1;
+    relay_v6 = fcIP.srv6 1;
+    stats_host_v4 = fcIP.srv4 3;
+    stats_host_v6 = fcIP.srv6 3;
   in
   {
     name = "rg-relay";
@@ -10,6 +15,16 @@ import ../make-test-python.nix (
         imports = [ (fcConfig { id = 1; }) ];
 
         flyingcircus.roles.statshost-relay.enable = true;
+
+        networking.firewall.enable = false;
+
+        flyingcircus.enc.role_configuration."statshost-relay" = {
+          relay_to_details.statshost.addresses = [
+            stats_host_v4
+            stats_host_v6
+          ];
+        };
+
         environment.etc."local/statshost/scrape-rg.json".text = ''
           [
             {"targets":["statsSource:9126"]}
@@ -21,7 +36,6 @@ import ../make-test-python.nix (
           ${fcIP.srv6 2} statsSource
         '';
 
-        networking.firewall.allowedTCPPorts = [ 9090 ];
         # Nginx wants to talk to DNS, so we set up a dnsmasq that serves /etc/hosts.
         services.dnsmasq = {
           enable = true;
@@ -35,14 +49,19 @@ import ../make-test-python.nix (
 
       statsSource = {
         imports = [ (fcConfig { id = 2; }) ];
-
-        networking.firewall.allowedTCPPorts = [ 9126 ];
+        networking.firewall.enable = false;
       };
 
       statshost = {
         imports = [ (fcConfig { id = 3; }) ];
-
         environment.systemPackages = [ pkgs.curl ];
+
+        flyingcircus.enc.role_configuration."statshost-relay" = {
+          relay_from_details.relay.addresses = [
+            relay_v4
+            relay_v6
+          ];
+        };
       };
     };
 
