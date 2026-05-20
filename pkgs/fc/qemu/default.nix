@@ -77,7 +77,6 @@ py.buildPythonPackage rec {
     util-linux
     xfsprogs
     py.requests
-    py.future
     py.colorama
     py.structlog
     py_consulate
