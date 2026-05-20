@@ -265,10 +265,12 @@ in
         };
         systemd.tmpfiles.rules = [
           "d /var/lib/skvaider 0755 skvaider service -"
-          "d /var/log/skvaider 0755 skvaider service -"
+          "d /var/log/skvaider 0750 skvaider service -"
           "d ${cfg.skvaider-inference.settings.models_dir} 0755 skvaider service -"
           "d /var/lib/skvaider/debug 0750 skvaider service -"
           "e /var/lib/skvaider/debug 4 -" # clean up debug logs older than 4 days
+          "A /var/log/skvaider - - - - g:sudo-srv:r-x,g:admins:r-x"
+          "a /var/log/skvaider - - - - d:g:sudo-srv:r,d:g:admins:r"
         ];
 
       }
