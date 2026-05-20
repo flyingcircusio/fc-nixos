@@ -235,9 +235,9 @@
     "version": "2.51.2"
   },
   "gitaly": {
-    "name": "gitaly-18.11.2",
+    "name": "gitaly-18.11.3",
     "pname": "gitaly",
-    "version": "18.11.2"
+    "version": "18.11.3"
   },
   "github-runner": {
     "name": "github-runner-2.333.1",
@@ -245,9 +245,9 @@
     "version": "2.333.1"
   },
   "gitlab": {
-    "name": "gitlab-18.11.2",
+    "name": "gitlab-18.11.3",
     "pname": "gitlab",
-    "version": "18.11.2"
+    "version": "18.11.3"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.39.0",
@@ -255,14 +255,14 @@
     "version": "4.39.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.11.2",
+    "name": "gitlab-ee-18.11.3",
     "pname": "gitlab-ee",
-    "version": "18.11.2"
+    "version": "18.11.3"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.11.2",
+    "name": "gitlab-pages-18.11.3",
     "pname": "gitlab-pages",
-    "version": "18.11.2"
+    "version": "18.11.3"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-18.11.2",
@@ -270,9 +270,9 @@
     "version": "18.11.2"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.11.2",
+    "name": "gitlab-workhorse-18.11.3",
     "pname": "gitlab-workhorse",
-    "version": "18.11.2"
+    "version": "18.11.3"
   },
   "glibc": {
     "name": "glibc-2.40-224",
@@ -295,9 +295,9 @@
     "version": "1.25.9"
   },
   "grafana": {
-    "name": "grafana-12.3.6",
+    "name": "grafana-12.3.6+security-01",
     "pname": "grafana",
-    "version": "12.3.6"
+    "version": "12.3.6+security-01"
   },
   "grub2": {
     "name": "grub-2.12.1",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.87",
+    "name": "linux-6.12.90",
     "pname": "linux",
-    "version": "6.12.87"
+    "version": "6.12.90"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.87",
+    "name": "linux-6.12.90",
     "pname": "linux",
-    "version": "6.12.87"
+    "version": "6.12.90"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -590,9 +590,9 @@
     "version": "4.38.2"
   },
   "nss_latest": {
-    "name": "nss-3.123.1",
+    "name": "nss-3.124",
     "pname": "nss",
-    "version": "3.123.1"
+    "version": "3.124"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.15",
@@ -741,9 +741,9 @@
     "version": "8.5.6"
   },
   "phpPackages.composer": {
-    "name": "composer-2.9.7",
+    "name": "composer-2.9.8",
     "pname": "composer",
-    "version": "2.9.7"
+    "version": "2.9.8"
   },
   "pkg-config": {
     "name": "pkg-config-wrapper-0.29.2",
@@ -771,9 +771,9 @@
     "version": "3.10.7"
   },
   "postgresql": {
-    "name": "postgresql-17.9",
+    "name": "postgresql-17.10",
     "pname": "postgresql",
-    "version": "17.9"
+    "version": "17.10"
   },
   "postgresql14Packages.postgis": {
     "name": "postgis-3.6.1",
@@ -836,29 +836,29 @@
     "version": "1.2.2"
   },
   "postgresql_14": {
-    "name": "postgresql-14.22",
+    "name": "postgresql-14.23",
     "pname": "postgresql",
-    "version": "14.22"
+    "version": "14.23"
   },
   "postgresql_15": {
-    "name": "postgresql-15.17",
+    "name": "postgresql-15.18",
     "pname": "postgresql",
-    "version": "15.17"
+    "version": "15.18"
   },
   "postgresql_16": {
-    "name": "postgresql-16.13",
+    "name": "postgresql-16.14",
     "pname": "postgresql",
-    "version": "16.13"
+    "version": "16.14"
   },
   "postgresql_17": {
-    "name": "postgresql-17.9",
+    "name": "postgresql-17.10",
     "pname": "postgresql",
-    "version": "17.9"
+    "version": "17.10"
   },
   "postgresql_18": {
-    "name": "postgresql-18.3",
+    "name": "postgresql-18.4",
     "pname": "postgresql",
-    "version": "18.3"
+    "version": "18.4"
   },
   "prometheus": {
     "name": "prometheus-3.7.2",
