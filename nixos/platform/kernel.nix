@@ -159,6 +159,9 @@ in
         extraConfig = config.flyingcircus.kernelOptions;
       }
     ];
-    boot.blacklistedKernelModules = [ "rxrpc" ]; # PL-135378, CVE-2026-43500 and unecessary module (AFS)
+    boot.blacklistedKernelModules = [
+      "rxrpc" # PL-135378, CVE-2026-43500 and unecessary module (AFS)
+      "rds" # PL-135412, "pintheft"
+    ];
   };
 }
