@@ -267,6 +267,8 @@ in
           "d /var/lib/skvaider 0755 skvaider service -"
           "d /var/log/skvaider 0755 skvaider service -"
           "d ${cfg.skvaider-inference.settings.models_dir} 0755 skvaider service -"
+          "d /var/lib/skvaider/debug 0750 skvaider service -"
+          "e /var/lib/skvaider/debug 4 -" # clean up debug logs older than 4 days
         ];
 
       }
@@ -284,6 +286,7 @@ in
           files = [
             "/var/log/skvaider/inference.log"
             "/var/log/skvaider/inference-*.log"
+            "/var/log/skvaider/access.log"
           ];
           frequency = "daily";
           su = "skvaider service";
