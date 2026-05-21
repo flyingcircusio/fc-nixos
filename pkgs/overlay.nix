@@ -686,6 +686,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   sensu-plugins-rabbitmq = getClosureFromStore /nix/store/lcvrxlakcxiqzvwq7g284nhzqfc5gvjv-sensu-plugins-rabbitmq-8.1.0;
   sensu-plugins-redis = getClosureFromStore /nix/store/qbqnynpw5mzx98nz8lx89gpjw91wyd5b-sensu-plugins-redis-4.1.0;
 
+  slurm-25_11 = lib.warnOnInstantiate "'slurm-25_11' has been replaced by 'slurm'." super.slurm;
   solr = super.callPackage ./solr { };
 
   tcpdump =
