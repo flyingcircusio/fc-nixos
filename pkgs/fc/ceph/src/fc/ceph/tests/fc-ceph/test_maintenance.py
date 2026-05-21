@@ -118,16 +118,13 @@ def test_successful_maintenance_cycle(
     maintenance_task.leave()
 
     assert ceph_json_calls.call_count == 4
-    assert ceph_calls.call_count == 6
+    assert ceph_calls.call_count == 5
     assert locktoolcalls.call_count == 4
 
     ceph_calls.assert_has_calls(
         [
             mock.call("osd", "set-group", "noup", "13", "14", "27"),
             mock.call("osd", "down", "13", "14", "27"),
-            mock.call(
-                "osd", "unset-group", "noup", "localhost", "localhost-ssd"
-            ),
             mock.call("osd", "unset-group", "noup", "13"),
             mock.call("osd", "unset-group", "noup", "14"),
             mock.call("osd", "unset-group", "noup", "27"),

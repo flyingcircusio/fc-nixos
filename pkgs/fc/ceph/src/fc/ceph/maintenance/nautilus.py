@@ -124,26 +124,22 @@ class VolumeDeletions(object):
         return status_code
 
 
-def get_host_crush_buckets() -> tuple[set[str], set[str]]:
-    """Return  the names of the crush buckets that correspond with the
-    host entries of this host as well as their associated OSD IDs.
-    """
+def get_host_osds() -> set[str]:
+    """Return the OSD IDs assigned to crush entries of this host."""
     hostname = socket.gethostname()
     osd_tree = run.json.ceph("osd", "tree")
 
     osds: set[str] = set()
 
     # Find the host entries in the crush map associated with this host
-    host_map_entries = set()
     for node in osd_tree["nodes"]:
         if node["type"] != "host":
             continue
         if node["name"].split("-")[0] != hostname:
             continue
-        host_map_entries.add(node["name"])
         osds.update(map(str, node["children"]))
 
-    return host_map_entries, osds
+    return osds
 
 
 def filter_noup_osds(osd_ids: set[str]) -> set[str]:
@@ -278,7 +274,7 @@ class MaintenanceTasks(object):
         # Prohibit OSD traffic by marking them down and flagging them to
         # not automatically return.
         try:
-            host_buckets, osd_ids = get_host_crush_buckets()
+            osd_ids = get_host_osds()
             if osd_ids:
                 run.ceph("osd", "set-group", "noup", *sorted(osd_ids))
                 run.ceph("osd", "down", *sorted(osd_ids))
@@ -287,11 +283,7 @@ class MaintenanceTasks(object):
             sys.exit(75)  # EXIT_TEMPFAIL, fc-agent might retry
 
     def leave(self):
-        host_buckets, osd_ids = get_host_crush_buckets()
-        if host_buckets:
-            # PL-133952: still needed for getting hosts upgrading from the
-            # previous mechanism out of maintenance. Remove later.
-            run.ceph("osd", "unset-group", "noup", *sorted(host_buckets))
+        osd_ids = get_host_osds()
 
         for osd_id in sorted(filter_noup_osds(osd_ids)):
             # remove noup flags in a staggered fashion, to reduce peering storm
