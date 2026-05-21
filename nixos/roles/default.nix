@@ -30,7 +30,6 @@ in
     ./lamp.nix
     ./loghost.nix
     ./loki.nix
-    ./loki-relay.nix
     ./mailout.nix
     ./mailserver.nix
     ./mariadb.nix
