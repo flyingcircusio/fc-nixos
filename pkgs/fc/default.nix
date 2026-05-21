@@ -68,19 +68,19 @@ rec {
   };
 
   qemu-pacific = callPackage ./qemu rec {
-    version = "1.7dev";
+    version = "1.8dev";
     src = pkgs.fetchFromGitHub {
       owner = "flyingcircusio";
       repo = "fc.qemu";
       # The release tooling didn't upgrade properly so we had to pick a specific
       # commit instead.
-      rev = "256964f932353a4c5375d709445afecc8f48aaaf";
-      hash = "sha256-ydEJlzio8ixFRqZEaDEwDkJFZYQ9RJ6DQhRJwTG+zik";
+      rev = "850a43bccbd4f586ba11e6c6326d6f7f1dd1126b";
+      hash = "sha256-gUC4+AydcZ/BkUqaX1/rKoOLk0G0lm63hHdj/zOYwD4=";
     };
     fc-ceph = ceph;
     qemu_ceph = pkgs.qemu-ceph-pacific;
     ceph_client = pkgs.ceph-pacific.ceph-client;
-    python3Packages = pkgs.python311Packages;
+    python3Packages = pkgs.python313Packages;
   };
 
   # Enable this temporarily during development, but DO NOT commit this as
