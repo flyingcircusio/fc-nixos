@@ -88,7 +88,6 @@ in
 
   locale = callTest ./locale.nix { };
   loki = callTest ./loki.nix { };
-  loki-relay = callTest ./loki-relay.nix { };
   loghost = callTest ./loghost.nix { };
   login = callTest ./login.nix { };
   logrotate = callTest ./logrotate.nix { };
