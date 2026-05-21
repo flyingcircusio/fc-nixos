@@ -10,6 +10,7 @@ from subprocess import CalledProcessError
 
 import fc.util.directory
 from fc.ceph.api import Cluster, Pools
+from fc.ceph.maintenance import noup_workaround
 from fc.ceph.maintenance.images_nautilus import (
     load_vm_images as load_vm_images_task,
 )
@@ -293,10 +294,14 @@ class MaintenanceTasks(object):
             # previous mechanism out of maintenance. Remove later.
             run.ceph("osd", "unset-group", "noup", *sorted(host_buckets))
 
-        for osd_id in sorted(filter_noup_osds(osd_ids)):
+        noup_osds = sorted(filter_noup_osds(osd_ids))
+        for osd_id in noup_osds:
             # remove noup flags in a staggered fashion, to reduce peering storm
             run.ceph("osd", "unset-group", "noup", str(osd_id))
             time.sleep(15)
+
+        if noup_osds and noup_workaround.run() != 0:
+            raise RuntimeError("noup-workaround failed, PGs may still be stuck")
 
         last_exc = None
         for _ in range(self.UNLOCK_MAX_RETRIES):
