@@ -68,8 +68,9 @@ def ceph_calls(monkeypatch):
 
 
 def test_successful_maintenance_cycle(
-    ceph_json_calls, ceph_calls, locktoolcalls, maintenance_manager, nosleep
+    ceph_json_calls, ceph_calls, locktoolcalls, maintenance_manager, nosleep, monkeypatch
 ):
+    monkeypatch.setattr("fc.ceph.maintenance.noup_workaround.run", lambda: 0)
     maintenance_task = maintenance_manager.MaintenanceTasks()
 
     locktoolcalls.side_effect = [
