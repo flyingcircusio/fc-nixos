@@ -15,6 +15,8 @@ let
 
   cephPkgs = fclib.ceph.mkPkgs cfg.cephRelease;
 
+  fcQemuConfFormat = pkgs.formats.ini { };
+
   # virtual ipv4 gateway address selected by 254-169=85, with each
   # octet +85 mod 256 the preceding octet
   virtualGatewayV4 = "169.254.83.168";
@@ -101,6 +103,17 @@ in
                     If VMs are remaining after this time, the maintenance fails temporarily.'';
       };
 
+      settings = lib.mkOption {
+        type = lib.types.submodule {
+          freeformType = fcQemuConfFormat.type;
+        };
+        description = ''
+          fc-qemu configuration as a structured attrset.
+          Populated with sensible default platform values, but certain settings
+          may be fine-grained overriden here, i.e. for tests.
+        '';
+      };
+
     };
   };
 
@@ -150,7 +163,7 @@ in
     environment.etc."iproute2/rt_protos.d/fc-qemu.conf".source =
       "${cfg.package}/share/iproute2/rt_protos";
 
-    environment.etc."qemu/fc-qemu.conf".text =
+    flyingcircus.roles.kvm_host.settings =
       let
         hostname = config.networking.hostName;
         migration_address = fclib.fqdn {
@@ -162,62 +175,63 @@ in
           domain = "gocept.net";
         };
       in
-      ''
-        [qemu]
-        accelerator = kvm
-        ; qemu 4.1 compatibility
-        machine-type = pc-i440fx-4.1
-        vhost = true
-        ; The 127.0.0.1 is important. Turning this to "localhost" confuses Qemu's
-        ; VNC ACL because it gets mixed up with ::1.
-        vnc = 127.0.0.1:{id}
-        timeout-graceful = 120
-        maintenance-evacuation-timeout = ${toString cfg.maintenanceEvacuationTimeout}
-        migration-address = tcp:${migration_address}:{id}
-        migration-ctl-address = ${migration_ctl_address}:0
-        migration-bandwidth = ${toString cfg.migrationBandwidth}
-        max-downtime = 4.0
-        ; generation 2 = #23965 upgrade to 2.7 due to security issues
-        binary-generation = 2
-        vm-max-total-memory = ${toString enc.parameters.kvm_net_memory}
-        vm-expected-overhead = 512
+      {
+        qemu = {
+          accelerator = "kvm";
+          machine-type = "pc-i440fx-6.0";
+          vhost = true;
+          # The 127.0.0.1 is important. Turning this to "localhost" confuses
+          # Qemu's VNC ACL because it gets mixed up with ::1.
+          vnc = "127.0.0.1:{id}";
+          timeout-graceful = 120;
+          maintenance-evacuation-timeout = cfg.maintenanceEvacuationTimeout;
+          migration-address = "tcp:${migration_address}:{id}";
+          migration-ctl-address = "${migration_ctl_address}:0";
+          migration-bandwidth = cfg.migrationBandwidth;
+          max-downtime = "4.0";
+          binary-generation = 3;
+          vm-max-total-memory = enc.parameters.kvm_net_memory;
+          vm-expected-overhead = 512;
+        };
 
-        [qemu-throttle-by-pool]
-        ; compatibility section, can be thrown out once fc.qemu has been updated
-        rbd.hdd = 250
-        rbd.ssd = 10000
+        "block-throttle-rbd.hdd" = {
+          iops = 250;
+          # 250 mib/s
+          bps = 262144000;
+          burst-factor = 10;
+        };
 
-        [block-throttle-rbd.hdd]
-        iops = 250
-        ; 250 mib/s
-        bps = 262144000
-        burst-factor = 10
+        "block-throttle-rbd.ssd" = {
+          iops = 10000;
+          # 500 mib/s
+          bps = 524288000;
+          burst-factor = 2;
+        };
 
-        [block-throttle-rbd.ssd]
-        iops = 10000
-        ; 500 mib/s
-        bps = 524288000
-        burst-factor = 2
+        network = {
+          tap-ifup-bridge = "/etc/kvm/kvm-ifup";
+          tap-ifdown-bridge = "/etc/kvm/kvm-ifdown";
+          tap-ifup-vrf = "/etc/kvm/kvm-ifup-vrf";
+          tap-ifdown-vrf = "/etc/kvm/kvm-ifdown-vrf";
+        };
 
-        [network]
-        tap-ifup-bridge = /etc/kvm/kvm-ifup
-        tap-ifdown-bridge = /etc/kvm/kvm-ifdown
-        tap-ifup-vrf = /etc/kvm/kvm-ifup-vrf
-        tap-ifdown-vrf = /etc/kvm/kvm-ifdown-vrf
+        consul = {
+          access-token = enc.parameters.secrets."consul/master_token";
+          event-threads = 10;
+        };
 
-        [consul]
-        access-token = ${enc.parameters.secrets."consul/master_token"}
-        event-threads = 10
+        ceph = {
+          client-id = hostname;
+          cluster = "ceph";
+          lock_host = hostname;
+          create-vm = "${pkgs.fc.agent}/bin/fc-create-vm -I {name}";
+        }
+        // lib.optionalAttrs (cfg.mkfsXfsFlags != null) {
+          mkfs-xfs = cfg.mkfsXfsFlags;
+        };
+      };
 
-        [ceph]
-        client-id = ${hostname}
-        cluster = ceph
-        lock_host = ${hostname}
-        create-vm = ${pkgs.fc.agent}/bin/fc-create-vm -I {name}
-      ''
-      + lib.optionalString (cfg.mkfsXfsFlags != null) ''
-        mkfs-xfs = ${cfg.mkfsXfsFlags}
-      '';
+    environment.etc."qemu/fc-qemu.conf".source = fcQemuConfFormat.generate "fc-qemu.conf" cfg.settings;
 
     # This needs to stay as is because the path is kept alive during live
     # migration.
