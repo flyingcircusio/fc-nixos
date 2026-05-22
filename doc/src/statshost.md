@@ -10,6 +10,15 @@ In order to configure this stack, you just need to add the `statshost-master` ro
 and optionally the `loki` role if you want to ingest, store and visualize logs like the system journal
 or other logfiles on your VMs.
 
+If you wish to also ingest metrics and logs from other RGs, you can add the `loki-relay` and `statshost-relay`
+roles to one of the VMs in each RG.
+This will enable role configuration for the stasthost-master role in the role section of that VM's overview
+on [my.flyingcircus.io](https://my.flyingcircus.io) where you can pick a `statshost-master` for logs and
+metrics from that VM's RG.
+You can choose between all VMs with the `statshost-master` role in other RGs that belong to the same customer.
+We currently only support sending logs and metrics to one remote target.
+
+
 ## Configuration
 
 To make our stack fit your application, you can of course configure them to suit your use-case.
