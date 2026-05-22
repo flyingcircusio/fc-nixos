@@ -15,8 +15,6 @@ with builtins;
 let
   fclib = config.fclib;
   enc = config.flyingcircus.enc;
-  roleConfig = enc.role_configuration."statshost-relay";
-  prometheusHosts = roleConfig.relay_from_details;
 
   localDir = "/etc/local/statshost";
 
@@ -49,11 +47,14 @@ let
   prometheusMetricRelabel = cfgStats.prometheusMetricRelabel ++ customRelabelConfig;
 
   relayRGNodes =
-    (lib.mapAttrsToList (n: _: {
-      job_name = n;
-      proxy_url = "http://${n}.fcio.net:9090";
-    }) prometheusHosts)
-    ++ (fclib.jsonFromFile "${localDir}/relays.json" "[]");
+    let
+      enc_relays = lib.mapAttrsToList (n: _: {
+        job_name = n;
+        proxy_url = "http://${n}.fcio.net:9090";
+      }) (enc.role_configuration."statshost-relay".relay_from_details or { });
+      local_relays = fclib.jsonFromFile "${localDir}/relays.json" "[]";
+    in
+    local_relays ++ enc_relays;
 
   relayLocationNodes = map (
     proxy:
