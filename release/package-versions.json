@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-148.0.7778.167",
+    "name": "chromedriver-unwrapped-148.0.7778.178",
     "pname": "chromedriver-unwrapped",
-    "version": "148.0.7778.167"
+    "version": "148.0.7778.178"
   },
   "chromium": {
-    "name": "chromium-148.0.7778.167",
+    "name": "chromium-148.0.7778.178",
     "pname": "chromium",
-    "version": "148.0.7778.167"
+    "version": "148.0.7778.178"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -150,9 +150,9 @@
     "version": "5.3.28"
   },
   "discourse": {
-    "name": "discourse-2026.1.3",
+    "name": "discourse-2026.1.4",
     "pname": "discourse",
-    "version": "2026.1.3"
+    "version": "2026.1.4"
   },
   "dnsmasq": {
     "name": "dnsmasq-2.92rel2",
@@ -210,9 +210,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-150.0.3",
+    "name": "firefox-151.0.1",
     "pname": "firefox",
-    "version": "150.0.3"
+    "version": "151.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-14.3.0",
@@ -240,9 +240,9 @@
     "version": "18.11.3"
   },
   "github-runner": {
-    "name": "github-runner-2.333.1",
+    "name": "github-runner-2.334.0",
     "pname": "github-runner",
-    "version": "2.333.1"
+    "version": "2.334.0"
   },
   "gitlab": {
     "name": "gitlab-18.11.3",
@@ -315,9 +315,9 @@
     "version": "7.1.2-19"
   },
   "imagemagick6": {
-    "name": "imagemagick-6.9.13-38",
+    "name": "imagemagick-6.9.13-48",
     "pname": "imagemagick",
-    "version": "6.9.13-38"
+    "version": "6.9.13-48"
   },
   "inetutils": {
     "name": "inetutils-2.7",
@@ -495,9 +495,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.5.9",
+    "name": "mastodon-4.5.10",
     "pname": "mastodon",
-    "version": "4.5.9"
+    "version": "4.5.10"
   },
   "matomo": {
     "name": "matomo-5.8.0",
@@ -520,9 +520,9 @@
     "version": "1.6.39"
   },
   "mongodb": {
-    "name": "mongodb-7.0.31",
+    "name": "mongodb-7.0.34",
     "pname": "mongodb",
-    "version": "7.0.31"
+    "version": "7.0.34"
   },
   "monitoring-plugins": {
     "name": "monitoring-plugins-2.4.0",
@@ -665,9 +665,9 @@
     "version": "10.46"
   },
   "pdns": {
-    "name": "pdns-4.9.14",
+    "name": "pdns-4.9.15",
     "pname": "pdns",
-    "version": "4.9.14"
+    "version": "4.9.15"
   },
   "percona": {
     "name": "percona-server-8.4.7-7",
@@ -1141,9 +1141,9 @@
     "version": "7.7.3"
   },
   "varnish80": {
-    "name": "varnish-8.0.1",
+    "name": "varnish-8.0.2",
     "pname": "varnish",
-    "version": "8.0.1"
+    "version": "8.0.2"
   },
   "vim": {
     "name": "vim-9.2.0340",
