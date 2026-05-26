@@ -13,7 +13,8 @@
     "openssl-1.1.1w" # EOL 2023-09-11, needed for Percona and older PHP versions.
     "python-2.7.18.12" # Needed for some legacy customer applications.
     "ruby-2.7.8" # EOL 2023-03-31, needed for Sensu checks
-    "docker-24.0.9" # Old installs still use storage driver removed in 25.x.
     "jitsi-meet-1.0.8792" # insecure libolm but this only affects optional e2ee which we don't really support.
+    "nodejs-slim-20.20.2" # EOL, required by github-runner
+    "nodejs-20.20.2" # EOL, required by github-runner
   ];
 }

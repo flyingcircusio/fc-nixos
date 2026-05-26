@@ -66,6 +66,7 @@ import ./make-test-python.nix (
         '';
       in
       ''
+        alloy.wait_for_open_port(3100)
         alloy.wait_for_unit("testservice.service")
         alloy.sleep(1)
         alloy.succeed('${testscript}')
