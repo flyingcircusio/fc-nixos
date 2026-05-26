@@ -564,15 +564,15 @@
     "pname": "nodejs",
     "version": "24.15.0"
   },
-  "nodejs_20": {
-    "name": "nodejs-20.20.2",
-    "pname": "nodejs",
-    "version": "20.20.2"
-  },
   "nodejs_22": {
     "name": "nodejs-22.22.3",
     "pname": "nodejs",
     "version": "22.22.3"
+  },
+  "nodejs_24": {
+    "name": "nodejs-24.15.0",
+    "pname": "nodejs",
+    "version": "24.15.0"
   },
   "nspr": {
     "name": "nspr-4.39",
