@@ -5,11 +5,10 @@
 :::{warning}
 The currently supported MongoDB
 versions are outdated and are only provided for the purpose of upgrading
-older machines to 25.05.
+older machines to 25.11.
 
-New projects should not use MongoDB. As a replacement, we offer a
-{ref}`FerretDB role <nixos-ferretdb>` which is currently in beta.
-[FerretDB](https://www.ferretdb.com) builds on PostgreSQL and is compatible
+Instead of MongoDB, we also offer a {ref}`FerretDB role <nixos-ferretdb>` which is currently in beta.
+[FerretDB](https://www.ferretdb.com) which builds on PostgreSQL and is compatible
 to MongoDB for many use cases.
 :::
 

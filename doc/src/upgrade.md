@@ -16,9 +16,20 @@ Contact our [support](/platform/index.html#support) for upgrade assistance.
 ## Overview
 
 - New roles:
+  - mariadb114
+  - mariadb118
+  - mongodb70
+  - mongodb80
 - Removed roles:
+  - {ref}`percona80 <nixos-upgrade-percona>`
 - Roles affected by significant breaking changes:
+  - {ref}`mailserver <nixos-upgrade-mail>`
+  - {ref}`mailstub <nixos-upgrade-mail>`
+  - {ref}`opensearch <nixos-upgrade-opensearch>`
+  - {ref}`slurm <nixos-upgrade-slurm>`
+  - {ref}`webproxy <nixos-upgrade-webproxy>`
 - Removed significant packages:
+  - varnish77
 
 ## Why upgrade? Security
 
@@ -26,14 +37,11 @@ Upgrading to the latest platform version as soon as possible is important to
 get all security package updates and other security-related improvements
 provided by NixOS (our "upstream" distribution we build on).
 
-We do back-ports for critical security issues but this may take longer in some
-cases and less important security fixes will not be back-ported most of the time.
-
 NixOS provides regular security updates for about one month after the release.
-Upstream support for 26.05 ends on **2026-06-30**.
+Upstream support for 25.11 ends on **2026-06-30**, upstream support for 26.05 ends on **2026-12-31**.
 
-New platform features are always developed for the current stable platform version
-and only critical bug fixes are back-ported to older versions.
+New platform features are always developed for the current stable platform version.
+Only very critical bug and security fixes are backported to older platform versions that are out of support upstream.
 
 ## How to upgrade?
 
@@ -61,16 +69,14 @@ like containers.
 
 ### Upgrade staging first
 
-Upgrades should always be checked in a staging environment first. We usually
-upgrade customer staging machines from our side as soon as the new platform
-version is ready for general testing. This is announced via our
-[Flying Circus Statuspage](https://status.flyingcircus.io) where you can
-also subscribe to updates.
+Upgrades should always be checked in a staging environment first.
+For managed deployments, our AppOps team coordinates this update,
+for guided and hosted VMs, please update yourself.
 
 ### Upgrade to the next platform version
 
 We strongly advise upgrading platform versions one at a time without skipping
-versions. Here we assume that you are upgrading from the 24.11 platform.
+versions. Here we assume that you are upgrading from the 25.11 platform.
 Please refrain from opening support cases for broken upgrade paths from older
 platform versions. The resolution is to upgrade one version at a time.
 
@@ -106,6 +112,8 @@ time-window.
 
 ## Significant breaking changes
 
+(nixos-upgrade-mail)=
+
 ### Mailserver / Mailstub
 
 Dovecot was updated from 2.3 to 2.4. This update contains a full rewrite of the configuration.
@@ -129,13 +137,19 @@ over STARTTLS soon. Please already migrate your applications to use SMTP over SS
 
 We removed the `percona80` role, as MySQL 8.0 is end-of-life and Percona 8.0 is likely not receiving security updates anymore.
 
-Please upgrade to `percona84` before upgrading.
+Please upgrade to `percona84` before upgrading the VM to fc-nixos 26.05.
 
 Percona Server 8.4 now has `caching_sha2_password` as default authentication plugin.
 This means that new user passwords are hashed with this mechanism and clients need to support this.
 We still support the old hashes up to Percona Server 9.7 when these will be removed.
 Please read the [Percona Server Upgrade Guide](https://docs.percona.com/percona-server/8.4/upgrade.html) for more
 information about the upgrade.
+
+### MariaDB
+
+We now also support MariaDB 11.4 and 11.8 as an alternative to Percona based on MySQL.
+
+There is no in-place migration from Percona to MariaDB.
 
 (nixos-upgrade-slurm)=
 
@@ -148,6 +162,8 @@ for details.
 Regarding new features or changes in Slurm itself,
 consult [its release notes](https://github.com/SchedMD/slurm/blob/slurm-25-11-1-1/RELEASE_NOTES.md).
 
+(nixos-upgrade-rabbitmq)=
+
 ### RabbitMQ
 
 Metrics for RabbitMQ are now only provided by the `rabbitmq_prometheus` exporter,
@@ -158,7 +174,7 @@ since the Flying Circus 25.05 platform release.
 Our statshost have a *RabbitMQ-Overview* dashboard available displaying this data.
 
 <details><summary>Removed metric names:</summary>
-```
+<pre>
 rabbitmq_exchange_messages_publish_in
 rabbitmq_exchange_messages_publish_in_rate
 rabbitmq_exchange_messages_publish_out
@@ -230,11 +246,11 @@ rabbitmq_overview_messages_unacked
 rabbitmq_overview_queues
 rabbitmq_overview_return_unroutable
 rabbitmq_overview_return_unroutable_rate
-```
+</pre>
 </details>
 
 <details><summary>Added metric names:</summary>
-```
+<pre>
 erlang_vm_allocators
 erlang_vm_atom_count
 erlang_vm_atom_limit
@@ -422,7 +438,7 @@ rabbitmq_schema_db_disk_tx_total
 rabbitmq_schema_db_ram_tx_total
 rabbitmq_stream_segments
 rabbitmq_unreachable_cluster_peers_count
-```
+</pre>
 </details>
 
 ### fc-userscan
@@ -431,6 +447,15 @@ fc-userscan no longer scans for nix store references in human users and all
 existing garbage collection roots will be removed. Service users are not
 affected. You can still add gcroots manually (e.g. via `nix-store --add-root`).
 
+(nixos-upgrade-opensearch)=
+
+### Opensearch
+
+OpenSearch was updated from version 2 to 3.5.
+Please review the breaking changes for this update: [breaking changes](https://docs.opensearch.org/latest/breaking-changes/#300).
+The update happens in place when upgrading the VM with the opensearch role to fc-nixos 26.05.
+
+(nixos-upgrade-webproxy)=
 
 ### Webproxy: Vinyl Cache and Varnish Cache
 
@@ -463,6 +488,8 @@ suggest migration paths tailored to the VMs' specific situation.
 - `services.dovecot2.extraConfig` was removed. Migrate configuration to `services.dovecot2.settings`.
 
 - `security.dhparams` has been deprecated. Remove any uses of DHE and migrate to ECDHE (RFC 8422, 2018) and Hybrid PQ (draft-ietf-tls-ecdhe-mlkem, 2026) key exchange algorithms. `security.dhparams` will be removed in fc-nixos 26.11
+
+- The `lamp` role supports PHP 8.5
 
 ## Known issues
 
