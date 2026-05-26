@@ -10,10 +10,10 @@ This component sets up a managed instance of the MariaDB database server.
 
 There's a role for each supported version, currently:
 
-- mariadb1011: MariaDB 10.11 (LTS)
 - mariadb114: MariaDB 11.4 (LTS)
+- mariadb118: MariaDB 11.8 (LTS)
 
-We recommend the use of `mariadb114`, as this is the most up to date LTS release.
+We recommend the use of `mariadb118`, as this is the most up to date LTS release.
 All of versions marked with EOL don't receive security updates and are only included to allow
 the upgrade of existing machines to this platform version.
 

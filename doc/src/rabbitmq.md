@@ -2,7 +2,7 @@
 
 # RabbitMQ
 
-A managed instance of the [RabbitMQ](http://rabbitmq.com) message broker in the latest version provided by NixOS which is 4.0 at the moment.
+A managed instance of the [RabbitMQ](http://rabbitmq.com) message broker in the latest version provided by NixOS which is 4.2 at the moment.
 
 ## Configuration
 

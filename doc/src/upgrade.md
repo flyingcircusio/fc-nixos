@@ -29,7 +29,7 @@ Contact our [support](/platform/index.html#support) for upgrade assistance.
   - {ref}`slurm <nixos-upgrade-slurm>`
   - {ref}`webproxy <nixos-upgrade-webproxy>`
 - Removed significant packages:
-
+  - varnish77
 
 ## Why upgrade? Security
 
