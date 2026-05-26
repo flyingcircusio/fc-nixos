@@ -18,5 +18,7 @@
     "jitsi-meet-1.0.8792" # insecure libolm but this only affects optional e2ee which we don't really support.
     "k3s-1.31.14+k3s1" # EOL, but we want to keep it
     "varnish-7.7.3" # EOL, known vulnerability (FC-52533). We will also recommend updating to varnish8, but there are breaking config changes.
+    "nodejs-slim-20.20.2" # EOL, required by github-runner
+    "imagemagick-6.9.13-48" # We're warning already that imagemagick 6 is EOL, but still allow it. See pkgs/overlay.nix
   ];
 }
