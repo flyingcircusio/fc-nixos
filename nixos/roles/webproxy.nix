@@ -81,7 +81,7 @@ in
         };
         varnish_http =
           let
-            check-varnish-http = pkgs.writers.writePython3BinFromFile ./check-vinyl-cache-http.py {
+            check-varnish-http = pkgs.writers.writePython3BinFromFile ./check-varnish-cache-http.py {
               dependencies = [
                 cfg.package
                 pkgs.monitoring-plugins

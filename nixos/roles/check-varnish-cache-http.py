@@ -4,7 +4,7 @@ import sys
 ports = []
 
 for line in (
-    subprocess.check_output(["vinyladm", "debug.listen_address"])
+    subprocess.check_output(["varnishadm", "debug.listen_address"])
     .decode("ascii")
     .splitlines()
 ):
@@ -15,7 +15,7 @@ for line in (
     ports.append((ip, port))
 
 if not ports:
-    print("No listen_address reported by vinyladm")
+    print("No listen_address reported by varnishadm")
     sys.exit(2)
 
 STATUS = 0
