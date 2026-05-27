@@ -632,6 +632,8 @@ None.
 * `util-linux`: 2.41.4 -> 2.42
 * `uv`: 0.9.30 -> 0.11.16
 * `varnish`: 7.7.3 -> 8.0.2
+* `vinyl-cache`: initialized at 9.0.1 (new)
+* `vinyl-cache_9`: initialized at 9.0.1 (new)
 * `vim`: 9.2.0340 -> 9.2.0389
 * `wireguard-tools`: 1.0.20250521 -> 1.0.20260223
 * `xfsprogs`: 6.17.0 -> 6.19.0

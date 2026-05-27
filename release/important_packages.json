@@ -221,6 +221,8 @@
   "util-linux",
   "uv",
   "varnish",
+  "vinyl-cache",
+  "vinyl-cache_9",
   "vim",
   "wget",
   "wireguard-tools",

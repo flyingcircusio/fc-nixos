@@ -1104,6 +1104,16 @@
     "pname": "vim",
     "version": "9.2.0389"
   },
+  "vinyl-cache": {
+    "name": "vinyl-cache-9.0.1",
+    "pname": "vinyl-cache",
+    "version": "9.0.1"
+  },
+  "vinyl-cache_9": {
+    "name": "vinyl-cache-9.0.1",
+    "pname": "vinyl-cache",
+    "version": "9.0.1"
+  },
   "wget": {
     "name": "wget-1.25.0",
     "pname": "wget",
