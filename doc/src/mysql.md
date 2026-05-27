@@ -17,6 +17,15 @@ There's a role for each supported version, currently:
 
 Percona 9.7 will be the next version added as soon as it's released.
 
+(nixos-mysql-upgrade)=
+
+## Upgrade
+
+Upgrading to a newer version of MySQL happens in place.
+The requirement for an in-place upgrade is to go from one LTS release to the next one, without skipping any.
+This means e.g. upgrading 8.0 -> 8.4 -> 9.7.
+Read the [MySQL](https://dev.mysql.com/doc/refman/8.4/en/upgrade-paths.html) documentation for more information.
+
 ## Configuration
 
 MySQL works out-of-the box without configuration.

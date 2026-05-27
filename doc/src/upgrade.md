@@ -29,7 +29,19 @@ Contact our [support](/platform/index.html#support) for upgrade assistance.
   - {ref}`slurm <nixos-upgrade-slurm>`
   - {ref}`webproxy <nixos-upgrade-webproxy>`
 - Removed significant packages:
-  - varnish77
+  - `python310`
+  - `k3s_1_32`
+  - `python38`
+  - `percona`
+  - `percona-server_8_0`
+  - `mysql80`
+  - `xorg.libX11`
+  - `promtail`
+  - `percona-xtrabackup_8_0`
+  - `percona57`
+  - `percona80`
+  - `imagemagick6`
+  - `k3s_1_31`
 
 ## Why upgrade? Security
 
@@ -116,20 +128,28 @@ time-window.
 
 ### Mailserver / Mailstub
 
-Dovecot was updated from 2.3 to 2.4. This update contains a full rewrite of the configuration.
-Please read the [dovecot upgrade documentation](https://doc.dovecot.org/2.4.3/installation/upgrade/2.3-to-2.4.html)
-for more information about the upgrade.
-The NixOS option `services.dovecot2.extraConfig` has been removed.
-Configuration for dovecot in NixOS now works via `services.dovecot2.settings`.
-
-Configuring postfix via `services.postfix.extraConfig`, `/etc/local/mail/main.cf`,
-`/etc/local/postfix/main.cf` is not allowed anymore.
-Please migrate to structured config with `services.postfix.settings.main`.
-
 SMTP with STARTTLS over port 587 (also known as Submission) is deprecated and
 scheduled for deactivation in fc-nixos 26.11.
 We will provide a migration check that checks for remaining usages of SMTP
 over STARTTLS soon. Please already migrate your applications to use SMTP over SSL/TLS via port 465.
+
+Our mailserver role uses Dovecot internally for receiving e-mails and Postfix for sending e-mails.
+Our mailstub role uses Postfix for sending e-mails.
+
+If you don't have custom Dovecot or Postfix configuration, no action is required regarding the following section.
+
+Dovecot was updated from 2.3 to 2.4. This update contains a full rewrite of the configuration system.
+For a detailed migration guide, see the [dovecot upgrade documentation](https://doc.dovecot.org/2.4.3/installation/upgrade/2.3-to-2.4.html).
+
+The NixOS option `services.dovecot2.extraConfig` has been removed.
+Configuration for dovecot in NixOS now works via `services.dovecot2.settings`.
+
+For the migration of custom configuration to Dovecot 2.4, Dovecot provides a [config upgrader](https://dovecot.org/upgrader/).
+You can use this to convert your settings previously specified in `services.dovecot2.extraConfig` to equivalent ones compatible with Dovecot 2.4 in `services.dovecot2.settings`.
+
+Configuring postfix via `services.postfix.extraConfig`, `/etc/local/mail/main.cf`,
+`/etc/local/postfix/main.cf` is not allowed anymore.
+Please migrate to structured config with `services.postfix.settings.main`.
 
 (nixos-upgrade-percona)=
 
@@ -137,7 +157,9 @@ over STARTTLS soon. Please already migrate your applications to use SMTP over SS
 
 We removed the `percona80` role, as MySQL 8.0 is end-of-life and Percona 8.0 is likely not receiving security updates anymore.
 
-Please upgrade to `percona84` before upgrading the VM to fc-nixos 26.05.
+Please upgrade to `percona84` by changing the role of the VM to `percona84` before upgrading the VM to fc-nixos 26.05.
+This upgrade happens then in place with the requirement that you previously used `percona80`.
+Read the {ref}`role-documentation <nixos-mysql-upgrade>` for more information about the upgrade path.
 
 Percona Server 8.4 now has `caching_sha2_password` as default authentication plugin.
 This means that new user passwords are hashed with this mechanism and clients need to support this.
@@ -479,7 +501,7 @@ suggest migration paths tailored to the VMs' specific situation.
 
 ## Other notable changes
 
-- The `imagemagick6` family of packages has known vulnerabilities and is not permitted by default anymore. Update your applications to work with a current version of imagemagick, or add this to `flyingcircus.permittedInsecurePackages`.
+- The `imagemagick6` family of packages has known vulnerabilities and has been removed. Please upgrade to `imagemagick`, which is version 7.
 
 - The sensu `swap` checks have been removed, as they are no longer relevant with systemd-oomd, which we introduced in fc-nixos 25.11
 
@@ -489,10 +511,130 @@ suggest migration paths tailored to the VMs' specific situation.
 
 - `security.dhparams` has been deprecated. Remove any uses of DHE and migrate to ECDHE (RFC 8422, 2018) and Hybrid PQ (draft-ietf-tls-ecdhe-mlkem, 2026) key exchange algorithms. `security.dhparams` will be removed in fc-nixos 26.11
 
-- The `lamp` role supports PHP 8.5
-
 ## Known issues
 
 None.
 
 ## Significant package updates
+
+(as of 2026-05-27)
+
+* `awscli`: 1.42.18 -> 1.44.21
+* `awscli2`: 2.31.39 -> 2.34.24
+* `bash`: 5.3p3 -> 5.3p9
+* `bind`: 9.20.21 -> 9.20.23
+* `binutils`: 2.44 -> 2.46
+* `calibre`: 8.14.0 -> 9.8.0
+* `cifs-utils`: 7.4 -> 7.5
+* `containerd`: 2.2.1 -> 2.3.0
+* `coreutils`: 9.8 -> 9.11
+* `curl`: 8.19.0 -> 8.20.0
+* `docker-compose`: 2.40.3 -> 5.1.4
+* `docker`: 28.5.2 -> 29.5.1
+* `dovecot`: 2.3.21.1 -> 2.4.4
+* `element-web`: 1.12.14 -> 1.12.18
+* `fetchmail`: 6.6.1 -> 6.6.3
+* `ffmpeg`: 8.0 -> 8.1
+* `file`: 5.45 -> 5.47
+* `gcc`: 14.3.0 -> 15.2.0
+* `ghostscript`: 10.06.0 -> 10.07.0
+* `git`: 2.51.2 -> 2.54.0
+* `glibc`: 2.40 -> 2.42
+* `go`: 1.25.9 -> 1.26.3
+* `grafana`: 12.3.6+security-01 -> 13.0.1+security-01
+* `haproxy`: 3.2.9 -> 3.3.9
+* `imagemagick`: 7.1.2-19 -> 7.1.2-23
+* `imagemagick6` removed
+* `iperf3`: 3.19.1 -> 3.20
+* `irqbalance`: 1.9.4-unstable-2025-06-10 -> 1.9.5
+* `jdk`: 21.0.10+7 -> 21.0.12+2
+* `jetbrains.jdk`: 21.0.9-b1163.86 -> 25.0.2-b329.72
+* `jetty`: 12.1.4 -> 12.1.9
+* `jre`: 21.0.10+7 -> 21.0.12+2
+* `k3s_1_31` removed
+* `k3s_1_32` removed
+* `k3s_1_33`: 1.33.9+k3s1 -> 1.33.11+k3s1
+* `k3s_1_34`: initialized at 1.34.7+k3s1 (new)
+* `k3s`: 1.34.5+k3s1 -> 1.35.4+k3s1
+* `keycloak`: 26.5.7 -> 26.6.2
+* `kubernetes-helm`: 3.19.1 -> 3.20.2
+* `libx11`: initialized at 1.8.13 (new)
+* `libxml2`: 2.15.1 -> 2.15.2
+* `mailutils`: 3.19 -> 3.21
+* `mariadb`: 11.4.8 -> 11.4.9
+* `matomo`: 5.8.0 -> 5.10.0
+* `matrix-synapse`: 1.152.1 -> 1.153.0
+* `mcpp`: 2.7.2.2 -> 2.7.2.3
+* `memcached`: 1.6.39 -> 1.6.42
+* `mstflint`: 4.34.0-1 -> 4.36.0-1
+* `mysql`: 11.4.8 -> 11.4.9
+* `mysql80` removed
+* `nfs-utils`: 2.8.6 -> 2.9.1
+* `nginx`: 1.28.3 -> 1.30.2
+* `nginxMainline`: 1.29.7 -> 1.31.1
+* `nginxStable`: 1.28.3 -> 1.30.2
+* `nix`: 2.31.5 -> 2.34.7
+* `nodejs_22`: 22.22.2 -> 22.22.3
+* `nodejs_24`: 24.16.0 -> 24.15.0
+* `nodejs`: 22.22.2 -> 24.15.0
+* `nspr`: 4.38.2 -> 4.39
+* `nvme-cli`: 2.15 -> 2.16
+* `openjdk`: 21.0.10+7 -> 21.0.12+2
+* `openldap`: 2.6.9 -> 2.6.13
+* `opensearch-dashboards`: 2.19.2 -> 3.5.0
+* `opensearch`: 2.19.2 -> 3.5.0
+* `pciutils`: 3.14.0 -> 3.15.0
+* `pdns`: 4.9.15 -> 5.0.5
+* `percona-server_8_0` removed
+* `percona-server`: 8.4.7-7 -> 8.4.8-8
+* `percona-xtrabackup_8_0` removed
+* `percona` removed
+* `percona80` removed
+* `podman`: 5.7.0 -> 5.8.2
+* `poetry`: 2.2.1 -> 2.4.1
+* `polkit`: 126 -> 127
+* `postfix`: 3.10.7 -> 3.11.3
+* `postgresql14Packages.postgis`: 3.6.1 -> 3.6.3
+* `postgresql15Packages.postgis`: 3.6.1 -> 3.6.3
+* `postgresql16Packages.postgis`: 3.6.1 -> 3.6.3
+* `postgresql17Packages.postgis`: 3.6.1 -> 3.6.3
+* `postgresql18Packages.postgis`: 3.6.1 -> 3.6.3
+* `postgresqlPackages.postgis`: 3.6.1 -> 3.6.3
+* `prometheus`: 3.7.2 -> 3.11.3
+* `promtail` removed
+* `python3`: 3.13.12 -> 3.13.13
+* `python310` removed
+* `python38` removed
+* `python3Packages.boto3`: 1.40.18 -> 1.42.31
+* `python3Packages.click`: 8.2.1 -> 8.3.1
+* `python3Packages.pillow`: 12.1.1 -> 12.2.0
+* `python3Packages.pip`: 25.0.1 -> 25.3
+* `python3Packages.pystemd`: 0.13.4 -> 0.15.3
+* `python3Packages.rich-rst`: 1.3.1 -> 1.3.2
+* `python3Packages.rich`: 14.1.0 -> 14.3.3
+* `python3Packages.urllib3`: 2.5.0 -> 2.6.3
+* `qemu-ceph-pacific`: 10.1.5 -> 10.2.2
+* `rabbitmq-server`: 4.2.1 -> 4.2.5
+* `rclone`: 1.72.1 -> 1.74.2
+* `re2c`: 4.3.1 -> 4.5.1
+* `rich-cli`: 1.8.0 -> 1.8.1
+* `roundcube`: 1.6.15 -> 1.7.0
+* `ruby`: 3.3.10 -> 3.4.9
+* `runc`: 1.3.3 -> 1.4.2
+* `slurm`: 25.05.3.1 -> 25-11-6-1
+* `strace`: 6.18 -> 7.0
+* `systemd`: 258.7 -> 260.1
+* `tcpdump`: 4.99.5 -> 4.99.6
+* `telegraf`: 1.36.4 -> 1.38.4
+* `tomcat10`: 10.1.54 -> 10.1.55
+* `tomcat9`: 9.0.117 -> 9.0.118
+* `usbutils`: 018 -> 019
+* `util-linux`: 2.41.4 -> 2.42
+* `uv`: 0.9.30 -> 0.11.16
+* `varnish`: 7.7.3 -> 8.0.2
+* `vinyl-cache`: initialized at 9.0.1 (new)
+* `vinyl-cache_9`: initialized at 9.0.1 (new)
+* `vim`: 9.2.0340 -> 9.2.0389
+* `wireguard-tools`: 1.0.20250521 -> 1.0.20260223
+* `xfsprogs`: 6.17.0 -> 6.19.0
+* `xorg.libX11` removed
