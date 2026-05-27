@@ -116,20 +116,28 @@ time-window.
 
 ### Mailserver / Mailstub
 
-Dovecot was updated from 2.3 to 2.4. This update contains a full rewrite of the configuration.
-Please read the [dovecot upgrade documentation](https://doc.dovecot.org/2.4.3/installation/upgrade/2.3-to-2.4.html)
-for more information about the upgrade.
-The NixOS option `services.dovecot2.extraConfig` has been removed.
-Configuration for dovecot in NixOS now works via `services.dovecot2.settings`.
-
-Configuring postfix via `services.postfix.extraConfig`, `/etc/local/mail/main.cf`,
-`/etc/local/postfix/main.cf` is not allowed anymore.
-Please migrate to structured config with `services.postfix.settings.main`.
-
 SMTP with STARTTLS over port 587 (also known as Submission) is deprecated and
 scheduled for deactivation in fc-nixos 26.11.
 We will provide a migration check that checks for remaining usages of SMTP
 over STARTTLS soon. Please already migrate your applications to use SMTP over SSL/TLS via port 465.
+
+Our mailserver role uses Dovecot internally for receiving e-mails and Postfix for sending e-mails.
+Our mailstub role uses Postfix for sending e-mails.
+
+If you don't have custom Dovecot or Postfix configuration, no action is required regarding the following section.
+
+Dovecot was updated from 2.3 to 2.4. This update contains a full rewrite of the configuration system.
+For a detailed migration guide, see the [dovecot upgrade documentation](https://doc.dovecot.org/2.4.3/installation/upgrade/2.3-to-2.4.html).
+
+The NixOS option `services.dovecot2.extraConfig` has been removed.
+Configuration for dovecot in NixOS now works via `services.dovecot2.settings`.
+
+For the migration of custom configuration to Dovecot 2.4, Dovecot provides a [config upgrader](https://dovecot.org/upgrader/).
+You can use this to convert your settings previously specified in `services.dovecot2.extraConfig` to equivalent ones compatible with Dovecot 2.4 in `services.dovecot2.settings`.
+
+Configuring postfix via `services.postfix.extraConfig`, `/etc/local/mail/main.cf`,
+`/etc/local/postfix/main.cf` is not allowed anymore.
+Please migrate to structured config with `services.postfix.settings.main`.
 
 (nixos-upgrade-percona)=
 
@@ -137,7 +145,9 @@ over STARTTLS soon. Please already migrate your applications to use SMTP over SS
 
 We removed the `percona80` role, as MySQL 8.0 is end-of-life and Percona 8.0 is likely not receiving security updates anymore.
 
-Please upgrade to `percona84` before upgrading the VM to fc-nixos 26.05.
+Please upgrade to `percona84` by changing the role of the VM to `percona84` before upgrading the VM to fc-nixos 26.05.
+This upgrade happens then in place with the requirement that you previously used `percona80`.
+Read the {ref}`role-documentation <nixos-mysql-upgrade>` for more information about the upgrade path.
 
 Percona Server 8.4 now has `caching_sha2_password` as default authentication plugin.
 This means that new user passwords are hashed with this mechanism and clients need to support this.
@@ -479,7 +489,7 @@ suggest migration paths tailored to the VMs' specific situation.
 
 ## Other notable changes
 
-- The `imagemagick6` family of packages has known vulnerabilities and is not permitted by default anymore. Update your applications to work with a current version of imagemagick, or add this to `flyingcircus.permittedInsecurePackages`.
+- The `imagemagick6` family of packages has known vulnerabilities and has been removed. Please upgrade to `imagemagick`, which is version 7.
 
 - The sensu `swap` checks have been removed, as they are no longer relevant with systemd-oomd, which we introduced in fc-nixos 25.11
 
@@ -488,8 +498,6 @@ suggest migration paths tailored to the VMs' specific situation.
 - `services.dovecot2.extraConfig` was removed. Migrate configuration to `services.dovecot2.settings`.
 
 - `security.dhparams` has been deprecated. Remove any uses of DHE and migrate to ECDHE (RFC 8422, 2018) and Hybrid PQ (draft-ietf-tls-ecdhe-mlkem, 2026) key exchange algorithms. `security.dhparams` will be removed in fc-nixos 26.11
-
-- The `lamp` role supports PHP 8.5
 
 ## Known issues
 
