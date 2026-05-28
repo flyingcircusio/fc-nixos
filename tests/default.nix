@@ -71,10 +71,10 @@ in
     clientCephRelease = "nautilus";
     serverCephRelease = "pacific";
   };
-  #kvm_host_ceph-pacific-pacific = callTest ./kvm_host_ceph-nautilus.nix {
-  #  clientCephRelease = "pacific";
-  #  serverCephRelease = "pacific";
-  #};
+  kvm_host_ceph-pacific-pacific = callTest ./kvm_host_ceph-nautilus.nix {
+    clientCephRelease = "pacific";
+    serverCephRelease = "pacific";
+  };
   lampVm = callTest ./lamp/vm-test.nix { };
   lampVm72 = callTest ./lamp/vm-test.nix { version = "lamp_php72"; };
   lampVm73 = callTest ./lamp/vm-test.nix { version = "lamp_php73"; };
