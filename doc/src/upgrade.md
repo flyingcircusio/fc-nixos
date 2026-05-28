@@ -28,6 +28,7 @@ Contact our [support](/platform/index.html#support) for upgrade assistance.
   - {ref}`opensearch <nixos-upgrade-opensearch>`
   - {ref}`slurm <nixos-upgrade-slurm>`
   - {ref}`webproxy <nixos-upgrade-webproxy>`
+  - {ref}`k3s <nixos-upgrade-k3s>`
 - Removed significant packages:
   - `python310`
   - `k3s_1_32`
@@ -499,13 +500,30 @@ We support this migration with NixOS warnings, which you can review using the co
 After migrating to fc-nixos 26.05, this command will highlight any deprecated behaviour and
 suggest migration paths tailored to the VMs' specific situation.
 
+(nixos-upgrade-k3s)=
+
+### k3s
+
+The default network configuration for new Kubernetes clusters has changed, and
+dual-stack networking is now enabled by default. Existing clusters are not
+affected by this change, so the existing configuration will be preserved when
+upgrading to 26.05.
+
+However, adding new agent VM's to clusters upgraded from older platform versions
+may require extra configuration due to the change in defaults. See the
+{ref}`role documentation <nixos-k3s-ipv6>` for IPv6 support in k3s for further
+information.
+
+The default `k3s` package has also been bumped to 1.33. Existing clusters may
+need to be updated to this version before upgrading cluster VM's to the 26.05
+platform. See the role documentation for {ref}`cluster version updates
+<nixos-k3s-update-versions>`.
+
 ## Other notable changes
 
 - The `imagemagick6` family of packages has known vulnerabilities and has been removed. Please upgrade to `imagemagick`, which is version 7.
 
 - The sensu `swap` checks have been removed, as they are no longer relevant with systemd-oomd, which we introduced in fc-nixos 25.11
-
-- The default `k3s` package has been bumped to 1.33
 
 - `services.dovecot2.extraConfig` was removed. Migrate configuration to `services.dovecot2.settings`.
 

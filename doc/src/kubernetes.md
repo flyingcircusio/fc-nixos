@@ -427,6 +427,8 @@ on your requirements there are a few more options available:
 }
 ```
 
+(nixos-k3s-ipv6)=
+
 ### IPv6 support
 
 By default, new Kubernetes clusters in our environment are configured with
@@ -502,6 +504,7 @@ Outside of upgrade scenarios, all nodes in the cluster should be running the
 same version of k3s.
 :::
 
+(nixos-k3s-update-versions)=
 
 ### Updating k3s
 
