@@ -429,27 +429,35 @@ on your requirements there are a few more options available:
 
 ### IPv6 support
 
-By default, Kubernetes clusters in our environment are configured with
-single-stack IPv4-only networking. This means that pods are only assigned a single
-IPv4 address, and cannot access external IPv6-only hosts.
+By default, new Kubernetes clusters in our environment are configured with
+dual-stack networking enabled. This means that pods are assigned both an IPv4
+and an IPv6 address, and can access external hosts over both address families.
 
-However, we provide the option to enable dual-stack networking when the cluster is
-first created, so that pods can be assigned both IPv4 and IPv6
-addresses. Dual-stack networking can be enabled by setting the
-`flyingcircus.kubernetes.network.enableIPv6` NixOS option to `true` in the host
-configuration on each node in the cluster, **before** any k3s roles are added to
-the node.
+Dual-stack networking can be disabled when the cluster is first created by
+setting the `flyingcircus.kubernetes.network.enableIPv6` NixOS option to `false`
+in the host configuration in each node in the cluster before any k3s roles are
+assigned. In this case, pods will only receive a single IPv4 address. However,
+single-stack networking in Kubernetes is **not recommended**.
 
 :::{warning}
 It is not possible to change the value of the
 `flyingcircus.kubernetes.network.enableIPv6` option after the cluster is
-created. Changing this value after cluster creation (after the k3s daemon has been
-started for the first time) has the potential to irrecoverably break the cluster,
-and is explicitly not supported.
+created. Changing this value after cluster creation (after the k3s daemon has
+been started for the first time) has the potential to irrecoverably break the
+cluster, and is explicitly not supported.
 
-Migrating an existing cluster with single-stack networking to dual-stack
-networking requires the cluster to be destroyed and recreated.
+Changing between single-stack networking and dual-stack networking (and vice
+versa) requires the cluster to be destroyed and recreated.
 :::
+
+Note that clusters which were originally created on platfrom versions 25.11 and
+older do not have dual-stack networking enabled unless explicitly configured. As
+dual-stack networking is now enabled by default in 26.05 and later, care must be
+taken when adding new agent VM's to clusters upgraded from older versions, to
+ensure that the networking configuration is consistent across the entire
+cluster. In this case, it's recommended to explicitly set the
+`flyingcircus.kubernetes.network.enableIPv6` option on all the cluster VM's to
+match the configuration with which the cluster was originally created.
 
 ## Storage
 
