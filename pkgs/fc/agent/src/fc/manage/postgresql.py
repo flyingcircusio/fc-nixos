@@ -233,24 +233,21 @@ def upgrade(
     if upgrade_now:
         stop_pg(log, old_data_dir, stop)
 
-        # PostgreSQL 18 requires checksums to be enabled.
-        if int(new_version) >= 18:
-            old_version = fc.util.postgresql.get_pg_version_from_data_dir(
-                log, old_data_dir
-            )
-            old_bin_dir = fc.util.postgresql.build_pg_bin_dir(
-                log, context.pg_data_root, old_version, False, extension_names
-            )
-            fc.util.postgresql.run_pg_checksums_enable(
-                log, old_bin_dir, old_data_dir
-            )
-
         fc.util.postgresql.run_pg_upgrade(
             log,
             new_bin_dir,
             new_data_dir,
             old_data_dir,
         )
+
+        # PostgreSQL 18 typically has data checksums enabled by default.
+        # We run initdb on the new cluster without data checksums, so that
+        # pg_upgrade --check runs successfully. Therefore, enable checksums
+        # after that to get to the desired state.
+        if int(new_version) >= 18:
+            fc.util.postgresql.run_pg_checksums_enable(
+                log, new_bin_dir, new_data_dir
+            )
 
         current_pgdata = fc.util.postgresql.get_current_pgdata_from_service()
 

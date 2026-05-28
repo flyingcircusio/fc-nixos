@@ -172,6 +172,7 @@ def create_new_data_dir(
     log,
     collate,
     ctype,
+    new_version: PGVersion,
     new_bin_dir,
     new_data_dir,
     old_data_dir,
@@ -194,6 +195,15 @@ def create_new_data_dir(
         "--lc-ctype",
         ctype,
     ]
+
+    # PostgreSQL 18 has data checksums on per default. When initrd runs
+    # with data checksums enabled, pg_upgrade --check fails. So initrd
+    # the new cluster without and enable checksums after the upgrade happened.
+    if int(new_version) >= 18 and not has_cluster_checksums(
+        log, old_data_dir / "package/bin", old_data_dir
+    ):
+        initdb_cmd.append("--no-data-checksums")
+
     initdb_cmd_str = " ".join(str(e) for e in initdb_cmd)
     log.debug("upgrade-initdb-cmd", cmd=initdb_cmd_str)
     try:
@@ -402,6 +412,7 @@ def prepare_upgrade(
             log,
             collate,
             ctype,
+            new_version,
             new_bin_dir,
             new_data_dir,
             old_data_dir,
@@ -521,32 +532,39 @@ def retrieve_shared_preload_libraries_setting(
                     return line.split("=")[1].strip()
 
 
-def check_if_checksums_need_to_be_enabled(
-    log, old_bin_dir: Path, old_data_dir: Path
-) -> bool:
+def has_cluster_checksums(log, bin_dir: Path, data_dir: Path) -> bool:
     log.info("check-checksums")
     cmd = run_as_postgres(
-        [old_bin_dir / "pg_checksums", "-D", old_data_dir, "--check"],
+        [bin_dir / "pg_controldata", "-D", data_dir],
         capture_output=True,
     )
-    if cmd.returncode == 0:
-        return False
-    if "data checksums are not enabled in cluster" in cmd.stderr:
-        return True
+    for line in cmd.stdout.splitlines():
+        stripped_line = line.strip()
+        if stripped_line.startswith("Data page checksum version:"):
+            try:
+                checksum_version = int(
+                    stripped_line.split("Data page checksum version:")[
+                        1
+                    ].strip()
+                )
+            except ValueError:
+                break
+            if checksum_version == 0:
+                return False
+            else:
+                return True
     log.error("check-checksums-failed", stdout=cmd.stdout, stderr=cmd.stderr)
     raise RuntimeError("check-checksums: unclear state")
 
 
-def run_pg_checksums_enable(log, old_bin_dir: Path, old_data_dir: Path):
-    if not check_if_checksums_need_to_be_enabled(
-        log, old_bin_dir, old_data_dir
-    ):
-        log.debug("enable-checksums-skipped")
+def run_pg_checksums_enable(log, bin_dir: Path, data_dir: Path):
+    if has_cluster_checksums(log, bin_dir, data_dir):
+        log.debug("enable-checksums-no-op")
         return
     log.info("enable-checksums")
     try:
         run_as_postgres(
-            [old_bin_dir / "pg_checksums", "-D", old_data_dir, "--enable"],
+            [bin_dir / "pg_checksums", "-D", data_dir, "--enable"],
             check=True,
         )
     except CalledProcessError as e:
