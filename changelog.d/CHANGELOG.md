@@ -1,3 +1,24 @@
+# Release 2026_020
+
+## Impact
+
+-
+
+
+## NixOS XX.XX platform
+
+- roles/kvm: support Ceph Pacific and qemu-10.1 (PL-131408)
+
+  not yet enabled by default, will be manually rolled out location-wise
+
+- Document upgrade procedures for k3s. (PL-132803)
+
+- fc-ceph: Work around a known [Ceph bug](https://tracker.ceph.com/issues/74424) that leaves OSDs stuck after maintenance. (PL-135425)
+
+- add the loki-relay role that enables cross-rg log shipping (PL-135168)
+
+
+
 # Release 2026_019
 
 
