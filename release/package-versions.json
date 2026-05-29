@@ -180,9 +180,9 @@
     "version": "1.12.18"
   },
   "erlang": {
-    "name": "erlang-28.5",
+    "name": "erlang-28.5.0.1",
     "pname": "erlang",
-    "version": "28.5"
+    "version": "28.5.0.1"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -210,9 +210,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-151.0.1",
+    "name": "firefox-151.0.2",
     "pname": "firefox",
-    "version": "151.0.1"
+    "version": "151.0.2"
   },
   "gcc": {
     "name": "gcc-wrapper-15.2.0",
@@ -265,9 +265,9 @@
     "version": "18.11.3"
   },
   "gitlab-runner": {
-    "name": "gitlab-runner-18.11.2",
+    "name": "gitlab-runner-18.11.3",
     "pname": "gitlab-runner",
-    "version": "18.11.2"
+    "version": "18.11.3"
   },
   "gitlab-workhorse": {
     "name": "gitlab-workhorse-18.11.3",
@@ -975,9 +975,9 @@
     "version": "1.8.1"
   },
   "roundcube": {
-    "name": "roundcube-1.7.0",
+    "name": "roundcube-1.7.1",
     "pname": "roundcube",
-    "version": "1.7.0"
+    "version": "1.7.1"
   },
   "rsync": {
     "name": "rsync-3.4.1",
