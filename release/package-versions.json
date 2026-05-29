@@ -40,9 +40,9 @@
     "version": "5.3p3"
   },
   "bind": {
-    "name": "bind-9.20.21",
+    "name": "bind-9.20.23",
     "pname": "bind",
-    "version": "9.20.21"
+    "version": "9.20.23"
   },
   "binutils": {
     "name": "binutils-wrapper-2.44",
@@ -175,9 +175,9 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.12.14",
+    "name": "element-web-1.12.18",
     "pname": "element-web",
-    "version": "1.12.14"
+    "version": "1.12.18"
   },
   "erlang": {
     "name": "erlang-28.5",
@@ -210,9 +210,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-151.0.1",
+    "name": "firefox-151.0.2",
     "pname": "firefox",
-    "version": "151.0.1"
+    "version": "151.0.2"
   },
   "gcc": {
     "name": "gcc-wrapper-14.3.0",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.90",
+    "name": "linux-6.12.91",
     "pname": "linux",
-    "version": "6.12.90"
+    "version": "6.12.91"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.90",
+    "name": "linux-6.12.91",
     "pname": "linux",
-    "version": "6.12.90"
+    "version": "6.12.91"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -505,9 +505,9 @@
     "version": "5.8.0"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.152.1",
+    "name": "matrix-synapse-wrapped-1.153.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.152.1"
+    "version": "1.153.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.2",
