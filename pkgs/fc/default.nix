@@ -74,8 +74,8 @@ rec {
       repo = "fc.qemu";
       # The release tooling didn't upgrade properly so we had to pick a specific
       # commit instead.
-      rev = "850a43bccbd4f586ba11e6c6326d6f7f1dd1126b";
-      hash = "sha256-gUC4+AydcZ/BkUqaX1/rKoOLk0G0lm63hHdj/zOYwD4=";
+      rev = "6f61942e685b9b24400908a722370b04b582e0b0";
+      hash = "sha256-/viOM98kS0rUGWl314lmhgmSM/VcxbLu3B55ppgFWeg=";
     };
     fc-ceph = ceph;
     qemu_ceph = pkgs.qemu-ceph-pacific;
