@@ -452,7 +452,7 @@ Changing between single-stack networking and dual-stack networking (and vice
 versa) requires the cluster to be destroyed and recreated.
 :::
 
-Note that clusters which were originally created on platfrom versions 25.11 and
+Note that clusters which were originally created on platform versions 25.11 and
 older do not have dual-stack networking enabled unless explicitly configured. As
 dual-stack networking is now enabled by default in 26.05 and later, care must be
 taken when adding new agent VM's to clusters upgraded from older versions, to
@@ -530,7 +530,7 @@ platform may no longer be available in the new platform.
 
 Before upgrading a k3s cluster to a new version of the platform, you should
 ensure that the cluster is running a version of k3s which is available in both
-the current platfrom and the new platform, updating k3s as described above if
+the current platform and the new platform, updating k3s as described above if
 necessary. The desired version of k3s should also be explictly configured on the
 cluster VM's during platform upgrades to prevent the new default k3s version
 taking effect unintentionally.
