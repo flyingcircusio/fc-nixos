@@ -496,7 +496,7 @@ and the user it runs in changed to `vinyl-cache`.
 
 We still support configuring Vinyl Cache 9 via `flyingcircus.services.varnish.virtualHosts` and `/etc/local/varnish/default.vcl` for this release, but please migrate this configuration to `flyingcircus.services.vinyl-cache.virtualHosts` and `/etc/local/vinyl-cache/default.vcl`.
 
-We support this migration with NixOS warnings, which you can review using the command 'fc-manage check'.
+We support this migration with NixOS warnings, which you can review using the command `fc-manage check`.
 After migrating to fc-nixos 26.05, this command will highlight any deprecated behaviour and
 suggest migration paths tailored to the VMs' specific situation.
 
