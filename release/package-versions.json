@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-148.0.7778.178",
+    "name": "chromedriver-unwrapped-148.0.7778.215",
     "pname": "chromedriver-unwrapped",
-    "version": "148.0.7778.178"
+    "version": "148.0.7778.215"
   },
   "chromium": {
-    "name": "chromium-148.0.7778.178",
+    "name": "chromium-148.0.7778.215",
     "pname": "chromium",
-    "version": "148.0.7778.178"
+    "version": "148.0.7778.215"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.5",
@@ -160,9 +160,9 @@
     "version": "2.92rel2"
   },
   "docker": {
-    "name": "docker-29.5.1",
+    "name": "docker-29.5.2",
     "pname": "docker",
-    "version": "29.5.1"
+    "version": "29.5.2"
   },
   "docker-compose": {
     "name": "docker-compose-5.1.4",
@@ -235,9 +235,9 @@
     "version": "2.54.0"
   },
   "gitaly": {
-    "name": "gitaly-18.11.3",
+    "name": "gitaly-18.11.4",
     "pname": "gitaly",
-    "version": "18.11.3"
+    "version": "18.11.4"
   },
   "github-runner": {
     "name": "github-runner-2.334.0",
@@ -245,9 +245,9 @@
     "version": "2.334.0"
   },
   "gitlab": {
-    "name": "gitlab-18.11.3",
+    "name": "gitlab-18.11.4",
     "pname": "gitlab",
-    "version": "18.11.3"
+    "version": "18.11.4"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.39.0",
@@ -255,14 +255,14 @@
     "version": "4.39.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.11.3",
+    "name": "gitlab-ee-18.11.4",
     "pname": "gitlab-ee",
-    "version": "18.11.3"
+    "version": "18.11.4"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.11.3",
+    "name": "gitlab-pages-18.11.4",
     "pname": "gitlab-pages",
-    "version": "18.11.3"
+    "version": "18.11.4"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-18.11.3",
@@ -270,9 +270,9 @@
     "version": "18.11.3"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.11.3",
+    "name": "gitlab-workhorse-18.11.4",
     "pname": "gitlab-workhorse",
-    "version": "18.11.3"
+    "version": "18.11.4"
   },
   "glibc": {
     "name": "glibc-2.42-61",
