@@ -155,6 +155,7 @@ import ../make-test-python.nix (
             print(machine.succeed("${fc-postgresql} list-versions"))
 
           with subtest("upgrade 17 -> 18 in one step"):
+            machine.succeed('${fc-postgresql} upgrade --expected employees --new-version 18')
             machine.succeed('${fc-postgresql} upgrade --expected employees --new-version 18 --stop --upgrade-now')
             machine.succeed("stat /srv/postgresql/17/fcio_migrated_to")
             machine.succeed("stat /srv/postgresql/18/fcio_migrated_from")
