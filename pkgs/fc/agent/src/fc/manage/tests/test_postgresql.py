@@ -63,7 +63,6 @@ def test_invoke_list_versions(invoke_app, monkeypatch, tmp_path):
     result = invoke_app("list-versions")
     print(result.output)
 
-
 @patch("fc.util.postgresql.run_pg_upgrade")
 @patch("fc.util.postgresql.run_pg_upgrade_check")
 @patch("fc.util.postgresql.prepare_upgrade")
@@ -81,6 +80,29 @@ def test_invoke_upgrade(
     run_pg_upgrade_check.assert_called()
     # Make sure we don't run destructive things by default.
     run_pg_upgrade.assert_not_called()
+
+
+
+@patch("fc.util.postgresql.run_pg_checksums_enable")
+@patch("fc.util.postgresql.run_pg_upgrade")
+@patch("fc.util.postgresql.run_pg_upgrade_check")
+@patch("fc.util.postgresql.prepare_upgrade")
+@patch("fc.util.postgresql.build_pg_bin_dir")
+def test_invoke_upgrade_18(
+    build_pg_bin_dir: Mock,
+    prepare_upgrade: Mock,
+    run_pg_upgrade_check: Mock,
+    run_pg_upgrade: Mock,
+    run_pg_checksums_enable: Mock,
+    invoke_app,
+):
+    invoke_app("upgrade", "--new-version", "18")
+    build_pg_bin_dir.assert_called()
+    prepare_upgrade.assert_called()
+    run_pg_upgrade_check.assert_called()
+    # Make sure we don't run destructive things by default.
+    run_pg_upgrade.assert_not_called()
+    run_pg_checksums_enable.assert_not_called()
 
 
 @patch("fc.util.postgresql.get_current_pgdata_from_service")
