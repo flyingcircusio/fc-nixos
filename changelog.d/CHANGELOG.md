@@ -1,3 +1,172 @@
+# Release 2026_021
+
+## Impact
+
+- fc-userscan no longer scans for nix store references in human users and all
+  existing gcroots will be removed. Service users are not affected. You can
+  still add gcroots manually (e.g. via `nix-store --add-root`).
+
+- webgateway: TLS- or ACME-enabled vhosts that do not define a single valid hostname do not receive an automatic certificate check anymore (PL-135244)
+
+  An evaluation warning informs about that behaviour change. The warning will be removed after 2 releases.
+
+- A bullet item for the Impact category.
+
+-
+
+-
+
+-
+
+-
+
+-
+
+
+## NixOS XX.XX platform
+
+- rgw-location-proxy: fix for large files and add maintenance constraint to ensure redundancy (PL-128135)
+
+- gitlab: run container registry migrations for instances that use a database as backend (PL-135270)
+
+- webgateway: fix regression that virtual hosts with `useACMEHost` don't eval
+
+- nix: test new object storage gateways as binary cache for our internal development VMs (PL-128135)
+
+- roles/kvm: support Ceph Pacific and qemu-10.1 (PL-131408)
+
+  not yet enabled by default, will be manually rolled out location-wise
+
+- Add role configuration to the loki and tempo roles and introduce an experimental faro frontend role (PL-135168)
+
+- Document upgrade procedures for k3s. (PL-132803)
+
+- devhost: Add a NixOS option to configure VM deletion/shutdown timeouts, see [`flyingcircus.roles.devhost.virtualMachineOptions`](https://search.flyingcircus.io/search/options?q=flyingcircus.roles.devhost.virtualMachineOptions&channel=fc-26.05-dev) (PL-135232)
+
+- Add a sensu check for redis that watches the status of the server's persistent background saves (FC-52192)
+
+- fc.check-ceph: check_snapshot_restore_fill ignores certain edge cases about empty pools or missing fill stats (PL-134230)
+
+- fc.check-ceph: check_snapshot_restore_fill refactoring away from librados python bindings (PL-131408)
+
+- fc-collect-garbage: delete gcroots of unknown/human users. (PL-134227)
+
+- flyingcircus-physical: show grub-bios bootloader menu over serial console as well (PL-130728)
+
+- `pkgs.writers.writePython3BinFromFile`: provide helper function for packaging single-file python scripts
+
+- Enable Websocket connections between the Grafana frontend and backend for more efficient live updates (PL-134309)
+
+- k3s: allow service users to access the default Kubernetes config
+  file and interact with the cluster. (PL-134284)
+
+- nixos/mail: correct dns.zone file with a non-default dkimSelector (PL-134262)
+
+- webgateway: Only generate certificate checks for vhosts defining a single valid hostname (PL-135244)
+
+- `flyingcircus.services.sensu-client.checks`: Prevent illegal check names that would crash the client service (PL-135244)
+
+- `flyingcircus.services.sensu-client.checks.enable`: introduce new option to explicitly disable checks
+
+- Adjusted the defaut threshold for k3s' automatic image garbage collection (FC-52143)
+
+- flyingcircus.raid: ensure dm-raid module is loaded (PL-135206)
+
+- Provide a new alloy configuration snippet that exports the running pod's journal to a loki instance (PL-135231)
+
+- Fix interface specific sysctls. (PL-135152)
+
+- rgw-location-proxy: initalize role (PL-128135)
+
+- ceph: stagger unset of "noup" flag at maintenance leave to reduce peering storm impact (PL-133952)
+
+- Add a new role for the MariaDB RDBMS (FC-52336)
+
+- devhost: start VMs only after network setup ran (PL-134208)
+
+- fc-ceph: Work around a known [Ceph bug](https://tracker.ceph.com/issues/74424) that leaves OSDs stuck after maintenance. (PL-135425)
+
+- webgateway: fix nginx_config sensu check (PL-135234)
+
+- stagger the fetch and build of releases over 2 hours instead of 1 hour, to reduce load (FC-52891)
+
+- kvm_host: make evacuation timeout configurable via platform config (PL-134247)
+
+  This allows us to set shorter evacuation timeouts in our dev environment, to properly trigger QA for retry behaviour.
+
+- fc-luks: improve detection of LUKS volumes to cover those not opened currently as well (PL-133176)
+
+- jitsi: fix role and simplify it (PL-135075)
+
+- Add extra configuration to Varnish's default VCL that mitigates VSV00018 (FC-52533)
+
+- redis: fix high entropy in metrics labels (dbN_distrib_*) (PL-135178)
+
+- Add package lamp_php85 (FC-52201)
+
+- router: remove various deprecated and obsolete role options. (PL-135248)
+
+- grub: apply patches to make boots from XFS more resilient
+
+- Provide version 3.5 of the Opensearch package for use with the opensearch service and role. This is a temporary measure targeted at 25.11 until the package is updated upstream in 26.05.
+
+- k3s: ensure that the frontend role does not set conflicting global
+  mode options in the haproxy configuration. This should avoid issues
+  when enabling the k3s roles in resource groups with existing haproxy
+  configuration. (PL-135086)
+
+- fc-ceph: Add locking to internal object storage accounting to prevent race conditions (PL-128135)
+
+- ceph: Introduce support for ceph-16.2.x "Pacific" (PL-131408)
+
+  clusters need to be updated manually, Ceph Nautilus remains the default
+
+- fc-ceph: Fix accounting for buckets with _ in its name (PL-128135)
+
+- nix: use redundant object storage gateways as binary cache while removing superfluous old binary cache (PL-135325)
+
+  This change leads to a better performance for Nix invocations that are not in any binary cache.
+
+- Add a role for mongodb version 7.0 and 8.0. (PL-133571)
+
+- backy: make whole object diff configurable and disable by default. (PL-134246)
+
+- k3s: document maintenance integration. Agent nodes will be
+  gracefully drained of workloads before entering
+  maintenance. (PL-135128)
+
+- Update port-releated documentation for the mailserver role (PL-135101)
+
+- rgw-location-proxy: improved nginx config for larger files (PL-128135)
+
+- Improve logging and instrospection of kernel messages in early boot (PL-135139)
+
+- KVM hosts: fix a regression in maintenance handling (PL-134247)
+  fc.qemu accidentally scrapped return codes set via sys.exit and replaced them with a 0, rendering maintenance guards ineffective. \
+  Has been released as a hotfix to affected hosts ahead of schedule.
+
+- nginx/webgateway: all TLS certificates are monitored for expiration now, by connecting to the HTTPS endpoint (check names `nginx_https_*`) and checking the certificate file directly: `ssl_cert_acme_*` (as before) or `ssl_cert_nginx_*` (added for non-ACME certs). Before, we only generated monitoring checks for ACME certs. (PL-134018)
+
+- k3s: introduce a new NixOS option
+  `flyingcircus.kubernetes.network.enableIPv6` for creating Kubernetes
+  clusters with IPv6 and dual-stack networking enabled. Note that this
+  option should only be set when creating new clusters, and should not
+  be set for existing clusters. For further information, please see
+  the role documentation. (PL-133774)
+
+- Slurm: Add a workaround for a rare bug which causes new jobs to fail on startup. (PL-135105)
+
+- add the loki-relay role that enables cross-rg log shipping (PL-135168)
+
+- Adds a sensu check to check for ollama loading models into CPU memory which degrades performance. (PL-134226)
+
+- mail: fix roundcube with STARTTLS deprecation (PL-134260)
+
+  Roundcube instances on 25.11 had problems with connecting to the mail server.
+  This change fixes this.
+
+
+
 # Release 2026_005
 
 ## NixOS XX.XX platform
