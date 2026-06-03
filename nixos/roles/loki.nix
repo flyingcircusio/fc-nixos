@@ -193,9 +193,9 @@ in
             "Z '/run/loki' 0750 root lokienv - -"
           ];
 
-          systemd.services.loki = {
-            environment."AWS_SHARED_CREDENTIALS_FILE" = credentialFile;
-            serviceConfig.SupplementaryGroups = [ "lokienv" ];
+          systemd.services.loki.serviceConfig = {
+            EnvironmentFile = credentialFile;
+            SupplementaryGroups = [ "lokienv" ];
           };
 
           systemd.services.loki-s3-setup = {
