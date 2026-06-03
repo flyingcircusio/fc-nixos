@@ -101,7 +101,7 @@ let
 
     # === Logging ===
 
-    # same as 'anonymized'
+    # same as 'anaonymized'
     log_format main
         '$remote_addr_anon - $remote_user [$time_local] '
         '"$request" $status $bytes_sent '
