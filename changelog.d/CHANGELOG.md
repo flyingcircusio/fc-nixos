@@ -1,3 +1,16 @@
+# Release 2026_022
+
+## Impact
+
+- A bullet item for the Impact category.
+
+
+## NixOS XX.XX platform
+
+- agent: fix fc-postgresql upgrade to 18 without --upgrade-now (FC-54426)
+
+
+
 # Release 2026_021
 
 ## Impact
