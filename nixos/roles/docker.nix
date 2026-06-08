@@ -22,6 +22,7 @@ in
       environment.systemPackages = [ pkgs.docker-compose ];
       flyingcircus.users.serviceUsers.extraGroups = [ "docker" ];
       virtualisation.docker.enable = true;
+      virtualisation.docker.package = pkgs.docker_29;
 
       boot.kernel.sysctl = {
         # IPv4 forwarding is enabled by default in the NixOS docker

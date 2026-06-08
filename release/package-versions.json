@@ -169,6 +169,11 @@
     "pname": "docker-compose",
     "version": "2.40.3"
   },
+  "docker_29": {
+    "name": "docker-29.5.2",
+    "pname": "docker",
+    "version": "29.5.2"
+  },
   "dovecot": {
     "name": "dovecot-2.3.21.1",
     "pname": "dovecot",
