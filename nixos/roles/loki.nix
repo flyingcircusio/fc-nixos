@@ -117,7 +117,15 @@ in
         services.loki = {
           enable = true;
           configuration = {
-            server.http_listen_address = "127.0.0.1";
+            server = {
+              http_listen_address = "127.0.0.1";
+              grpc_server_max_recv_msg_size = 104857600;
+              grpc_server_max_send_msg_size = 104857600;
+            };
+            frontend.grpc_client_config = {
+              max_recv_msg_size = 104857600;
+              max_send_msg_size = 104857600;
+            };
 
             auth_enabled = false;
 
