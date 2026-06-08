@@ -18,7 +18,15 @@ import ./make-test-python.nix (
           ../nixos/roles
           (testlib.fcConfig { net.fe = false; })
         ];
-        flyingcircus.roles.loki.enable = true;
+        flyingcircus.roles.loki = {
+          enable = true;
+          storageSchedule.default = lib.mkForce [
+            {
+              startDate = "2024-09-10";
+              backend = "filesystem";
+            }
+          ];
+        };
 
         flyingcircus.encServices = [
           {
