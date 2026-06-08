@@ -92,7 +92,15 @@ import ../make-test-python.nix (
           config = {
             flyingcircus.encServices = encServices;
             flyingcircus.roles.k3s-server.enable = true;
-            flyingcircus.roles.loki.enable = true;
+            flyingcircus.roles.loki = {
+              enable = true;
+              storageSchedule.default = lib.mkForce [
+                {
+                  startDate = "2024-09-10";
+                  backend = "filesystem";
+                }
+              ];
+            };
             flyingcircus.kubernetes.network.enableIPv6 = enableIPv6;
             networking.domain = "fcio.net";
             networking.hostName = lib.mkForce "k3sserver";

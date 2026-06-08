@@ -32,7 +32,15 @@ import ./make-test-python.nix (
           ];
 
           flyingcircus = {
-            roles.loki.enable = true;
+            roles.loki = {
+              enable = true;
+              storageSchedule.default = lib.mkForce [
+                {
+                  startDate = "2024-09-10";
+                  backend = "filesystem";
+                }
+              ];
+            };
             enc.role_configuration."statshost-master".relay_from_details = {
               loki_relay.addresses = [
                 loki_relay_v4
