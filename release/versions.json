@@ -8,10 +8,10 @@
     "url": "https://gitlab.flyingcircus.io/flyingcircus/nixos-mailserver.git/"
   },
   "nixpkgs": {
-    "hash": "sha256-NuHYTSf1jUn4hHoOscBXVNwDs9UIhK8FsZa3xojbnLc=",
+    "hash": "sha256-zrSuoefbhMdQeEFjrfI4TIVJjqe1MTVbik/7mMTezOA=",
     "owner": "flyingcircusio",
     "repo": "nixpkgs",
-    "rev": "d4dc96a37ceb2ff3c0d5b0e2a8b58d0295be0e8a"
+    "rev": "171aa7538628cc1fd6746a32c81224e372efb524"
   },
   "poetry2nix": {
     "hash": "sha256-nzgO/ZCSBzWjbMkYDxG+yl9Z2eGbCgQu06Oku3ir5D4=",
