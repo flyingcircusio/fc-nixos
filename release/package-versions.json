@@ -65,9 +65,9 @@
     "version": "3.123"
   },
   "calibre": {
-    "name": "calibre-9.8.0",
+    "name": "calibre-9.9.0",
     "pname": "calibre",
-    "version": "9.8.0"
+    "version": "9.9.0"
   },
   "ceph": {
     "name": "ceph-14.2.22",
@@ -715,14 +715,14 @@
     "version": "8.3.31"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.21",
+    "name": "php-with-extensions-8.4.22",
     "pname": "php-with-extensions",
-    "version": "8.4.21"
+    "version": "8.4.22"
   },
   "php85": {
-    "name": "php-with-extensions-8.5.6",
+    "name": "php-with-extensions-8.5.7",
     "pname": "php-with-extensions",
-    "version": "8.5.6"
+    "version": "8.5.7"
   },
   "phpPackages.composer": {
     "name": "composer-2.9.8",
