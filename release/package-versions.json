@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-148.0.7778.178",
+    "name": "chromedriver-unwrapped-149.0.7827.53",
     "pname": "chromedriver-unwrapped",
-    "version": "148.0.7778.178"
+    "version": "149.0.7827.53"
   },
   "chromium": {
-    "name": "chromium-148.0.7778.178",
+    "name": "chromium-149.0.7827.53",
     "pname": "chromium",
-    "version": "148.0.7778.178"
+    "version": "149.0.7827.53"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -135,9 +135,9 @@
     "version": "4.9.0"
   },
   "curl": {
-    "name": "curl-8.19.0",
+    "name": "curl-8.20.0",
     "pname": "curl",
-    "version": "8.19.0"
+    "version": "8.20.0"
   },
   "cyrus_sasl": {
     "name": "cyrus-sasl-2.1.28",
@@ -168,6 +168,11 @@
     "name": "docker-compose-2.40.3",
     "pname": "docker-compose",
     "version": "2.40.3"
+  },
+  "docker_29": {
+    "name": "docker-29.5.2",
+    "pname": "docker",
+    "version": "29.5.2"
   },
   "dovecot": {
     "name": "dovecot-2.3.21.1",
@@ -210,9 +215,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-151.0.2",
+    "name": "firefox-151.0.3",
     "pname": "firefox",
-    "version": "151.0.2"
+    "version": "151.0.3"
   },
   "gcc": {
     "name": "gcc-wrapper-14.3.0",
@@ -235,9 +240,9 @@
     "version": "2.51.2"
   },
   "gitaly": {
-    "name": "gitaly-18.11.3",
+    "name": "gitaly-18.11.4",
     "pname": "gitaly",
-    "version": "18.11.3"
+    "version": "18.11.4"
   },
   "github-runner": {
     "name": "github-runner-2.334.0",
@@ -245,9 +250,9 @@
     "version": "2.334.0"
   },
   "gitlab": {
-    "name": "gitlab-18.11.3",
+    "name": "gitlab-18.11.4",
     "pname": "gitlab",
-    "version": "18.11.3"
+    "version": "18.11.4"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.39.0",
@@ -255,24 +260,24 @@
     "version": "4.39.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.11.3",
+    "name": "gitlab-ee-18.11.4",
     "pname": "gitlab-ee",
-    "version": "18.11.3"
+    "version": "18.11.4"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.11.3",
+    "name": "gitlab-pages-18.11.4",
     "pname": "gitlab-pages",
-    "version": "18.11.3"
+    "version": "18.11.4"
   },
   "gitlab-runner": {
-    "name": "gitlab-runner-18.11.2",
+    "name": "gitlab-runner-18.11.3",
     "pname": "gitlab-runner",
-    "version": "18.11.2"
+    "version": "18.11.3"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.11.3",
+    "name": "gitlab-workhorse-18.11.4",
     "pname": "gitlab-workhorse",
-    "version": "18.11.3"
+    "version": "18.11.4"
   },
   "glibc": {
     "name": "glibc-2.40-224",
@@ -290,9 +295,9 @@
     "version": "2.4.9"
   },
   "go": {
-    "name": "go-1.25.9",
+    "name": "go-1.25.10",
     "pname": "go",
-    "version": "1.25.9"
+    "version": "1.25.10"
   },
   "grafana": {
     "name": "grafana-12.3.6+security-01",
@@ -305,14 +310,14 @@
     "version": "2.12.1"
   },
   "haproxy": {
-    "name": "haproxy-3.2.9",
+    "name": "haproxy-3.2.19",
     "pname": "haproxy",
-    "version": "3.2.9"
+    "version": "3.2.19"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.2-19",
+    "name": "imagemagick-7.1.2-23",
     "pname": "imagemagick",
-    "version": "7.1.2-19"
+    "version": "7.1.2-23"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.13-48",
@@ -460,14 +465,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.91",
+    "name": "linux-6.12.92",
     "pname": "linux",
-    "version": "6.12.91"
+    "version": "6.12.92"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.91",
+    "name": "linux-6.12.92",
     "pname": "linux",
-    "version": "6.12.91"
+    "version": "6.12.92"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -515,9 +520,9 @@
     "version": "2.7.2.2"
   },
   "memcached": {
-    "name": "memcached-1.6.39",
+    "name": "memcached-1.6.42",
     "pname": "memcached",
-    "version": "1.6.39"
+    "version": "1.6.42"
   },
   "mongodb": {
     "name": "mongodb-7.0.34",
@@ -540,9 +545,9 @@
     "version": "11.4.8"
   },
   "mysql80": {
-    "name": "mysql-8.0.45",
+    "name": "mysql-8.0.46",
     "pname": "mysql",
-    "version": "8.0.45"
+    "version": "8.0.46"
   },
   "nfs-utils": {
     "name": "nfs-utils-2.8.6",
@@ -585,9 +590,9 @@
     "version": "24.16.0"
   },
   "nspr": {
-    "name": "nspr-4.38.2",
+    "name": "nspr-4.39",
     "pname": "nspr",
-    "version": "4.38.2"
+    "version": "4.39"
   },
   "nss_latest": {
     "name": "nss-3.124",
@@ -766,9 +771,9 @@
     "version": "126"
   },
   "postfix": {
-    "name": "postfix-3.10.7",
+    "name": "postfix-3.10.10",
     "pname": "postfix",
-    "version": "3.10.7"
+    "version": "3.10.10"
   },
   "postgresql": {
     "name": "postgresql-17.10",
@@ -916,9 +921,9 @@
     "version": "6.0.2"
   },
   "python3Packages.pillow": {
-    "name": "python3.13-pillow-12.1.1",
+    "name": "python3.13-pillow-12.2.0",
     "pname": "pillow",
-    "version": "12.1.1"
+    "version": "12.2.0"
   },
   "python3Packages.pip": {
     "name": "python3.13-pip-25.0.1",
@@ -986,9 +991,9 @@
     "version": "10.1.5"
   },
   "rabbitmq-server": {
-    "name": "rabbitmq-server-4.2.1",
+    "name": "rabbitmq-server-4.2.4",
     "pname": "rabbitmq-server",
-    "version": "4.2.1"
+    "version": "4.2.4"
   },
   "rclone": {
     "name": "rclone-1.72.1",
@@ -1011,9 +1016,9 @@
     "version": "1.8.0"
   },
   "roundcube": {
-    "name": "roundcube-1.6.15",
+    "name": "roundcube-1.6.16",
     "pname": "roundcube",
-    "version": "1.6.15"
+    "version": "1.6.16"
   },
   "rsync": {
     "name": "rsync-3.4.1",

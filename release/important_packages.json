@@ -32,6 +32,7 @@
   "discourse",
   "dnsmasq",
   "docker",
+  "docker_29",
   "docker-compose",
   "dovecot",
   "element-web",

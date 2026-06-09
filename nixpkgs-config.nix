@@ -20,5 +20,6 @@
     "varnish-7.7.3" # EOL, known vulnerability (FC-52533). We will also recommend updating to varnish8, but there are breaking config changes.
     "nodejs-slim-20.20.2" # EOL, required by github-runner
     "imagemagick-6.9.13-48" # We're warning already that imagemagick 6 is EOL, but still allow it. See pkgs/overlay.nix
+    "docker-28.5.2" # Default in 25.11, we changed the default to 29, but docker-tools and similar tools still use 28, but with less attack surface
   ];
 }
