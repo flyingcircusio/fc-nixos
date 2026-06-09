@@ -144,7 +144,10 @@ in
         };
       };
 
+      # FIXME: This only happens to work properly in relation to the `ceph` maintenance hook due to alphabetical ordered execution of maintenance hooks, see PL-135507.
+      # Otherwise there is the danger of RGWs being shut down preemptively, with the host then failing to acquire the atomic rbd maintenance locks while keeping the RGWs down.
       flyingcircus.agent.maintenance.rgw = {
+        # avoid RGW issues related to temporary network reconfigurations during system switch
         enter = "systemctl stop fc-ceph-rgw";
         leave = "systemctl start fc-ceph-rgw";
       };

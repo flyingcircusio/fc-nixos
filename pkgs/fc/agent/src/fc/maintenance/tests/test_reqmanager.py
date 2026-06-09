@@ -13,11 +13,7 @@ from rich.console import Console
 
 from fc.maintenance.activity import Activity, RebootType
 from fc.maintenance.estimate import Estimate
-from fc.maintenance.reqmanager import (
-    PostponeMaintenance,
-    ReqManager,
-    TempfailMaintenance,
-)
+from fc.maintenance.reqmanager import ReqManager, HandleEnterExceptionResult
 from fc.maintenance.request import Attempt, Request
 from fc.maintenance.state import ARCHIVE, EXIT_POSTPONE, State
 from fc.maintenance.tests import MergeableActivity
@@ -232,7 +228,7 @@ def test_enter_maintenance(log, reqmanager, monkeypatch):
     )
     monkeypatch.setattr("socket.gethostname", lambda: "host")
 
-    reqmanager._enter_maintenance(True, 10)
+    reqmanager._enter_maintenance(True, 10, False, False)
 
     assert log.has("enter-maintenance")
     assert log.has(
@@ -259,8 +255,8 @@ def test_enter_maintenance_postpone(log, reqmanager, monkeypatch):
     # monkeypatch.setattr("subprocess.run", run_mock := MagicMock())
     reqmanager.config["maintenance-enter"]["postpone"] = "exit 69"
 
-    with pytest.raises(PostponeMaintenance):
-        reqmanager._enter_maintenance(True, 10)
+    enter_result = reqmanager._enter_maintenance(True, 10, False, False)
+    assert enter_result == HandleEnterExceptionResult(postpone=True, exit=True)
 
     assert reqmanager.maintenance_marker_path.exists()
 
@@ -272,10 +268,51 @@ def test_enter_maintenance_tempfail(log, reqmanager, monkeypatch):
     # monkeypatch.setattr("subprocess.run", run_mock := MagicMock())
     reqmanager.config["maintenance-enter"]["tempfail"] = "exit 75"
 
-    with pytest.raises(TempfailMaintenance):
-        reqmanager._enter_maintenance(True, 10)
+    enter_result = reqmanager._enter_maintenance(True, 10, False, False)
+    assert enter_result == HandleEnterExceptionResult(temporary=True, exit=True)
 
     assert reqmanager.maintenance_marker_path.exists()
+
+
+def test_enter_maintenance_stops_at_first_failure(log, reqmanager, monkeypatch):
+    """Without --force_run, a failing hook aborts the loop. later hooks
+    must not be executed."""
+    monkeypatch.setattr(
+        "fc.util.directory.connect", connect_mock := MagicMock()
+    )
+    reqmanager.config["maintenance-enter"]["first"] = "exit 75"
+    reqmanager.config["maintenance-enter"]["second"] = 'echo "second"'
+
+    enter_result = reqmanager._enter_maintenance(
+        True, 10, run_all_now=False, force_run=False
+    )
+
+    assert enter_result == HandleEnterExceptionResult(temporary=True, exit=True)
+    assert log.has("enter-maintenance-cmd", subsystem="first")
+    assert not log.has("enter-maintenance-cmd", subsystem="second")
+
+
+def test_enter_maintenance_force_continues_after_failure(
+    log, reqmanager, monkeypatch
+):
+    """With --force_run, a failing hook is tolerated and later hooks
+    still execute."""
+    monkeypatch.setattr(
+        "fc.util.directory.connect", connect_mock := MagicMock()
+    )
+    reqmanager.config["maintenance-enter"]["first"] = "exit 75"
+    reqmanager.config["maintenance-enter"]["second"] = 'echo "second"'
+
+    enter_result = reqmanager._enter_maintenance(
+        True, 10, run_all_now=False, force_run=True
+    )
+
+    # The succeeding second hook resets enter_result on its iteration,
+    # so the tempfail signal is (intentionally) swallowed under --force-run.
+    assert enter_result == HandleEnterExceptionResult()
+    assert log.has("enter-maintenance-cmd", subsystem="first")
+    assert log.has("enter-maintenance-cmd", subsystem="second")
+    assert log.has("enter-maintenance-cmd-success", subsystem="second")
 
 
 def test_execute_postpone(log, reqmanager):
@@ -283,8 +320,10 @@ def test_execute_postpone(log, reqmanager):
     req.state = State.due
     req.execute = Mock()
 
-    def enter_maintenance_postpone(online: bool, timeout: int):
-        raise PostponeMaintenance()
+    def enter_maintenance_postpone(
+        online: bool, timeout: int, run_all_now: bool, force_run: bool
+    ):
+        return HandleEnterExceptionResult(postpone=True, exit=True)
 
     reqmanager._runnable = lambda run_all_now, force_run: [req]
     reqmanager._enter_maintenance = enter_maintenance_postpone
@@ -302,8 +341,10 @@ def test_execute_tempfail(log, reqmanager):
     req.state = State.due
     req.execute = Mock()
 
-    def enter_maintenance_tempfail(online: bool, timeout: int):
-        raise TempfailMaintenance()
+    def enter_maintenance_tempfail(
+        online: bool, timeout: int, run_all_now: bool, force_run: bool
+    ):
+        return HandleEnterExceptionResult(temporary=True, exit=True)
 
     reqmanager._runnable = lambda run_all_now, force_run: [req]
     reqmanager._enter_maintenance = enter_maintenance_tempfail
@@ -320,6 +361,7 @@ def test_execute_activity_no_reboot(reqmanager, log):
     req = reqmanager.add(Request(Activity(), 1))
     reqmanager._runnable = lambda run_all_now, force_run: [req]
     reqmanager._enter_maintenance = Mock()
+    reqmanager._enter_maintenance.return_value = HandleEnterExceptionResult()
     reqmanager._leave_maintenance = Mock()
 
     reqmanager.execute()
@@ -333,6 +375,7 @@ def test_execute_activity_with_reboot(reqmanager, log, monkeypatch):
     monkeypatch.setattr("time.sleep", sleep := Mock())
     monkeypatch.setattr("subprocess.run", run := Mock())
     reqmanager._enter_maintenance = Mock()
+    reqmanager._enter_maintenance.return_value = HandleEnterExceptionResult()
     reqmanager._leave_maintenance = Mock()
 
     activity = Activity()

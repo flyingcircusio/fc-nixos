@@ -69,17 +69,10 @@ class RequestsNotLoaded(Exception):
         )
 
 
-class PostponeMaintenance(Exception):
-    pass
-
-
-class TempfailMaintenance(Exception):
-    pass
-
-
 class HandleEnterExceptionResult(NamedTuple):
     exit: bool = False
     postpone: bool = False
+    temporary: bool = False
 
 
 class ReqManager:
@@ -553,7 +546,9 @@ class ReqManager:
                 )
                 due_dt = max(utcnow(), request.next_due + delta)
 
-    def _enter_maintenance(self, online: bool, timeout: int):
+    def _enter_maintenance(
+        self, online: bool, timeout: int, run_all_now: bool, force_run: bool
+    ) -> HandleEnterExceptionResult:
         """Enters maintenance mode which tells the directory to mark the machine
         as 'not in service'. The main reason is to avoid false alarms during expected
         service interruptions as the machine reboots or services are restarted.
@@ -578,8 +573,6 @@ class ReqManager:
             )
         else:
             self.maintenance_marker_path.write_text(utcnow().isoformat())
-        postpone_seen = False
-        tempfail_seen = False
         for name, command in self.config["maintenance-enter"].items():
             if not command.strip():
                 continue
@@ -611,6 +604,8 @@ class ReqManager:
             stdout = "".join(stdout_lines)
             proc.wait()
 
+            enter_result = HandleEnterExceptionResult()
+
             match proc.returncode:
                 case 0:
                     log.debug("enter-maintenance-cmd-success")
@@ -624,7 +619,13 @@ class ReqManager:
                         ),
                     )
                     log.debug("enter-maintenance-postpone-out", stdout=stdout)
-                    postpone_seen = True
+                    # XXX: dispatching the effects of `--run-all-now` and `--force-run`
+                    # flags needs to be done here, to decide whether to abort
+                    # after a single enter failure
+
+                    enter_result = self._handle_enter_postpone(
+                        run_all_now, force_run
+                    )
                 case state.EXIT_TEMPFAIL:
                     log.info(
                         "enter-maintenance-tempfail",
@@ -635,7 +636,9 @@ class ReqManager:
                         ),
                     )
                     log.debug("enter-maintenance-tempfail-out", stdout=stdout)
-                    tempfail_seen = True
+                    enter_result = self._handle_enter_tempfail(
+                        run_all_now, force_run
+                    )
                 case error:
                     log.error(
                         "enter-maintenance-fail",
@@ -644,11 +647,10 @@ class ReqManager:
                     )
                     raise subprocess.CalledProcessError(error, command, stdout)
 
-        if postpone_seen:
-            raise PostponeMaintenance()
+            if enter_result.exit:
+                break
 
-        if tempfail_seen:
-            raise TempfailMaintenance()
+        return enter_result
 
     @require_directory
     def _mark_directory_service_status(
@@ -801,7 +803,7 @@ class ReqManager:
                 "execute-requests-tempfail",
             )
             # We stay in maintenance and try again on the next run.
-            return HandleEnterExceptionResult(exit=True)
+            return HandleEnterExceptionResult(exit=True, temporary=True)
 
         if run_all_now and not force_run:
             self.log.info(
@@ -812,7 +814,7 @@ class ReqManager:
                     "Doing nothing unless --force-run is given, too."
                 ),
             )
-            return HandleEnterExceptionResult(exit=True)
+            return HandleEnterExceptionResult(exit=True, temporary=True)
 
         if not run_all_now and force_run:
             self.log.warn(
@@ -822,7 +824,7 @@ class ReqManager:
                     "(temporary) failure of a maintenance enter command."
                 ),
             )
-            return HandleEnterExceptionResult()
+            return HandleEnterExceptionResult(temporary=True)
 
         if run_all_now and force_run:
             self.log.warn(
@@ -833,7 +835,7 @@ class ReqManager:
                     "(temporary) failure of a maintenance enter command."
                 ),
             )
-            return HandleEnterExceptionResult()
+            return HandleEnterExceptionResult(temporary=True)
 
     def _write_stats_for_execute(
         self,
@@ -935,38 +937,33 @@ class ReqManager:
 
         prepare_dt = utcnow()
         try:
-            self._enter_maintenance(online, timeout)
-        except PostponeMaintenance:
-            res = self._handle_enter_postpone(run_all_now, force_run)
-            if res.postpone:
-                for req in runnable_requests:
-                    self.log.debug("execute-requests-postpone", request=req.id)
-                    req.state = State.postpone
-            if res.exit:
-                self._leave_maintenance(online)
-                self._write_stats_for_execute()
-                return
-
-        except TempfailMaintenance:
-            res = self._handle_enter_tempfail(run_all_now, force_run)
-            if res.exit:
-                # Stay in maintenance mode as we expect the temporary failure
-                # to go away on the next agent run.
-                self._write_stats_for_execute()
-                return
+            enter_result = self._enter_maintenance(
+                online, timeout, run_all_now, force_run
+            )
 
         except Exception:
             # Other exceptions are similar to tempfail, just with additional
-            # logging. Could an error from a enter command, from the directory
+            # logging. Could be an error from a enter command, from the directory
             # or an internal one.
+            # Might already be in maintenance or not, depending on where
+            # _enter_maintenance failed. That's ok, the next agent
+            # run can continue in either case.
             self.log.error("execute-enter-maintenance-failed", exc_info=True)
-            res = self._handle_enter_tempfail(run_all_now, force_run)
-            if res.exit:
-                # Might already be in maintenance or not, depending on where
-                # _enter_maintenance failed. That's ok, the next agent
-                # run can continue in either case.
-                self._write_stats_for_execute()
-                return
+            enter_result = self._handle_enter_tempfail(run_all_now, force_run)
+
+        if enter_result.temporary and enter_result.exit:
+            # Stay in maintenance mode as we expect the temporary failure
+            # to go away on the next agent run.
+            self._write_stats_for_execute()
+            return
+        if enter_result.postpone:
+            for req in runnable_requests:
+                self.log.debug("execute-requests-postpone", request=req.id)
+                req.state = State.postpone
+        if enter_result.exit:
+            self._leave_maintenance(online)
+            self._write_stats_for_execute()
+            return
 
         # We are now in maintenance mode, start the action.
         requested_reboots = set()
