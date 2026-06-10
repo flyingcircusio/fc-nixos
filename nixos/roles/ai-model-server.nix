@@ -284,7 +284,7 @@ in
           }
         ];
         flyingcircus.services.telegraf.inputs.nvidia_smi = lib.mkIf cfg.skvaider-inference.enable [
-          { }
+          { bin_path = "/run/current-system/sw/bin/nvidia-smi"; }
         ];
         services.logrotate.settings.skvaider-inference = {
           create = "0640 skvaider service";
