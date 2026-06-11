@@ -1,3 +1,11 @@
+# Release 2026_023
+
+## NixOS XX.XX platform
+
+- docker: use docker 29 by default, as docker 28 is EOL (PL-135500)
+
+
+
 # Release 2026_022
 
 ## Impact
