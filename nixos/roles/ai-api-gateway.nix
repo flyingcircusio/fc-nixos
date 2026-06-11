@@ -150,7 +150,7 @@ in
       };
     };
     systemd.tmpfiles.rules = [
-      "d /var/lib/skvaider 0755 skvaider service -"
+      "d /var/lib/skvaider 0750 skvaider service -"
       "d /var/log/skvaider 0750 skvaider service -"
       "A /var/log/skvaider - - - - g:sudo-srv:r-x,g:admins:r-x"
       "a /var/log/skvaider - - - - d:g:sudo-srv:r,d:g:admins:r"
