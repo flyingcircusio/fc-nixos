@@ -55,7 +55,7 @@ let
 in
 # We use buildPythonPackage instead of buildPythonApplication
 # to assist using this in a mixed buildEnv for external unit testing.
-py.buildPythonPackage rec {
+py.buildPythonPackage (finalAttrs: {
   inherit version src;
 
   name = "fc.qemu-${version}";
@@ -71,7 +71,6 @@ py.buildPythonPackage rec {
     gptfdisk
     iproute2
     parted
-    procps
     qemu_ceph
     systemd
     util-linux
@@ -88,49 +87,51 @@ py.buildPythonPackage rec {
   ];
 
   passthru = {
-    inherit py nativeCheckInputs;
+    inherit py;
+    # need to be defined here to keep them overridable *and* consistent,
+    # because `buildPythonPackages` messes with `nativeCheckInputs`,
+    nativeCheckInputs = [
+      file
+      openssh
+      py.pytest_patterns
+      py.pytest
+      py.pytest-xdist
+      py.pytest-cov
+      py.pytest-timeout
+      py.mock
+      fc-ceph
+      # Allow passing through to pytest in the NixOS test.
+      (py.buildPythonPackage rec {
+        pname = "pytest-flakefinder";
+        version = "1.1.0";
+
+        src = py.fetchPypi {
+          inherit pname version;
+          hash = "sha256-4kEqGSC9uOeQh4OyCz1X6drVkMw5qT6Flv/dSTtAPg4=";
+        };
+
+        pyproject = true;
+        build-system = [ py.setuptools ];
+        propagatedBuildInputs = [ py.pytest ];
+
+        meta = {
+          description = "Runs tests multiple times to expose flakiness.";
+          homepage = "https://github.com/dropbox/pytest-flakefinder";
+        };
+      })
+    ];
   };
 
   postInstall = ''
     cp -Pr $src/share $out/share
   '';
 
-  nativeCheckInputs = [
-    file
-    openssh
-    py.pytest_patterns
-    py.pytest
-    py.pytest-xdist
-    py.pytest-cov
-    py.pytest-timeout
-    py.mock
-    fc-ceph
-    # Allow passing through to pytest in the NixOS test.
-    (py.buildPythonPackage rec {
-      pname = "pytest-flakefinder";
-      version = "1.1.0";
-
-      src = py.fetchPypi {
-        inherit pname version;
-        hash = "sha256-4kEqGSC9uOeQh4OyCz1X6drVkMw5qT6Flv/dSTtAPg4=";
-      };
-
-      pyproject = true;
-      build-system = [ py.setuptools ];
-      propagatedBuildInputs = [ py.pytest ];
-
-      meta = with lib; {
-        description = "Runs tests multiple times to expose flakiness.";
-        homepage = "https://github.com/dropbox/pytest-flakefinder";
-      };
-    })
-  ];
-
+  nativeCheckInputs = finalAttrs.passthru.nativeCheckInputs;
   doCheck = true;
   checkPhase = ''
     runHook preCheck
-    PATH="${lib.makeBinPath propagatedBuildInputs}:$PATH" pytest -vv -m "unit"
+    PATH="${lib.makeBinPath finalAttrs.propagatedBuildInputs}:$PATH" pytest -vv -m "unit"
     runHook postCheck
   '';
 
-}
+})
