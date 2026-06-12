@@ -60,8 +60,21 @@ in
         default = { };
         type = types.submodule {
           options = {
-            enable = mkEnableOption "storing the logs in object storage" // {
+            enable = mkOption {
+              description = ''
+                Enable additional configuration so that loki's logs can be stored in
+                object storage.
+
+                This option merely serves as a toggle for the configuration that enables
+                storing logs in object storage and does not affect the actual storage backend.
+                If you just want to store logs on disk instead you should add a fitting
+                entry to `flyingcircus.roles.loki.storageSchedule` instead.
+              '';
               default = config.flyingcircus.enc ? role_configuration.loki;
+              # role_configuration.loki is available to VMs managed via the directory with the loki role.
+              # The defaultText is adjusted here because the value above evaluates to false when
+              # evaluating the options for fc-search etc.
+              defaultText = "true";
             };
             endpoint = mkOption {
               description = "HTTP(S) endpoint of the object store";
@@ -93,10 +106,24 @@ in
                     startDate = "2024-09-10";
                     backend = "filesystem";
                   }
+                  {
+                    startDate = "2026-07-01";
+                    backend = "aws";
+                  }
                 ];
               };
               extra = mkOption {
-                description = "Additional entries to add to the log storage schedule";
+                description = ''
+                  Entries to add to the log storage schedule.
+
+                  The default policy is to store all logs in object storage starting on 2026-07-01.
+                  Object storage buckets and credentials are set up automatically for you.
+
+                  If you instead wish to store logs on the filesystem, add an entry here
+                  with `backend = "filesystem";` and a `startDate` in the future.
+
+                  See https://grafana.com/docs/loki/latest/operations/storage/schema/ for more details.
+                '';
                 type = listOf storageScheduleSubmodule;
                 default = [ ];
                 defaultText = "[]";
