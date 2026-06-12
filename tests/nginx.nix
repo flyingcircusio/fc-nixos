@@ -260,7 +260,15 @@ import ./make-test-python.nix (
             (testlib.fcConfig { id = 7; })
           ];
 
-          flyingcircus.roles.loki.enable = true;
+          flyingcircus.roles.loki = {
+            enable = true;
+            storageSchedule.default = lib.mkForce [
+              {
+                startDate = "2024-09-10";
+                backend = "filesystem";
+              }
+            ];
+          };
           flyingcircus.roles.webgateway.enable = true;
           flyingcircus.services.nginx = {
             virtualHosts.server = {
