@@ -147,6 +147,7 @@ in
   tempo = callTest ./tempo.nix { };
   users = callTest ./users.nix { };
   vxlan = callTest ./vxlan.nix { };
+  wazuh-agent = callTest ./wazuh-agent.nix { };
   webproxy = callTest ./webproxy.nix { };
   webproxy-legacy = callTest ./webproxy-legacy.nix { };
 }
