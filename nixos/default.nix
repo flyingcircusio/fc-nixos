@@ -13,7 +13,6 @@ with builtins;
     ./lib
     ./platform
     ./services
-    ./upstream_services
     ./version.nix
   ];
 
