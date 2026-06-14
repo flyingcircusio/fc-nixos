@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-149.0.7827.53",
+    "name": "chromedriver-unwrapped-149.0.7827.102",
     "pname": "chromedriver-unwrapped",
-    "version": "149.0.7827.53"
+    "version": "149.0.7827.102"
   },
   "chromium": {
-    "name": "chromium-149.0.7827.53",
+    "name": "chromium-149.0.7827.102",
     "pname": "chromium",
-    "version": "149.0.7827.53"
+    "version": "149.0.7827.102"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.5",
@@ -160,9 +160,9 @@
     "version": "2.92rel2"
   },
   "docker": {
-    "name": "docker-29.5.2",
+    "name": "docker-29.5.3",
     "pname": "docker",
-    "version": "29.5.2"
+    "version": "29.5.3"
   },
   "docker-compose": {
     "name": "docker-compose-5.1.4",
@@ -175,14 +175,14 @@
     "version": "2.4.4"
   },
   "element-web": {
-    "name": "element-web-1.12.18",
+    "name": "element-web-1.12.21",
     "pname": "element-web",
-    "version": "1.12.18"
+    "version": "1.12.21"
   },
   "erlang": {
-    "name": "erlang-28.5.0.1",
+    "name": "erlang-28.5.0.2",
     "pname": "erlang",
-    "version": "28.5.0.1"
+    "version": "28.5.0.2"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -210,9 +210,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-151.0.3",
+    "name": "firefox-151.0.4",
     "pname": "firefox",
-    "version": "151.0.3"
+    "version": "151.0.4"
   },
   "gcc": {
     "name": "gcc-wrapper-15.2.0",
@@ -465,14 +465,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.92",
+    "name": "linux-6.12.93",
     "pname": "linux",
-    "version": "6.12.92"
+    "version": "6.12.93"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.92",
+    "name": "linux-6.12.93",
     "pname": "linux",
-    "version": "6.12.92"
+    "version": "6.12.93"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -510,9 +510,9 @@
     "version": "5.10.0"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-1.153.0",
+    "name": "matrix-synapse-1.154.0",
     "pname": "matrix-synapse",
-    "version": "1.153.0"
+    "version": "1.154.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.3",
@@ -1030,9 +1030,9 @@
     "version": "7.0"
   },
   "strongswan": {
-    "name": "strongswan-6.0.6",
+    "name": "strongswan-6.0.7",
     "pname": "strongswan",
-    "version": "6.0.6"
+    "version": "6.0.7"
   },
   "subversion": {
     "name": "subversion-1.14.5",
@@ -1100,9 +1100,9 @@
     "version": "2.42"
   },
   "uv": {
-    "name": "uv-0.11.16",
+    "name": "uv-0.11.19",
     "pname": "uv",
-    "version": "0.11.16"
+    "version": "0.11.19"
   },
   "varnish": {
     "name": "varnish-8.0.2",
