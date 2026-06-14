@@ -400,9 +400,9 @@
     "version": "1.33.9+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.5.7",
+    "name": "keycloak-26.6.3",
     "pname": "keycloak",
-    "version": "26.5.7"
+    "version": "26.6.3"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.19.1",
@@ -500,9 +500,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.5.10",
+    "name": "mastodon-4.5.11",
     "pname": "mastodon",
-    "version": "4.5.10"
+    "version": "4.5.11"
   },
   "matomo": {
     "name": "matomo-5.8.0",
@@ -510,9 +510,9 @@
     "version": "5.8.0"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.153.0",
+    "name": "matrix-synapse-wrapped-1.154.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.153.0"
+    "version": "1.154.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.2",
@@ -736,14 +736,14 @@
     "version": "8.3.31"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.21",
+    "name": "php-with-extensions-8.4.22",
     "pname": "php-with-extensions",
-    "version": "8.4.21"
+    "version": "8.4.22"
   },
   "php85": {
-    "name": "php-with-extensions-8.5.6",
+    "name": "php-with-extensions-8.5.7",
     "pname": "php-with-extensions",
-    "version": "8.5.6"
+    "version": "8.5.7"
   },
   "phpPackages.composer": {
     "name": "composer-2.9.8",
