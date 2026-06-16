@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-149.0.7827.53",
+    "name": "chromedriver-unwrapped-149.0.7827.114",
     "pname": "chromedriver-unwrapped",
-    "version": "149.0.7827.53"
+    "version": "149.0.7827.114"
   },
   "chromium": {
-    "name": "chromium-149.0.7827.53",
+    "name": "chromium-149.0.7827.114",
     "pname": "chromium",
-    "version": "149.0.7827.53"
+    "version": "149.0.7827.114"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -170,9 +170,9 @@
     "version": "2.40.3"
   },
   "docker_29": {
-    "name": "docker-29.5.2",
+    "name": "docker-29.5.3",
     "pname": "docker",
-    "version": "29.5.2"
+    "version": "29.5.3"
   },
   "dovecot": {
     "name": "dovecot-2.3.21.1",
@@ -185,9 +185,9 @@
     "version": "1.12.18"
   },
   "erlang": {
-    "name": "erlang-28.5",
+    "name": "erlang-28.5.0.2",
     "pname": "erlang",
-    "version": "28.5"
+    "version": "28.5.0.2"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -215,9 +215,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-151.0.3",
+    "name": "firefox-151.0.4",
     "pname": "firefox",
-    "version": "151.0.3"
+    "version": "151.0.4"
   },
   "gcc": {
     "name": "gcc-wrapper-14.3.0",
@@ -240,9 +240,9 @@
     "version": "2.51.2"
   },
   "gitaly": {
-    "name": "gitaly-18.11.4",
+    "name": "gitaly-18.11.5",
     "pname": "gitaly",
-    "version": "18.11.4"
+    "version": "18.11.5"
   },
   "github-runner": {
     "name": "github-runner-2.334.0",
@@ -250,9 +250,9 @@
     "version": "2.334.0"
   },
   "gitlab": {
-    "name": "gitlab-18.11.4",
+    "name": "gitlab-18.11.5",
     "pname": "gitlab",
-    "version": "18.11.4"
+    "version": "18.11.5"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.39.0",
@@ -260,14 +260,14 @@
     "version": "4.39.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.11.4",
+    "name": "gitlab-ee-18.11.5",
     "pname": "gitlab-ee",
-    "version": "18.11.4"
+    "version": "18.11.5"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.11.4",
+    "name": "gitlab-pages-18.11.5",
     "pname": "gitlab-pages",
-    "version": "18.11.4"
+    "version": "18.11.5"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-18.11.3",
@@ -275,9 +275,9 @@
     "version": "18.11.3"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.11.4",
+    "name": "gitlab-workhorse-18.11.5",
     "pname": "gitlab-workhorse",
-    "version": "18.11.4"
+    "version": "18.11.5"
   },
   "glibc": {
     "name": "glibc-2.40-224",
@@ -400,9 +400,9 @@
     "version": "1.33.9+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.5.7",
+    "name": "keycloak-26.6.3",
     "pname": "keycloak",
-    "version": "26.5.7"
+    "version": "26.6.3"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.19.1",
@@ -465,14 +465,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.92",
+    "name": "linux-6.12.93",
     "pname": "linux",
-    "version": "6.12.92"
+    "version": "6.12.93"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.92",
+    "name": "linux-6.12.93",
     "pname": "linux",
-    "version": "6.12.92"
+    "version": "6.12.93"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -500,9 +500,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.5.10",
+    "name": "mastodon-4.5.11",
     "pname": "mastodon",
-    "version": "4.5.10"
+    "version": "4.5.11"
   },
   "matomo": {
     "name": "matomo-5.8.0",
@@ -510,9 +510,9 @@
     "version": "5.8.0"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.153.0",
+    "name": "matrix-synapse-wrapped-1.154.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.153.0"
+    "version": "1.154.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.2",
@@ -645,9 +645,9 @@
     "version": "1.1.1w"
   },
   "openssl_3": {
-    "name": "openssl-3.0.20",
+    "name": "openssl-3.0.21",
     "pname": "openssl",
-    "version": "3.0.20"
+    "version": "3.0.21"
   },
   "openvpn": {
     "name": "openvpn-2.6.19",
@@ -675,24 +675,24 @@
     "version": "4.9.15"
   },
   "percona": {
-    "name": "percona-server-8.4.7-7",
+    "name": "percona-server-8.4.8-8",
     "pname": "percona-server",
-    "version": "8.4.7-7"
+    "version": "8.4.8-8"
   },
   "percona-server": {
-    "name": "percona-server-8.4.7-7",
+    "name": "percona-server-8.4.8-8",
     "pname": "percona-server",
-    "version": "8.4.7-7"
+    "version": "8.4.8-8"
   },
   "percona-server_8_0": {
-    "name": "percona-server-8.0.45-36",
+    "name": "percona-server-8.0.46-37",
     "pname": "percona-server",
-    "version": "8.0.45-36"
+    "version": "8.0.46-37"
   },
   "percona-xtrabackup_8_0": {
-    "name": "percona-xtrabackup-8.0.35-34",
+    "name": "percona-xtrabackup-8.0.35-36",
     "pname": "percona-xtrabackup",
-    "version": "8.0.35-34"
+    "version": "8.0.35-36"
   },
   "percona-xtrabackup_8_4": {
     "name": "percona-xtrabackup-8.4.0-4",
@@ -701,9 +701,9 @@
   },
   "percona57": {},
   "percona80": {
-    "name": "percona-server-8.0.45-36",
+    "name": "percona-server-8.0.46-37",
     "pname": "percona-server",
-    "version": "8.0.45-36"
+    "version": "8.0.46-37"
   },
   "php72": {
     "name": "php-with-extensions-7.2.34",
@@ -736,14 +736,14 @@
     "version": "8.3.31"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.21",
+    "name": "php-with-extensions-8.4.22",
     "pname": "php-with-extensions",
-    "version": "8.4.21"
+    "version": "8.4.22"
   },
   "php85": {
-    "name": "php-with-extensions-8.5.6",
+    "name": "php-with-extensions-8.5.7",
     "pname": "php-with-extensions",
-    "version": "8.5.6"
+    "version": "8.5.7"
   },
   "phpPackages.composer": {
     "name": "composer-2.9.8",
@@ -1006,9 +1006,9 @@
     "version": "4.3.1"
   },
   "redis": {
-    "name": "redis-8.6.3",
+    "name": "redis-8.6.4",
     "pname": "redis",
-    "version": "8.6.3"
+    "version": "8.6.4"
   },
   "rich-cli": {
     "name": "rich-cli-1.8.0",
