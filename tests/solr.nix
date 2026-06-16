@@ -23,6 +23,7 @@ import ./make-test-python.nix (
         virtualisation.memorySize = 2000;
 
         services.solr.enable = true;
+        services.solr.package = pkgs.solr_10;
       };
 
     testScript = ''
@@ -34,7 +35,6 @@ import ./make-test-python.nix (
 
       # adapted from pkgs.solr/examples/films/README.txt
       machine.succeed("sudo -u solr solr create -c films")
-      machine.succeed("chmod 0644 /var/lib/solr/data/films/conf/managed-schema")
       res = machine.succeed(
           """
         curl http://localhost:8983/solr/films/schema -X POST -H 'Content-type:application/json' --data-binary '{
@@ -56,7 +56,7 @@ import ./make-test-python.nix (
       assert '"status":0' in res, "unexpected output: " + res
 
       machine.succeed(
-          "sudo -u solr post -c films ${pkgs.solr}/example/films/films.json"
+          "sudo -u solr solr post -c films ${pkgs.solr}/example/films/films.json"
       )
       assert '"name":"Batman Begins"' in machine.succeed(
           "curl http://localhost:8983/solr/films/query?q=name:batman"
