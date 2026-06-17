@@ -90,6 +90,7 @@ in
         # resolution — they survive as long as the caller's definition
         # doesn't explicitly include the same key.
         flyingcircus.roles.ai-model-server.skvaider-inference.settings = lib.mkDefault {
+          enable = true;
           models_dir = "/var/lib/skvaider/model";
           server.port = 8000;
           server.host = "0.0.0.0";
