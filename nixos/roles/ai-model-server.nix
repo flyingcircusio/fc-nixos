@@ -109,6 +109,13 @@ in
         services.xserver.videoDrivers = [ "nvidia" ];
         hardware.nvidia-container-toolkit.enable = true;
 
+        networking.firewall.extraCommands = lib.mkIf config.flyingcircus.roles.kvm_host.enable (
+          lib.mkAfter ''
+            # Allow bridged L2 traffic from Docker/vLLM containers on KVM hosts.
+            ip46tables -I fc-kvm-forward 1 -m physdev --physdev-is-bridged -j ACCEPT
+          ''
+        );
+
         environment.systemPackages = [
           (pkgs.writeShellScriptBin "nvtop-nvidia" ''
             exec ${pkgs.nvtopPackages.nvidia}/bin/nvtop "$@"
