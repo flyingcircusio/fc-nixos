@@ -1,3 +1,26 @@
+# Release 2026_024
+
+## Impact
+
+-
+
+-
+
+-
+
+
+## NixOS XX.XX platform
+
+- Increase loki's internal grpc message size limit to enable larger queries against log lines (PL-135503)
+
+- Default to storing loki's data in the automatically configured object storage (PL-135489)
+
+- Fix a small with the Grafana frontend showing a basic auth form sometimes due to improper subpath handling in the frontend.
+
+- Fix an issue where object storage credentials were not passed to loki correctly. (PL-135488)
+
+
+
 # Release 2026_023
 
 ## NixOS XX.XX platform
