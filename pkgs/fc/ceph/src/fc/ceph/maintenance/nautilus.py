@@ -279,7 +279,7 @@ class MaintenanceTasks(object):
         # Prohibit OSD traffic by marking them down and flagging them to
         # not automatically return.
         try:
-            host_buckets, osd_ids = get_host_crush_buckets()
+            _, osd_ids = get_host_crush_buckets()
             if osd_ids:
                 run.ceph("osd", "set-group", "noup", *sorted(osd_ids))
                 run.ceph("osd", "down", *sorted(osd_ids))
@@ -288,11 +288,7 @@ class MaintenanceTasks(object):
             sys.exit(75)  # EXIT_TEMPFAIL, fc-agent might retry
 
     def leave(self):
-        host_buckets, osd_ids = get_host_crush_buckets()
-        if host_buckets:
-            # PL-133952: still needed for getting hosts upgrading from the
-            # previous mechanism out of maintenance. Remove later.
-            run.ceph("osd", "unset-group", "noup", *sorted(host_buckets))
+        _, osd_ids = get_host_crush_buckets()
 
         noup_osds = sorted(filter_noup_osds(osd_ids))
         for osd_id in noup_osds:
