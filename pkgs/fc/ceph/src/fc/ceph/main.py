@@ -437,6 +437,22 @@ requests. Useful for identifying slacky OSDs.""",
     parser_leave = maint_sub.add_parser("leave", help="Leave maintenance mode.")
     parser_leave.set_defaults(action="leave")
 
+    parser_lock = maint_sub.add_parser(
+        "lock", help="Acquire a named maintenance lock."
+    )
+    parser_lock.set_defaults(action="lock")
+    parser_lock.add_argument(
+        "lock_name", help="name of the rbd lock volume to acquire"
+    )
+
+    parser_unlock = maint_sub.add_parser(
+        "unlock", help="Free a named maintenance lock."
+    )
+    parser_unlock.set_defaults(action="unlock")
+    parser_unlock.add_argument(
+        "lock_name", help="name of the rbd lock volume to acquire"
+    )
+
     check = subparsers.add_parser("check", help="Cluster checks")
     check.set_defaults(action=check.print_usage)
     check_sub = check.add_subparsers()

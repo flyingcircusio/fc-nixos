@@ -235,22 +235,22 @@ class MaintenanceTasks(object):
         rpe.ensure_pools_are_balanceable()
         return max(volume_statuscode, rpe_statuscode)
 
-    def _ensure_maintenance_volume(self):
+    def _ensure_maintenance_volume(self, lock_name: str):
         try:
             # fmt: off
-            run.rbd_locktool("-q", "-i", "rbd/.maintenance",
+            run.rbd_locktool("-q", "-i", f"rbd/{lock_name}",
                 timeout=self.LOCKTOOL_TIMEOUT_SECS,
             )
             # fmt: on
         except subprocess.CalledProcessError:
-            run.rbd("create", "--size", "1", "rbd/.maintenance")
+            run.rbd("create", "--size", "1", f"rbd/{lock_name}")
 
-    def enter(self):
+    def lock(self, lock_name: str):
         try:
-            self._ensure_maintenance_volume()
+            self._ensure_maintenance_volume(lock_name)
             # Aquire the maintenance lock
             run.rbd_locktool(
-                "-l", "rbd/.maintenance", timeout=self.LOCKTOOL_TIMEOUT_SECS
+                "-l", f"rbd/{lock_name}", timeout=self.LOCKTOOL_TIMEOUT_SECS
             )
         # locking can block on a busy cluster, causing the whole agent (and all other
         # agent operations waiting for the global agent lock) to be stuck
@@ -263,6 +263,9 @@ class MaintenanceTasks(object):
         except subprocess.CalledProcessError:
             sys.exit(75)  # EXIT_TEMPFAIL, fc-agent might retry
 
+    def enter(self):
+        self.lock(".maintenance")
+
         # Check that the cluster is fully healhty
         cluster_status = run.json.ceph("health")
         if not self.check_cluster_maintenance(cluster_status):
@@ -271,7 +274,9 @@ class MaintenanceTasks(object):
                 f"Ceph status is {cluster_status['status']}."
             )
             # when postponing the maintenance, do not leave a stale lock around in case
-            # e.g. the machine failing before the next maintenance attempt
+            # e.g. the machine failing before the next maintenance attempt.
+            # This also sets our own OSDs `up` again, in case they might have
+            # been the culprit behind the unhealthy status.
             self.leave()
             # 69 signals to postpone the maintenance, triggering a leave in fc-agent
             sys.exit(69)
@@ -284,27 +289,18 @@ class MaintenanceTasks(object):
                 run.ceph("osd", "set-group", "noup", *sorted(osd_ids))
                 run.ceph("osd", "down", *sorted(osd_ids))
         except Exception:
+            # `leave` is necessary once we started setting OSDs noup/ down,
+            # as down OSDs will cause the next lock-time health check to fail
             self.leave()
             sys.exit(75)  # EXIT_TEMPFAIL, fc-agent might retry
 
-    def leave(self):
-        _, osd_ids = get_host_crush_buckets()
-
-        noup_osds = sorted(filter_noup_osds(osd_ids))
-        for osd_id in noup_osds:
-            # remove noup flags in a staggered fashion, to reduce peering storm
-            run.ceph("osd", "unset-group", "noup", str(osd_id))
-            time.sleep(15)
-
-        if noup_osds and noup_workaround.run() != 0:
-            raise RuntimeError("noup-workaround failed, PGs may still be stuck")
-
+    def unlock(self, lock_name: str):
         last_exc = None
         for _ in range(self.UNLOCK_MAX_RETRIES):
             try:
-                self._ensure_maintenance_volume()
+                self._ensure_maintenance_volume(lock_name)
                 # fmt: off
-                run.rbd_locktool("-q", "-u", "rbd/.maintenance",
+                run.rbd_locktool("-q", "-u", f"rbd/{lock_name}",
                     timeout=self.LOCKTOOL_TIMEOUT_SECS,
                 )
                 # fmt: on
@@ -328,3 +324,17 @@ class MaintenanceTasks(object):
                 if last_exc
                 else RuntimeError("Ceph cluster maintenance unlock failed")
             )
+
+    def leave(self):
+        _, osd_ids = get_host_crush_buckets()
+
+        noup_osds = sorted(filter_noup_osds(osd_ids))
+        for osd_id in noup_osds:
+            # remove noup flags in a staggered fashion, to reduce peering storm
+            run.ceph("osd", "unset-group", "noup", str(osd_id))
+            time.sleep(15)
+
+        if noup_osds and noup_workaround.run() != 0:
+            raise RuntimeError("noup-workaround failed, PGs may still be stuck")
+
+        self.unlock(".maintenance")
