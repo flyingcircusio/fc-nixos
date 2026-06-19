@@ -62,7 +62,11 @@ in
   k3s = callTest ./k3s { };
   k3s_ipv6 = callTest ./k3s { enableIPv6 = true; };
   k3s_monitoring = callTest ./k3s/monitoring.nix { };
-  kernelconfig = callTest ./kernelconfig.nix { };
+  kernelconfig = {
+    default = callTest ./kernelconfig.nix { };
+    gpu = callTest ./kernelconfig-gpu.nix { };
+    verification = callTest ./kernelconfig-verification.nix { };
+  };
   kernelversions = callTest ./kernelversions.nix { };
   kvm_host_ceph-nautilus-nautilus = callTest ./kvm_host_ceph-nautilus.nix {
     clientCephRelease = "nautilus";

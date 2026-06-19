@@ -385,18 +385,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   # TODO: re-evaluate whether this still needs to be vendored without lmdb support (#PL-130446)
   libmodsecurity = super.callPackage ./libmodsecurity { };
 
-  linuxKernelGPU = self.linux_6_18.override {
-    argsOverride = rec {
-      src = super.fetchurl {
-        url = "mirror://kernel/linux/kernel/v6.x/linux-${version}.tar.xz";
-        hash = "sha256-fHFiFsPEE07Q3mkZVwHmd1d7vN05efMxwYKs0Gvy8XA=";
-      };
-      version = "6.18.15";
-      modDirVersion = version;
-      kernelPatches = self.linux_6_18.kernelPatches ++ [ ];
-    };
-    ignoreConfigErrors = true;
-  };
+  linuxKernelGPU = self.linux_6_18;
 
   # Change this alias for trying out other kernel packages on non-production
   # machines.

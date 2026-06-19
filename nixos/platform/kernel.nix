@@ -126,7 +126,6 @@ in
       PC87413_WDT n
       NV_TCO n
       60XX_WDT n
-      CPU5_WDT n
       SMSC_SCH311X_WDT n
       SMSC37B787_WDT n
       TQMX86_WDT n
@@ -156,6 +155,9 @@ in
       {
         name = "fcio-kernel-options";
         patch = null;
+        structuredExtraConfig = with lib.kernel.whenHelpers config.boot.kernelPackages.kernel.version; {
+          CPU5_WDT = whenOlder "6.18" lib.kernel.no;
+        };
         extraConfig = config.flyingcircus.kernelOptions;
       }
     ];

@@ -104,10 +104,11 @@ in
 
         nixpkgs.config.cudaSupport = true;
         hardware.graphics.enable = true;
-        hardware.nvidia.open = true;
-        hardware.nvidia.nvidiaSettings = false;
-        services.xserver.videoDrivers = [ "nvidia" ];
         hardware.nvidia-container-toolkit.enable = true;
+        hardware.nvidia.nvidiaSettings = false;
+        hardware.nvidia.open = true;
+        services.xserver.videoDrivers = [ "nvidia" ];
+        hardware.nvidia-container-toolkit.suppressNvidiaDriverAssertion = true;
 
         environment.systemPackages = [
           (pkgs.writeShellScriptBin "nvtop-nvidia" ''
