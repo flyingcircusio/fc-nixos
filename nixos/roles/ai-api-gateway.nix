@@ -150,13 +150,12 @@ in
       };
     };
     systemd.tmpfiles.rules = [
-      "d /var/lib/skvaider 0750 skvaider service -"
-      "d /var/log/skvaider 0750 skvaider service -"
+      "d /var/lib/skvaider 0750 skvaider service - -"
+      "d /var/lib/skvaider/debug 0750 skvaider service 4d -"
+
+      "d /var/log/skvaider 0750 skvaider service - -"
       "A /var/log/skvaider - - - - g:sudo-srv:r-x,g:admins:r-x"
       "a /var/log/skvaider - - - - d:g:sudo-srv:r,d:g:admins:r"
-      "d /var/lib/skvaider/debug 0750 skvaider service -"
-      "e /var/lib/skvaider/debug 4 -" # clean up debug logs after 4 days
-      "e /var/log/skvaider 4 -" # clean up old logs after 4 days
     ];
     services.logrotate.settings.skvaider = {
       create = "0640 skvaider service";
