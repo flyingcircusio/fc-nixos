@@ -83,7 +83,7 @@ let
     preferLocalBuild = true;
   };
 
-  initialEnv = if stableBranch then branch else "fc-26.05-dev";
+  initialEnv = if stableBranch then branch else "fc-26.11-dev";
 
   initialNixChannels = pkgs.writeText "nix-channels" ''
     https://hydra.flyingcircus.io/channel/custom/flyingcircus/${initialEnv}/release nixos
