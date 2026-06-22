@@ -288,6 +288,11 @@ in
         flyingcircus.services.telegraf.inputs.nvidia_smi = lib.mkIf cfg.skvaider-inference.enable [
           { bin_path = "/run/current-system/sw/bin/nvidia-smi"; }
         ];
+        networking.firewall.extraCommands = lib.mkIf config.flyingcircus.roles.kvm_host.enable (
+          lib.mkAfter ''
+            ip46tables -I fc-kvm-forward 1 -m physdev --physdev-is-bridged -j ACCEPT
+          ''
+        );
         services.logrotate.settings.skvaider-inference = {
           create = "0640 skvaider service";
           files = [
