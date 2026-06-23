@@ -650,15 +650,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     cyrus_sasl = self.cyrus_sasl-legacyCrypt;
   };
 
-  python27 = super.python27.overrideAttrs (prev: {
-    buildInputs = prev.buildInputs ++ [ super.libxcrypt-legacy ];
-    NIX_LDFLAGS = "-lcrypt";
-    configureFlags = [
-      "CFLAGS=-I${super.libxcrypt-legacy}/include"
-      "LIBS=-L${super.libxcrypt-legacy}/lib"
-    ];
-  });
-
   qemu-ceph-nautilus = fc-nixos-21_05.qemu-ceph-nautilus;
   # pacific: let's also try a qemu version update from 6.0 to 10.1, because
   # pacific does not compile against old qemu

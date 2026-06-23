@@ -105,6 +105,7 @@ time-window.
 ## Other notable changes
 
 - The `security.dhparams` module has been removed. Remove any uses of DHE and migrate to ECDHE (RFC 8422, 2018) and Hybrid PQ (draft-ietf-tls-ecdhe-mlkem, 2026) key exchange algorithms.
+- The `python2` and `python27` package has been removed.
 
 ## Known issues
 
