@@ -166,23 +166,6 @@ When an RSA server certificate is in use the following ciphers are activated:
 Using two certificates to support both kinds of ciphers is possible with Nginx
 but needs manual configuration.
 
-For ciphers using DHE, an RSA certificate must be used. *dhparams* must be generated and set:
-
-security.dhparams.enable = true;
-security.dhparams.params.nginx = {};
-services.nginx.sslDhparam = config.security.dhparams.params.nginx.path;i
-
-DHE TLS ciphers are deprecated and will be removed in fc-nixos 26.11 together with the `services.dhparams` module. Please migrate to ECDHE (RFC 8422, 2018) and Hybrid PQ (draft-ietf-tls-ecdhe-mlkem, 2026) key exchange algorithms.
-
-This enables the following TLS ciphers:
-
-- TLS_DHE_RSA_WITH_AES_128_GCM_SHA256
-- TLS_DHE_RSA_WITH_AES_256_GCM_SHA384
-- TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256
-
-The DH param file is located at /var/lib/dhparams/nginx.pem.
-This path can be referenced from Nix code by `security.dhparams.params.nginx.path` as shown in the config example above.
-
 The services.nginx.sslCiphers option can be used to change the cipher list:
 
 https://search.nixos.org/options&show=services.nginx.sslCiphers&from=0&size=50&sort=relevance&query=sslCiphers
@@ -216,9 +199,3 @@ configuration for the default vhost.
 The effect is that Nginx will start a separate socket listener for each worker.
 This helps performance and also allows changing listen IPs on config reload
 without the need to restart Nginx.
-
-For ciphers using DHE, an RSA certificate must be used and dhparams must be set:
-
-ssl_dhparam /var/lib/dhparams/nginx.pem;
-
-The nginx.pem file is generated automatically on all VMs.
