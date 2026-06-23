@@ -305,7 +305,7 @@ let
     let
       evaled = import "${nixpkgs_}/nixos/lib/eval-config.nix" config;
       build = evaled.config.system.build;
-      kernelTarget = evaled.pkgs.stdenv.hostPlatform.linux-kernel.target;
+      kernelTarget = build.kernel.target;
 
       customIPXEScript = pkgs.writeTextDir "netboot.ipxe" ''
         #!ipxe
