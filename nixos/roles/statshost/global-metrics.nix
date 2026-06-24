@@ -43,6 +43,7 @@ let
     "redis"
     "routes"
     "skvaider"
+    "nvidia_smi"
     "socket_listener"
     "swap"
     "system"
