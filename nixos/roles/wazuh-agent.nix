@@ -1,7 +1,10 @@
-# NOTE: Set the manager password in /run/wazuh-pass before enabling the role.
-# The password is only needed for authenticating with the wazuh manager once.
-# Other than that, the role works out-of-the-box.
-# Just set flyingcircus.wazuh-agent.enable = true;
+# NOTE: Set `agentAuthPassword` to the manager auth password if you need
+# initial enrollment. After the agent has enrolled once, the password is
+# no longer needed. Other than that, the role works out-of-the-box.
+# Just set flyingcircus.roles.wazuh-agent = {
+#   enable = true;
+#   agentAuthPassword = "...";  # optional, only for first enrollment
+# };
 #
 # Enrollment flow:
 #   1. setup-pre-wazuh (root) — copies package state dirs, config, and auth password
@@ -13,7 +16,6 @@
 { config, lib, ... }:
 
 let
-  agentAuthPasswordFile = "/run/wazuh-pass";
   # Apply mkDefault to every leaf value in a nested attrset, so users can
   # override individual scalars at normal priority without discarding the
   # rest of the role defaults.
@@ -35,17 +37,29 @@ in
       default = "VM";
       description = "Agent group assigned during enrollment.";
     };
+
+    agentAuthPassword = lib.mkOption {
+      type = lib.types.nullOr lib.types.nonEmptyStr;
+      default = null;
+      description = ''
+        Password for the Wazuh manager auth service, needed for initial
+        enrollment. Unset (default) or `null` means no password is written;
+        `setup-pre-wazuh` simply skips creating `authd.pass`.
+
+        Once the agent has enrolled (`.agent-registered` exists), this
+        option is no longer needed — it can be left unset on subsequent
+        deployments.
+
+        Note: this value ends up in the Nix store and the generated system
+        configuration, which are world-readable.
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable {
-    # Fail hard if the auth password file is missing.
-    systemd.services.setup-pre-wazuh = {
-      unitConfig.ConditionPathExists = agentAuthPasswordFile;
-    };
-
     services.wazuh.agent = {
       enable = true;
-      inherit agentAuthPasswordFile;
+      inherit (cfg) agentAuthPassword;
       agentAuthGroup = cfg.agentGroup;
 
       # Scalar defaults — each leaf wrapped in mkDefault (via mkDefaultDeep)

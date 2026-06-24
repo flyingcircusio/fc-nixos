@@ -201,25 +201,18 @@ in
         description = "List of extra packages added to wazuh-agent's `$PATH`";
       };
 
-      agentAuthPasswordFile = mkOption {
-        type = types.nullOr types.path;
+      agentAuthPassword = mkOption {
+        type = types.nullOr types.nonEmptyStr;
         default = null;
         description = ''
-          Path to a file containing the password for the auth service.
+          Password for the auth service.
 
-          This is the secure way to provide the password. The file must be
-          readable by root and should have restrictive permissions.
+          Written to `/var/ossec/etc/authd.pass` by `setup-pre-wazuh` and used
+          for initial enrollment with the manager.
 
-          Example:
-          ```bash
-          echo "password" > /run/secrets/wazuh-auth-password
-          chmod 600 /run/secrets/wazuh-auth-password
-          chown wazuh:wazuh /run/secrets/wazuh-auth-password
-          ```
-
-          ```nix
-          services.wazuh.agent.agentAuthPasswordFile = "/run/secrets/wazuh-auth-password";
-          ```
+          Note: this value is embedded in the Nix store and the generated
+          system configuration, both of which are world-readable. Set it only
+          if that exposure is acceptable.
         '';
       };
 
@@ -350,14 +343,16 @@ in
               # Copy ossec.conf as real file (Wazuh's XML parser has issues with symlinks)
               cp -f ${cfg.config} ${stateDir}/etc/ossec.conf
 
-              # Handle auth password (skip if file doesn't exist — e.g., already enrolled agent)
-              ${lib.optionalString (cfg.agentAuthPasswordFile != null) ''
-                if [ -f "${cfg.agentAuthPasswordFile}" ]; then
-                  umask 077
-                  cp "${cfg.agentAuthPasswordFile}" "${stateDir}/etc/authd.pass"
-                  chmod 600 "${stateDir}/etc/authd.pass"
-                  chown ${cfg.user}:${cfg.group} "${stateDir}/etc/authd.pass"
-                fi
+              # Write auth password (skip if unset — e.g., already enrolled agent).
+              # `pkgs.writeText` materializes the password as a store path that
+              # setup-pre-wazuh copies into place with restrictive permissions.
+              # The password is therefore world-readable in the store — see the
+              # option description for the trade-off.
+              ${lib.optionalString (cfg.agentAuthPassword != null) ''
+                umask 077
+                cp "${pkgs.writeText "wazuh-authd.pass" cfg.agentAuthPassword}" "${stateDir}/etc/authd.pass"
+                chmod 600 "${stateDir}/etc/authd.pass"
+                chown ${cfg.user}:${cfg.group} "${stateDir}/etc/authd.pass"
               ''}
 
             ''}/bin/wazuh-prestart";
