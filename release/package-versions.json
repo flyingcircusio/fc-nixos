@@ -130,9 +130,9 @@
     "version": "9.11"
   },
   "coturn": {
-    "name": "coturn-4.9.0",
+    "name": "coturn-4.13.1",
     "pname": "coturn",
-    "version": "4.9.0"
+    "version": "4.13.1"
   },
   "curl": {
     "name": "curl-8.20.0",
@@ -195,9 +195,9 @@
     "version": "6.6.3"
   },
   "ffmpeg": {
-    "name": "ffmpeg-8.1",
+    "name": "ffmpeg-8.1.1",
     "pname": "ffmpeg",
-    "version": "8.1"
+    "version": "8.1.1"
   },
   "file": {
     "name": "file-5.47",
@@ -210,9 +210,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-152.0",
+    "name": "firefox-152.0.1",
     "pname": "firefox",
-    "version": "152.0"
+    "version": "152.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-15.2.0",
@@ -225,9 +225,9 @@
     "version": "2.3.3"
   },
   "ghostscript": {
-    "name": "ghostscript-with-X-10.07.0",
+    "name": "ghostscript-with-X-10.07.1",
     "pname": "ghostscript-with-X",
-    "version": "10.07.0"
+    "version": "10.07.1"
   },
   "git": {
     "name": "git-2.54.0",
@@ -275,7 +275,7 @@
     "version": "18.11.5"
   },
   "glibc": {
-    "name": "glibc-2.42-61",
+    "name": "glibc-2.42-67",
     "pname": "glibc",
     "version": "2.42"
   },
@@ -290,9 +290,9 @@
     "version": "2.4.9"
   },
   "go": {
-    "name": "go-1.26.3",
+    "name": "go-1.26.4",
     "pname": "go",
-    "version": "1.26.3"
+    "version": "1.26.4"
   },
   "grafana": {
     "name": "grafana-13.0.2",
@@ -310,9 +310,9 @@
     "version": "3.3.9"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.2-23",
+    "name": "imagemagick-7.1.2-24",
     "pname": "imagemagick",
-    "version": "7.1.2-23"
+    "version": "7.1.2-24"
   },
   "inetutils": {
     "name": "inetutils-2.7",
@@ -410,9 +410,9 @@
     "version": "3.5.2"
   },
   "libgcrypt": {
-    "name": "libgcrypt-1.11.2",
+    "name": "libgcrypt-1.12.2",
     "pname": "libgcrypt",
-    "version": "1.11.2"
+    "version": "1.12.2"
   },
   "libjpeg": {
     "name": "libjpeg-turbo-3.1.4",
@@ -450,9 +450,9 @@
     "version": "1.8.13"
   },
   "libxml2": {
-    "name": "libxml2-2.15.2",
+    "name": "libxml2-2.15.3",
     "pname": "libxml2",
-    "version": "2.15.2"
+    "version": "2.15.3"
   },
   "libxslt": {
     "name": "libxslt-1.1.45",
@@ -465,14 +465,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.93",
+    "name": "linux-6.12.94",
     "pname": "linux",
-    "version": "6.12.93"
+    "version": "6.12.94"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.93",
+    "name": "linux-6.12.94",
     "pname": "linux",
-    "version": "6.12.93"
+    "version": "6.12.94"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -510,9 +510,9 @@
     "version": "5.10.0"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-1.154.0",
+    "name": "matrix-synapse-1.155.0",
     "pname": "matrix-synapse",
-    "version": "1.154.0"
+    "version": "1.155.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.3",
@@ -570,9 +570,9 @@
     "version": "2.34.7"
   },
   "nodejs": {
-    "name": "nodejs-24.15.0",
+    "name": "nodejs-24.16.0",
     "pname": "nodejs",
-    "version": "24.15.0"
+    "version": "24.16.0"
   },
   "nodejs_22": {
     "name": "nodejs-22.23.0",
@@ -580,9 +580,9 @@
     "version": "22.23.0"
   },
   "nodejs_24": {
-    "name": "nodejs-24.15.0",
+    "name": "nodejs-24.16.0",
     "pname": "nodejs",
-    "version": "24.15.0"
+    "version": "24.16.0"
   },
   "nspr": {
     "name": "nspr-4.39",
@@ -845,9 +845,9 @@
     "version": "18.4"
   },
   "prometheus": {
-    "name": "prometheus-3.11.3",
+    "name": "prometheus-3.12.0",
     "pname": "prometheus",
-    "version": "3.11.3"
+    "version": "3.12.0"
   },
   "prosody": {
     "name": "prosody-13.0.3",
@@ -980,9 +980,9 @@
     "version": "1.7.1"
   },
   "rsync": {
-    "name": "rsync-3.4.1",
+    "name": "rsync-3.4.4",
     "pname": "rsync",
-    "version": "3.4.1"
+    "version": "3.4.4"
   },
   "ruby": {
     "name": "ruby-3.4.9",
@@ -1025,9 +1025,9 @@
     "version": "8.11.4"
   },
   "strace": {
-    "name": "strace-7.0",
+    "name": "strace-7.1",
     "pname": "strace",
-    "version": "7.0"
+    "version": "7.1"
   },
   "strongswan": {
     "name": "strongswan-6.0.7",
@@ -1050,9 +1050,9 @@
     "version": "12.7.7"
   },
   "systemd": {
-    "name": "systemd-260.1",
+    "name": "systemd-260.2",
     "pname": "systemd",
-    "version": "260.1"
+    "version": "260.2"
   },
   "tcpdump": {
     "name": "tcpdump-vxlan-4.99.6",
