@@ -103,6 +103,8 @@ in
 rec {
   stripNetmask = cidr: head (lib.splitString "/" cidr);
 
+  defaultMartianNetworks = import ./martian_networks.nix;
+
   prefixLength = cidr: lib.toInt (elemAt (lib.splitString "/" cidr) 1);
   # The same as prefixLength, but returns a string not an int
   prefix = cidr: elemAt (lib.splitString "/" cidr) 1;
