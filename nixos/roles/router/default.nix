@@ -123,7 +123,7 @@ in
 
       martianNetworks = mkOption {
         type = types.listOf types.str;
-        default = import ./martian_networks.nix;
+        default = fclib.defaultMartianNetworks;
         visible = false;
         description = "Networks considered invalid as source addresses or as forwarding destinations";
       };
