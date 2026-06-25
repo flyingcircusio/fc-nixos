@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-149.0.7827.114",
+    "name": "chromedriver-unwrapped-149.0.7827.155",
     "pname": "chromedriver-unwrapped",
-    "version": "149.0.7827.114"
+    "version": "149.0.7827.155"
   },
   "chromium": {
-    "name": "chromium-149.0.7827.114",
+    "name": "chromium-149.0.7827.155",
     "pname": "chromium",
-    "version": "149.0.7827.114"
+    "version": "149.0.7827.155"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -105,9 +105,9 @@
     "version": "7.4"
   },
   "clamav": {
-    "name": "clamav-1.4.3",
+    "name": "clamav-1.4.4",
     "pname": "clamav",
-    "version": "1.4.3"
+    "version": "1.4.4"
   },
   "cmake": {
     "name": "cmake-4.1.2",
@@ -215,9 +215,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-151.0.4",
+    "name": "firefox-152.0.1",
     "pname": "firefox",
-    "version": "151.0.4"
+    "version": "152.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-14.3.0",
@@ -510,9 +510,9 @@
     "version": "5.8.0"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.154.0",
+    "name": "matrix-synapse-wrapped-1.155.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.154.0"
+    "version": "1.155.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.2",
@@ -585,9 +585,9 @@
     "version": "22.22.2"
   },
   "nodejs_24": {
-    "name": "nodejs-24.16.0",
+    "name": "nodejs-24.17.0",
     "pname": "nodejs",
-    "version": "24.16.0"
+    "version": "24.17.0"
   },
   "nspr": {
     "name": "nspr-4.39",
@@ -595,9 +595,9 @@
     "version": "4.39"
   },
   "nss_latest": {
-    "name": "nss-3.124",
+    "name": "nss-3.125",
     "pname": "nss",
-    "version": "3.124"
+    "version": "3.125"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.15",
