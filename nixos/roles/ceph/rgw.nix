@@ -145,8 +145,8 @@ in
       };
 
       flyingcircus.agent.maintenance.rgw = {
-        enter = "systemctl stop fc-ceph-rgw";
-        leave = "systemctl start fc-ceph-rgw";
+        enter = "fc-ceph maintenance lock .radosgw && systemctl stop fc-ceph-rgw";
+        leave = "systemctl start fc-ceph-rgw && fc-ceph maintenance unlock .radosgw";
       };
 
       networking.firewall.extraStopCommands = ''
