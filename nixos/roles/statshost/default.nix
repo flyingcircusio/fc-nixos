@@ -506,25 +506,12 @@ in
         recommendedOptimisation = true;
         recommendedProxySettings = true;
         recommendedTlsSettings = true;
-        appendHttpConfig = ''
-          map $http_referer $redirect_referer {
-              "~^https://${cfgStats.hostName}/grafana/" 1;
-              default 0;
-          }
-        '';
         virtualHosts.${cfgStats.hostName} = {
           enableACME = cfgStats.useSSL;
           forceSSL = cfgStats.useSSL;
           locations = {
             "/".extraConfig = ''
-              if ($redirect_referer) {
-                  rewrite ^(.*)$ /grafana$1 redirect;
-              }
-
-              rewrite ^/$ /grafana/ redirect;
-              auth_basic "FCIO user";
-              auth_basic_user_file "/etc/local/htpasswd_fcio_users";
-              proxy_pass http://${prometheusListenAddress};
+              rewrite ^(.*)$ /grafana$1 redirect;
             '';
             "/grafana/" = {
               proxyPass = "http://127.0.0.1:3001/";
