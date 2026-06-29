@@ -157,6 +157,19 @@ in
   ];
 
   config = lib.mkIf role.enable {
+    nixpkgs.overlays = [
+      (final: prev: {
+        ipxe = prev.ipxe.overrideAttrs (oA: {
+          version = "1.21.1-unstable-2025-11-19";
+          src = final.fetchFromGitHub {
+            owner = "ipxe";
+            repo = "ipxe";
+            rev = "81496315f22f5ab90eddf8788fc8526eab1852f9";
+            hash = "sha256-5/qxoCUtCEoZxaf8j03hqWjmJHo3kpBFWpBV180gjaY=";
+          };
+        });
+      })
+    ];
     assertions = [
       {
         assertion = (location != "standalone") -> (role.routerUplinkNetworks != [ ]);
