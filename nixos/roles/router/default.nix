@@ -126,6 +126,24 @@ in
         visible = false;
         description = "Networks considered invalid as source addresses or as forwarding destinations";
       };
+
+      dhcpResolversV4 = mkOption {
+        type = types.listOf (types.addCheck types.str fclib.isIp4);
+        # pass the system resolver configuration through to dhcp.
+        default = filter fclib.isIp4 config.networking.nameservers;
+        description = "IPv4 DNS resolvers to be advertised in DHCP";
+      };
+      dhcpResolversV6 = mkOption {
+        type = types.listOf (types.addCheck types.str fclib.isIp6);
+        default =
+          # networking.nameservers never uses IPv6 resolvers, fall
+          # back to static data.
+          if (hasAttr location config.flyingcircus.static.nameservers6) then
+            config.flyingcircus.static.nameservers6."${location}"
+          else
+            [ ];
+        description = "IPv6 DNS resolvers to be advertised in DHCPv6";
+      };
     };
   };
 

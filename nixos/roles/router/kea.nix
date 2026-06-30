@@ -20,18 +20,6 @@ let
 
   bootServer = head fclib.network.mgm.v4.defaultGateways;
 
-  resolvers4 =
-    if (hasAttr location config.flyingcircus.static.nameservers) then
-      config.flyingcircus.static.nameservers.${location}
-    else
-      [ ];
-
-  resolvers6 =
-    if (hasAttr location config.flyingcircus.static.nameservers6) then
-      config.flyingcircus.static.nameservers6.${location}
-    else
-      [ ];
-
   baseConfig = {
     dhcp-ddns = {
       enable-updates = false;
@@ -65,7 +53,7 @@ let
       }
       {
         name = "domain-name-servers";
-        data = lib.concatStringsSep ", " resolvers4;
+        data = lib.concatStringsSep ", " role.dhcpResolversV4;
       }
       # NTP options set on a per-subnet basis by fc-kea
     ];
@@ -104,7 +92,7 @@ let
     option-data = [
       {
         name = "dns-servers";
-        data = lib.concatStringsSep ", " resolvers6;
+        data = lib.concatStringsSep ", " role.dhcpResolversV6;
       }
       {
         name = "domain-search";
