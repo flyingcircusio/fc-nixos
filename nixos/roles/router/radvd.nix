@@ -17,7 +17,6 @@ let
     lib.concatStringsSep "\n" ([ (head lines) ] ++ (fclib.indentWith spaces (tail lines)));
 
   ifaces = listToAttrs (
-    # TODO: this should use routerGatewayNetworks in the future.
     filter (iface: iface.value.networkAttrs != [ ]) (
       map (
         vlan:
@@ -30,7 +29,7 @@ let
             networkAttrs = filter (attr: attr.addresses != [ ]) iface.v6.networkAttrs;
           }
         )
-      ) role.floatingGatewayNetworks
+      ) role.routerGatewayNetworks
     )
   );
 

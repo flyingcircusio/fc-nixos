@@ -41,8 +41,7 @@ let
     fclib.filterConfiguredNetworks role.routerUplinkNetworks
   );
 
-  # TODO: this should use routerGatewayNetworks in the future.
-  gatewayInterfaces = map (network: fclib.network."${network}") role.floatingGatewayNetworks;
+  gatewayInterfaces = map (network: fclib.network."${network}") role.routerGatewayNetworks;
 
   martianIptablesInput = (
     lib.concatMapStringsSep "\n" (
