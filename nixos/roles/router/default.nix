@@ -126,20 +126,6 @@ in
         visible = false;
         description = "Networks considered invalid as source addresses or as forwarding destinations";
       };
-
-      sourceAddressV4 = mkOption {
-        type = types.nullOr (types.addCheck types.str fclib.isIp4);
-        default = null;
-        defaultText = "192.0.2.1";
-        description = "IPv4 address to prefer as source address for outgoing connections";
-      };
-      sourceAddressV6 = mkOption {
-        type = types.nullOr (types.addCheck types.str fclib.isIp6);
-        default = null;
-        defaultText = "2001:db8::1";
-        description = "IPv6 address to prefer as source address for outgoing connections";
-      };
-
     };
   };
 
