@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-149.0.7827.196",
+    "name": "chromedriver-unwrapped-149.0.7827.200",
     "pname": "chromedriver-unwrapped",
-    "version": "149.0.7827.196"
+    "version": "149.0.7827.200"
   },
   "chromium": {
-    "name": "chromium-149.0.7827.196",
+    "name": "chromium-149.0.7827.200",
     "pname": "chromium",
-    "version": "149.0.7827.196"
+    "version": "149.0.7827.200"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -130,9 +130,9 @@
     "version": "9.8"
   },
   "coturn": {
-    "name": "coturn-4.9.0",
+    "name": "coturn-4.13.1",
     "pname": "coturn",
-    "version": "4.9.0"
+    "version": "4.13.1"
   },
   "curl": {
     "name": "curl-8.20.0",
