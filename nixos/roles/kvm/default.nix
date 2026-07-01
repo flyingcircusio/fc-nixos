@@ -208,11 +208,19 @@ in
           burst-factor = 2;
         };
 
-        network = {
-          tap-ifup-bridge = "/etc/kvm/kvm-ifup";
-          tap-ifdown-bridge = "/etc/kvm/kvm-ifdown";
-          tap-ifup-vrf = "/etc/kvm/kvm-ifup-vrf";
-          tap-ifdown-vrf = "/etc/kvm/kvm-ifdown-vrf";
+        network = rec {
+          tap-ifup-bridged = "/etc/kvm/kvm-ifup";
+          tap-ifdown-bridged = "/etc/kvm/kvm-ifdown";
+          tap-ifup-routed = "/etc/kvm/kvm-ifup-vrf";
+          tap-ifdown-routed = "/etc/kvm/kvm-ifdown-vrf";
+
+          # legacy config aliases. these keys have been renamed in
+          # fc.qemu to use the linktype enc field for selecting the
+          # interface up and down scripts.
+          tap-ifup-bridge = tap-ifup-bridged;
+          tap-ifdown-bridge = tap-ifdown-bridged;
+          tap-ifup-vrf = tap-ifup-routed;
+          tap-ifdown-vrf = tap-ifdown-routed;
         };
 
         consul = {
