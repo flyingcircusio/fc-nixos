@@ -42,14 +42,14 @@ let
   # These are interfaces configured as one would expect in a traditional
   # Linux environment: they receive addresses and are attached to some link.
   simpleAddressedInterfaces = filter (
-    i: !(i.policy == "underlay") && !(i.policy == "vxlan" && i.routed)
+    i: !(i.policy == "underlay") && !(i.policy == "vxlan" && i.linktype == "routed")
   ) managedInterfaces;
 
   bridgedInterfaces = filter (i: i.bridged) managedInterfaces;
 
   vxlanInterfaces = filter (i: i.policy == "vxlan") managedInterfaces;
 
-  vxlanVrfInterfaces = filter (i: i.routed) vxlanInterfaces;
+  vxlanVrfInterfaces = filter (i: i.linktype == "routed") vxlanInterfaces;
 
   ethernetLinks =
     let
@@ -508,7 +508,7 @@ in
                   " advertise-svi-ip"
                   "exit-vni"
                 ]
-              ) (filter (i: !i.routed) vxlanInterfaces)
+              ) (filter (i: i.linktype == "bridged") vxlanInterfaces)
             }
            exit-address-family
            !
@@ -1176,7 +1176,7 @@ in
           interval = 300;
           command =
             let
-              ifaces = filter (i: !i.routed) vxlanInterfaces;
+              ifaces = filter (i: i.linktype != "routed") vxlanInterfaces;
               args = lib.concatMapStringsSep " " (iface: "-n " + (toString iface.vlanId)) ifaces;
             in
             "sudo -g frrvty ${pkgs.fc.check-rib-integrity}/bin/check_rib_integrity check-evpn-rib ${args}";
