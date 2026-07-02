@@ -170,9 +170,9 @@
     "version": "2.40.3"
   },
   "docker_29": {
-    "name": "docker-29.5.3",
+    "name": "docker-29.6.0",
     "pname": "docker",
-    "version": "29.5.3"
+    "version": "29.6.0"
   },
   "dovecot": {
     "name": "dovecot-2.3.21.1",
@@ -215,9 +215,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-152.0.3",
+    "name": "firefox-152.0.4",
     "pname": "firefox",
-    "version": "152.0.3"
+    "version": "152.0.4"
   },
   "gcc": {
     "name": "gcc-wrapper-14.3.0",
