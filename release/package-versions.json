@@ -160,9 +160,9 @@
     "version": "2.93"
   },
   "docker": {
-    "name": "docker-29.5.3",
+    "name": "docker-29.6.0",
     "pname": "docker",
-    "version": "29.5.3"
+    "version": "29.6.0"
   },
   "docker-compose": {
     "name": "docker-compose-5.1.4",
@@ -210,9 +210,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-152.0.3",
+    "name": "firefox-152.0.4",
     "pname": "firefox",
-    "version": "152.0.3"
+    "version": "152.0.4"
   },
   "gcc": {
     "name": "gcc-wrapper-15.2.0",
