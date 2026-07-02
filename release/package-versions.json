@@ -65,9 +65,9 @@
     "version": "3.123"
   },
   "calibre": {
-    "name": "calibre-9.9.0",
+    "name": "calibre-9.10.0",
     "pname": "calibre",
-    "version": "9.9.0"
+    "version": "9.10.0"
   },
   "ceph": {
     "name": "ceph-14.2.22",
@@ -725,9 +725,9 @@
     "version": "8.5.7"
   },
   "phpPackages.composer": {
-    "name": "composer-2.9.8",
+    "name": "composer-2.10.1",
     "pname": "composer",
-    "version": "2.9.8"
+    "version": "2.10.1"
   },
   "pkg-config": {
     "name": "pkg-config-wrapper-0.29.2",
