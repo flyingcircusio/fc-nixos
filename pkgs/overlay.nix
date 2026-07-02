@@ -330,7 +330,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   # The logic for enabling different kernels on prod and non-prod remains active
   # the whole time. But in the normal case, both kernels point to the same
   # stable kernel packages.
-  linuxKernelVerify = self.linux_6_12;
+  linuxKernelVerify = self.linux_6_18;
 
   linuxKernelStable = self.linux_6_12;
 
