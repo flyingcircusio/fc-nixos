@@ -1,3 +1,18 @@
+# Release 2026_026
+
+## Impact
+
+-
+
+
+## NixOS XX.XX platform
+
+- Remove a deprecated proxy pass to prometheus on root location of the default statshost domain that was causing a number of basic auth pop ups (PL-134309)
+
+- ceph/rgw: take separate maintenance lock for radosgw, preventing race conditions in shutdown of instances (PL-135499)
+
+
+
 # Release 2026_025
 
 
