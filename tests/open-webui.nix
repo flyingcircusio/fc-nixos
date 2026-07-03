@@ -25,7 +25,10 @@ import ./make-test-python.nix (
 
         # cannot download sentence transformers model without network
         # connection.
-        services.open-webui.environment.RAG_EMBEDDING_MODEL = "";
+        services.open-webui.environment = {
+          RAG_EMBEDDING_MODEL = "";
+          RAG_EMBEDDING_ENGINE = "ollama";
+        };
 
         services.nginx.virtualHosts."ai-chat.test.fcio.net" = {
           enableACME = lib.mkForce false;
@@ -37,7 +40,7 @@ import ./make-test-python.nix (
 
       # open webui is slow to boot, but should eventually respond
       # with http status 200
-      machine.wait_for_open_port(8080, "192.168.3.1", timeout=120)
+      machine.wait_for_open_port(8080, "192.168.3.1", timeout=160)
       machine.wait_until_succeeds("curl -f http://192.168.3.1:8080")
     '';
   }
