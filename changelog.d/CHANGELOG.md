@@ -1,3 +1,20 @@
+# Release 2026_027
+
+## Impact
+
+- A bullet item for the Impact category.
+
+
+## NixOS XX.XX platform
+
+- linuxKernelVerify: bump to 6.18
+
+  All non-production machines, as well as all machines running in our WHQ and DEV locations, will now use a 6.18 kernel. Production RZOB machines remain at kernel 6.12 for now.
+
+- Fast track kernel updated to 6.12.95 and 6.18.38 to fix Januscape (PL-135580, CVE-2026-53359)
+
+
+
 # Release 2026_026
 
 ## Impact
