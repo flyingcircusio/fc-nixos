@@ -132,28 +132,10 @@ import ./make-test-python.nix (
             };
           };
 
-          # Create test password file BEFORE setup-pre-wazuh runs.
-          # The upstream module's setup-pre-wazuh copies this file with
-          # restricted permissions.
-          systemd.services.create-test-secret = {
-            description = "Create test auth password file";
-            before = [ "setup-pre-wazuh.service" ];
-            wantedBy = [ "setup-pre-wazuh.service" ];
-            serviceConfig = {
-              Type = "oneshot";
-              ExecStart = "${pkgs.writeShellScript "create-secret" ''
-                echo "test-password" > /run/wazuh-pass
-                chown wazuh:wazuh /run/wazuh-pass
-                chmod 600 /run/wazuh-pass
-              ''}";
-            };
-          };
-
           flyingcircus.roles.wazuh-agent = {
             enable = true;
             managerAddress = "127.0.0.1";
-            authPasswordFile = "/run/secrets/wazuh-auth-password";
-            package = pkgs.wazuh-agent;
+            agentAuthPassword = "test-password";
           };
 
           # Retry enrollment until fake manager is ready.
@@ -185,28 +167,10 @@ import ./make-test-python.nix (
             (testlib.fcConfig { id = 3; })
           ];
 
-          # Password file so setup-pre-wazuh's ConditionPathExists passes.
-          # No fake manager needed — we only wait for setup-pre (which writes
-          # ossec.conf), not for enrollment.
-          systemd.services.create-test-secret = {
-            description = "Create test auth password file";
-            before = [ "setup-pre-wazuh.service" ];
-            wantedBy = [ "setup-pre-wazuh.service" ];
-            serviceConfig = {
-              Type = "oneshot";
-              ExecStart = "${pkgs.writeShellScript "create-secret" ''
-                echo "test-password" > /run/wazuh-pass
-                chown wazuh:wazuh /run/wazuh-pass
-                chmod 600 /run/wazuh-pass
-              ''}";
-            };
-          };
-
           flyingcircus.roles.wazuh-agent = {
             enable = true;
             managerAddress = "127.0.0.1";
-            authPasswordFile = "/run/secrets/wazuh-auth-password";
-            package = pkgs.wazuh-agent;
+            agentAuthPassword = "test-password";
           };
 
           # Scalar override — only this value changes, all other role
