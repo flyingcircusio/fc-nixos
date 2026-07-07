@@ -39,9 +39,11 @@ let
     i: i.policy != "vxlan" && i.policy != "underlay"
   ) managedInterfaces;
 
-  # These are interfaces configured as one would expect in a traditional
-  # Linux environment: they receive addresses and are attached to some link.
-  simpleAddressedInterfaces = filter (
+  # These are interfaces which behave and have addresses configured as
+  # if they were connected to a simple layer 2 switch. This set of
+  # interfaces is disjoint to the set which contains the underlay
+  # loopback and any routed layer 3 interfaces.
+  switchedInterfaces = filter (
     i: !(i.policy == "underlay") && !(i.policy == "vxlan" && i.linktype == "routed")
   ) managedInterfaces;
 
@@ -300,7 +302,7 @@ in
 
               mtu = interface.mtu;
             })
-          ) simpleAddressedInterfaces)
+          ) switchedInterfaces)
           ++
 
             ####################################################################
