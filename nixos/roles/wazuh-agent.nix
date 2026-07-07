@@ -28,13 +28,11 @@ in
 
     managerAddress = lib.mkOption {
       type = lib.types.nonEmptyStr;
-      default = "manage.fcwazuh.fcio.net";
       description = "IP address or hostname of the Wazuh manager.";
     };
 
-    agentGroup = lib.mkOption {
+    agentAuthGroup = lib.mkOption {
       type = lib.types.nullOr lib.types.nonEmptyStr;
-      default = "VM";
       description = "Agent group assigned during enrollment.";
     };
 
@@ -59,8 +57,7 @@ in
   config = lib.mkIf cfg.enable {
     services.wazuh.agent = {
       enable = true;
-      inherit (cfg) agentAuthPassword;
-      agentAuthGroup = cfg.agentGroup;
+      inherit (cfg) agentAuthGroup agentAuthPassword;
 
       # Scalar defaults — each leaf wrapped in mkDefault (via mkDefaultDeep)
       # so users can override individual values at normal priority without
