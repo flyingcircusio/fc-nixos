@@ -213,6 +213,8 @@ in
           tap-ifdown-bridged = "/etc/kvm/kvm-ifdown";
           tap-ifup-routed = "/etc/kvm/kvm-ifup-vrf";
           tap-ifdown-routed = "/etc/kvm/kvm-ifdown-vrf";
+          tap-ifup-dynamic = "/etc/kvm/kvm-ifup-dynamic";
+          tap-ifdown-dynamic = "/etc/kvm/kvm-ifdown-dynamic";
 
           # legacy config aliases. these keys have been renamed in
           # fc.qemu to use the linktype enc field for selecting the
@@ -301,6 +303,28 @@ in
         ${pkgs.iproute2}/bin/ip link set $INTERFACE down
         ${pkgs.iproute2}/bin/ip address flush dev $INTERFACE
         ${pkgs.iproute2}/bin/ip link set $INTERFACE nomaster
+      '';
+      mode = "0744";
+    };
+
+    environment.etc."kvm/kvm-ifup-dynamic" = {
+      text = ''
+        #!${pkgs.stdenv.shell}
+
+        ${lib.optionalString (fclib.underlay != null) ''
+          ${lib.getExe' pkgs.fc.agent "fc-dynamic-interface"} attach "$1" ${fclib.underlay.loopback}
+        ''}
+      '';
+      mode = "0744";
+    };
+
+    environment.etc."kvm/kvm-ifdown-dynamic" = {
+      text = ''
+        #!${pkgs.stdenv.shell}
+
+        ${lib.optionalString (fclib.underlay != null) ''
+          ${lib.getExe' pkgs.fc.agent "fc-dynamic-interface"} detach "$1"
+        ''}
       '';
       mode = "0744";
     };
