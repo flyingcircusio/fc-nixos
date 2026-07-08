@@ -11,7 +11,8 @@ rec {
     nix = pkgs.nixVersions.nix_2_34;
     pyPackages = pyPackages;
   };
-  agentWithSlurm = agent.override { enableSlurm = true; };
+  # FIXME: PL-135583
+  # agentWithSlurm = agent.override { enableSlurm = true; };
 
   blockdev = callPackage ./blockdev { };
 

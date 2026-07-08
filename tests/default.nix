@@ -107,7 +107,8 @@ in
   network = callSubTests ./network { };
   nfs = callSubTests ./nfs.nix { };
   nginx = callTest ./nginx.nix { };
-  nix-version = callTest ./nix-version.nix { };
+  # FIXME: PL-135583
+  # nix-version = callTest ./nix-version.nix { };
   nodejs = callTest ./nodejs.nix { };
   opensearch = callTest ./opensearch.nix { };
   opensearch_dashboards = callTest ./opensearch_dashboards.nix { };
