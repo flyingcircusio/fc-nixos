@@ -524,7 +524,7 @@ import ./make-test-python.nix (
           assert re.search("Complete requests: +1000", out), "incomplete test"
           error_match = re.search("Connect: ([0-9]+), Receive: ([0-9]+), Length: ([0-9]+), Exceptions: ([0-9]+)", out)
           assert error_match, "Missing connection errors"
-          errors = error_match.groups()  # type: ignore
+          errors = error_match.groups()
           assert int(errors[0]) == 0
           assert int(errors[1]) == 0
           assert int(errors[2]) > 900
