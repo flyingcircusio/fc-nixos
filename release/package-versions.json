@@ -305,9 +305,9 @@
     "version": "2.12.1"
   },
   "haproxy": {
-    "name": "haproxy-3.3.9",
+    "name": "haproxy-3.3.11",
     "pname": "haproxy",
-    "version": "3.3.9"
+    "version": "3.3.11"
   },
   "imagemagick": {
     "name": "imagemagick-7.1.2-24",
@@ -395,9 +395,9 @@
     "version": "1.36.2+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.6.3",
+    "name": "keycloak-26.6.4",
     "pname": "keycloak",
-    "version": "26.6.3"
+    "version": "26.6.4"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.20.2",
@@ -465,14 +465,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.94",
+    "name": "linux-6.12.95",
     "pname": "linux",
-    "version": "6.12.94"
+    "version": "6.12.95"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.18.37",
+    "name": "linux-6.18.38",
     "pname": "linux",
-    "version": "6.18.37"
+    "version": "6.18.38"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -500,9 +500,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.6.2",
+    "name": "mastodon-4.6.3",
     "pname": "mastodon",
-    "version": "4.6.2"
+    "version": "4.6.3"
   },
   "matomo": {
     "name": "matomo-5.10.0",
@@ -645,9 +645,9 @@
     "version": "3.0.21"
   },
   "openvpn": {
-    "name": "openvpn-2.6.19",
+    "name": "openvpn-2.6.21",
     "pname": "openvpn",
-    "version": "2.6.19"
+    "version": "2.6.21"
   },
   "pciutils": {
     "name": "pciutils-3.15.0",
