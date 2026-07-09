@@ -22,11 +22,45 @@
   systemd,
   util-linux,
   xfsprogs,
+  rustPlatform,
 }:
 
 let
   # Python must be the same as the one used by Ceph
-  py = python3Packages;
+  py = python3Packages.override {
+    overrides =
+      pyself: pysuper:
+      let
+        pydanticVersion = "2.13.4";
+        pydanticSource = fetchFromGitHub {
+          owner = "pydantic";
+          repo = "pydantic";
+          tag = "v${pydanticVersion}";
+          hash = "sha256-G4Xo6BF6tOn4g/qG3RNDP3/+lYnCOuw3AB1OrVOGcSA=";
+        };
+      in
+      {
+        pydantic = pysuper.pydantic.overrideAttrs rec {
+          src = pydanticSource;
+          disabledTestPaths = pysuper.pydantic.disabledTestPaths ++ [
+            # symlink to pydantic-core tests, can't be run here due to
+            # dependencies.
+            "tests/pydantic_core"
+          ];
+        };
+
+        pydantic-core = pysuper.pydantic-core.overrideAttrs rec {
+          version = "2.46.4";
+          src = pydanticSource;
+          sourceRoot = "${src.name}/pydantic-core";
+          cargoDeps = rustPlatform.fetchCargoVendor {
+            inherit src version;
+            pname = "pydantic-core";
+            hash = "sha256-5L317YTV7/Bc/YJLLzc745oJntiYkcZupdeUxiQwcOU=";
+          };
+        };
+      };
+  };
 
   # unreleased version
   py_consulate = py.buildPythonPackage rec {
@@ -80,6 +114,7 @@ py.buildPythonPackage (finalAttrs: {
     py.structlog
     py_consulate
     py.psutil
+    py.pydantic
     py.pyyaml
     py.setuptools
     py.websockets
