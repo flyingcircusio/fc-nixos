@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-150.0.7871.46",
+    "name": "chromedriver-unwrapped-150.0.7871.114",
     "pname": "chromedriver-unwrapped",
-    "version": "150.0.7871.46"
+    "version": "150.0.7871.114"
   },
   "chromium": {
-    "name": "chromium-150.0.7871.46",
+    "name": "chromium-150.0.7871.114",
     "pname": "chromium",
-    "version": "150.0.7871.46"
+    "version": "150.0.7871.114"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.5",
@@ -160,9 +160,9 @@
     "version": "2.93"
   },
   "docker": {
-    "name": "docker-29.6.0",
+    "name": "docker-29.6.1",
     "pname": "docker",
-    "version": "29.6.0"
+    "version": "29.6.1"
   },
   "docker-compose": {
     "name": "docker-compose-5.1.4",
@@ -210,9 +210,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-152.0.4",
+    "name": "firefox-152.0.5",
     "pname": "firefox",
-    "version": "152.0.4"
+    "version": "152.0.5"
   },
   "gcc": {
     "name": "gcc-wrapper-15.2.0",
@@ -525,9 +525,9 @@
     "version": "1.6.42"
   },
   "mongodb": {
-    "name": "mongodb-7.0.34",
+    "name": "mongodb-7.0.37",
     "pname": "mongodb",
-    "version": "7.0.34"
+    "version": "7.0.37"
   },
   "monitoring-plugins": {
     "name": "monitoring-plugins-2.4.0",
@@ -705,29 +705,29 @@
     "version": "8.0.30"
   },
   "php82": {
-    "name": "php-with-extensions-8.2.31",
+    "name": "php-with-extensions-8.2.32",
     "pname": "php-with-extensions",
-    "version": "8.2.31"
+    "version": "8.2.32"
   },
   "php83": {
-    "name": "php-with-extensions-8.3.31",
+    "name": "php-with-extensions-8.3.32",
     "pname": "php-with-extensions",
-    "version": "8.3.31"
+    "version": "8.3.32"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.22",
+    "name": "php-with-extensions-8.4.23",
     "pname": "php-with-extensions",
-    "version": "8.4.22"
+    "version": "8.4.23"
   },
   "php85": {
-    "name": "php-with-extensions-8.5.7",
+    "name": "php-with-extensions-8.5.8",
     "pname": "php-with-extensions",
-    "version": "8.5.7"
+    "version": "8.5.8"
   },
   "phpPackages.composer": {
-    "name": "composer-2.10.1",
+    "name": "composer-2.10.2",
     "pname": "composer",
-    "version": "2.10.1"
+    "version": "2.10.2"
   },
   "pkg-config": {
     "name": "pkg-config-wrapper-0.29.2",
@@ -955,9 +955,9 @@
     "version": "4.2.5"
   },
   "rclone": {
-    "name": "rclone-1.74.3",
+    "name": "rclone-1.74.4",
     "pname": "rclone",
-    "version": "1.74.3"
+    "version": "1.74.4"
   },
   "re2c": {
     "name": "re2c-4.5.1",
@@ -975,9 +975,9 @@
     "version": "1.8.1"
   },
   "roundcube": {
-    "name": "roundcube-1.7.1",
+    "name": "roundcube-1.7.2",
     "pname": "roundcube",
-    "version": "1.7.1"
+    "version": "1.7.2"
   },
   "rsync": {
     "name": "rsync-3.4.4",
