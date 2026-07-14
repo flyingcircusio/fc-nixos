@@ -510,9 +510,9 @@
     "version": "5.10.0"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-1.155.0",
+    "name": "matrix-synapse-1.156.0",
     "pname": "matrix-synapse",
-    "version": "1.155.0"
+    "version": "1.156.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.3",
@@ -750,9 +750,9 @@
     "version": "127"
   },
   "postfix": {
-    "name": "postfix-3.11.3",
+    "name": "postfix-3.11.5",
     "pname": "postfix",
-    "version": "3.11.3"
+    "version": "3.11.5"
   },
   "postgresql": {
     "name": "postgresql-17.10",
