@@ -257,9 +257,9 @@ in
         VLAN=$(echo $INTERFACE | ${pkgs.gnused}/bin/sed 's/t\([a-zA-Z]\+\)[0-9]\+/\1/')
         BRIDGE="br''${VLAN}"
 
-        ${pkgs.iproute2}/bin/ip link set $INTERFACE up
-        ${pkgs.iproute2}/bin/ip link set mtu $(< /sys/class/net/br''${VLAN}/mtu) dev $INTERFACE
-        ${pkgs.bridge-utils}/bin/brctl addif $BRIDGE $INTERFACE
+        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" up
+        ${pkgs.iproute2}/bin/ip link set mtu $(< /sys/class/net/br''${VLAN}/mtu) dev "$INTERFACE"
+        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" master "$BRIDGE"
       '';
       mode = "0744";
     };
@@ -271,8 +271,8 @@ in
         VLAN=$(echo $INTERFACE | sed 's/t\([a-zA-Z]\+\)[0-9]\+/\1/')
         BRIDGE="br''${VLAN}"
 
-        ${pkgs.bridge-utils}/bin/brctl delif $BRIDGE $INTERFACE
-        ${pkgs.iproute2}/bin/ip link set $INTERFACE down
+        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" nomaster
+        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" down
       '';
       mode = "0744";
     };
