@@ -70,7 +70,7 @@ def resolve_network_name(net_id: int, cfg: dict[str, Any]) -> str:
 
     for net, net_config in networks.items():
         if (
-            net_config.get("network_id") == net_id
+            net_config.get("network_number") == net_id
             and net_config.get("linktype") == "dynamic"
         ):
             return net
