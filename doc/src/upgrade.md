@@ -101,6 +101,21 @@ time-window.
 
 ## Significant breaking changes
 
+### LAMP
+
+Configuration options of PHP-FPM are now correctly escaped.
+This leads to a change that booleans written as a string, e.g. "true" and "false" are now also written as `"true"` and `"false"` instead of `true` and `false` in the PHP-FPM INI config file. Integers written as a string before in the Nix config, e.g. `"8"`, are now also written as `"8"` instead of `8` in the INI configuration file. Please migrate to the correct types in the NixOS configuration.
+This change affects the configuration options:
+
+- `flyingcircus.roles.lamp.vhosts.<...>.pool.extraConfig`
+- `flyingcircus.roles.lamp.vhosts.<...>.pool.phpEnv`
+- `flyingcircus.roles.lamp.vhosts.<...>.pool.settings`
+- `services.phpfpm.pools.<...>.extraConfig`
+- `services.phpfpm.pools.<...>.phpEnv`
+- `services.phpfpm.pools.<...>.settings`
+- `services.phpfpm.extraConfig`
+- `services.phpfpm.settings`
+
 
 ## Other notable changes
 
