@@ -255,11 +255,14 @@ in
       });
 
     fileinfo = prev.extensions.fileinfo.overrideAttrs (attrs: {
-      env = mergeEnv attrs {
-        NIX_CFLAGS_COMPILE = lib.optionals (lib.versionOlder prev.php.version "7.2") [
-          "-Wno-implicit-int"
-        ];
-      };
+      postPatch = appendStrings attrs "postPatch" (
+        lib.optional (lib.versionOlder prev.php.version "7.0") ''
+          # Add missing return type
+          # Part of https://github.com/php/php-src/commit/2181ed2e2ab0c137d843e2ebea1d7d92e7d9b759
+          substituteInPlace ext/fileinfo/libmagic/funcs.c \
+            --replace "file_replace" "protected int file_replace"
+        ''
+      );
     });
 
     ffi =
@@ -475,6 +478,22 @@ in
                 url = "https://github.com/php/php-src/commit/93a9b56c90c334896e977721bfb3f38b1721cec6.patch";
                 sha256 = "055l40lpyhb0rbjn6y23qkzdhvpp7inbnn6x13cpn4inmhjqfpg4";
               })
+            ]
+            ++ lib.optionals (lib.versionOlder prev.php.version "8.1") [
+              # Fix build with Clang 21
+              (pkgs.fetchpatch {
+                url = "https://github.com/php/php-src/commit/e90180d06a3b7ed7931571cd21004879b22ee362.patch";
+                hash =
+                  if lib.versionOlder prev.php.version "7.0" then
+                    "sha256-66FlpUI6CwANMUlqJZdGDOrfLKfDmk4i5xbrTjhCJoc="
+                  else
+                    "sha256-4F2hD1w6B2GLsq/mZEKMOhJg0vcHh3MnAsBJCvv4P5c=";
+                decode =
+                  if lib.versionOlder prev.php.version "7.0" then
+                    "sed 's/zend_long/long/;s/zend_ulong/unsigned long/'"
+                  else
+                    "cat";
+              })
             ];
         in
         ourPatches ++ upstreamPatches;
@@ -530,7 +549,11 @@ in
           upstreamPatches = attrs.patches or [ ];
 
           ourPatches =
-            lib.optionals (lib.versionOlder prev.php.version "7.2") [
+            lib.optionals (lib.versionOlder prev.php.version "7.0") [
+              # Add missing declaration
+              ./patches/php56-mbstring-missing-declaration.patch
+            ]
+            ++ lib.optionals (lib.versionOlder prev.php.version "7.2") [
               # Upgrade to oniguruma 6 file layout.
               (pkgs.fetchpatch {
                 url = "https://github.com/php/php-src/commit/2a76d2282ad26c757d42b5ce2d079dcff07ae9de.patch";
@@ -572,18 +595,7 @@ in
             chmod -R +w ext/mbstring/oniguruma
           ''
         )
-
       );
-
-      env = mergeEnv attrs {
-        NIX_CFLAGS_COMPILE =
-          lib.optionals (lib.versionOlder prev.php.version "7.0") [
-            "-Wno-implicit-function-declaration"
-          ]
-          ++ lib.optionals (lib.versionOlder prev.php.version "7.4" && !isClang) [
-            "-Wno-incompatible-pointer-types"
-          ];
-      };
     });
 
     mcrypt =
@@ -677,14 +689,14 @@ in
       else
         throw "php.extensions.mysql requires PHP version < 7.0.";
 
-    mysqli =
-      if lib.versionOlder prev.php.version "7.0" then
-        prev.extensions.mysqli.overrideAttrs (attrs: {
+    mysqli = prev.extensions.mysqli.overrideAttrs (attrs: {
+      env = mergeEnv attrs {
+        NIX_CFLAGS_COMPILE = lib.optionals (lib.versionOlder prev.php.version "7.0") [
           # the --with-mysql-sock option didn't exist in php 5.6
-          NIX_CFLAGS_COMPILE = "-DPHP_MYSQL_UNIX_SOCK_ADDR=\"/run/mysqld/mysqld.sock\"";
-        })
-      else
-        prev.extensions.mysqli;
+          "-DPHP_MYSQL_UNIX_SOCK_ADDR=\"/run/mysqld/mysqld.sock\""
+        ];
+      };
+    });
 
     mysqlnd = prev.extensions.mysqlnd.overrideAttrs (attrs: {
       patches =
@@ -911,24 +923,19 @@ in
     redis =
       if lib.versionOlder prev.php.version "7.0" then
         final.callPackage ./extensions/redis/4.nix { }
+      else if lib.versionOlder prev.php.version "7.2" then
+        final.callPackage ./extensions/redis/5.nix { }
       else if lib.versionOlder prev.php.version "7.3" then
         final.callPackage ./extensions/redis/6.0.nix { }
       else if lib.versionOlder prev.php.version "8.0" then
         prev.extensions.redis.overrideAttrs (attrs: {
           preConfigure =
             let
-              deps = lib.optionals (lib.versionOlder prev.php.version "8.0") [
+              deps = [
                 final.extensions.json
               ];
             in
             attrs.preConfigure or "" + linkInternalDeps deps;
-
-          env = mergeEnv attrs {
-            NIX_CFLAGS_COMPILE = lib.optionals (lib.versionOlder prev.php.version "7.2") [
-              "-Wno-implicit-function-declaration"
-              "-Wno-int-conversion"
-            ];
-          };
         })
       else
         prev.extensions.redis;
@@ -946,6 +953,7 @@ in
         throw "php.extensions.relay requires PHP version >= 8.0.";
 
     session = prev.extensions.session.overrideAttrs (attrs: {
+      patches = lib.optionals (lib.versionOlder prev.php.version "7.4") prev.php.unwrapped.patches;
       env = mergeEnv attrs {
         NIX_CFLAGS_COMPILE = lib.optionals (lib.versionOlder prev.php.version "7.0") [
           "-Wno-incompatible-pointer-types"
