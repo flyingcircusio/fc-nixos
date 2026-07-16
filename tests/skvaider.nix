@@ -106,7 +106,7 @@ import ./make-test-python.nix (
         # role's services.xserver.videoDrivers = [ "nvidia" ] here.
         hardware.nvidia-container-toolkit.suppressNvidiaDriverAssertion = true;
 
-        systemd.services.skvaider-inference.path = lib.mkAfter [ vllm ];
+        systemd.services.skvaider-inference.path = lib.mkAfter [ pkgs.vllm ];
 
         flyingcircus.roles.ai-model-server.skvaider-inference.settings = {
           # Explicitly carry all required fields: our attrset at normal priority

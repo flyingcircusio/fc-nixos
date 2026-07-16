@@ -50,5 +50,6 @@
     "jitsi-meet-1.0.8792" # insecure libolm but this only affects optional e2ee which we don't really support.
     "nodejs-slim-20.20.2" # EOL, required by github-runner
     "nodejs-20.20.2" # EOL, required by github-runner
+    "python3.13-vllm-0.16.0" # too fast moving for regular nixos release cycle?
   ];
 }

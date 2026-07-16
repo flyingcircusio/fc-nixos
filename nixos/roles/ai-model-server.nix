@@ -97,12 +97,6 @@ in
           embedding_verification_file = lib.mkDefault ./embeddings-reference.json;
         };
 
-        # NVIDIA driver, CUDA toolkit, cuDNN and nvtopPackages.nvidia pull
-        # unfree packages. Keep the allow-list in pkgs/overlay.nix so the
-        # unstable CUDA package set and the NixOS role use the same names.
-        flyingcircus.allowedUnfreePackageNames = pkgs.nvidiaUnfreePackageNames;
-
-        nixpkgs.config.cudaSupport = true;
         hardware.graphics.enable = true;
         hardware.nvidia-container-toolkit.enable = true;
         hardware.nvidia.nvidiaSettings = false;
@@ -163,7 +157,7 @@ in
               ${lib.getExe' pkgs.fc.skvaider "skvaider-inference"} -c ${configfile}
             '';
           path = [
-            "/run/current-system/sw" # for nvidia-x11 giving us nvidia-smi, which is used for GPU monitoring in Skvaider
+            config.hardware.nvidia.package # for nvidia-x11 giving us nvidia-smi, which is used for GPU monitoring
           ];
 
           requires = [ "network-online.target" ];
