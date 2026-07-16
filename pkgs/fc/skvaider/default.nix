@@ -4,7 +4,6 @@
   pyproject-nix,
   pyproject-build-systems,
   python312,
-  callPackages,
   callPackage,
   fetchFromGitHub,
   ...
@@ -13,8 +12,8 @@ let
   src = fetchFromGitHub {
     owner = "flyingcircusio";
     repo = "skvaider";
-    rev = "3d15223a0d485dd32354305821fc126046708485";
-    hash = "sha256-/J1Ahztef5Xnqfi7Yc4KaJe8VSxjmnLdQ+IIPtS3lBk=";
+    rev = "abc806a5ae480e0111de47440051195c5df5d499"; # origin/main
+    hash = "sha256-S6Lan6QwpIpxMqzCloks8XmSeonPAOw6xQi1czMFmyM=";
   };
 
   # Load a uv workspace from a workspace root.
@@ -37,12 +36,15 @@ let
         ]
       );
 
-  util = callPackages pyproject-nix.build.util { };
-
 in
 (pythonSet.mkVirtualEnv "skvaider-env" workspace.deps.default).overrideAttrs (old: {
   venvIgnoreCollisions = [
     "*"
   ];
   passthru.src = src;
+  passthru.testEnv =
+    (pythonSet.mkVirtualEnv "skvaider-test-env" workspace.deps.all).overrideAttrs
+      (_: {
+        venvIgnoreCollisions = [ "*" ];
+      });
 })

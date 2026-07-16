@@ -45,7 +45,6 @@ let
   inherit (super)
     fetchpatch
     fetchFromGitHub
-    fetchurl
     lib
     ;
   inherit (builtins) hasAttr storePath;
@@ -324,6 +323,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   # TODO: re-evaluate whether this still needs to be vendored without lmdb support (#PL-130446)
   libmodsecurity = super.callPackage ./libmodsecurity { };
+
+  linuxKernelGPU = self.linux_6_18;
 
   # Change this alias for trying out other kernel packages on non-production
   # machines.
@@ -698,6 +699,10 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       (old: {
         pname = "tcpdump-vxlan";
       });
+
+  # keep an alias because this name has been introduced on the specific server
+  # configs.
+  vllm-cuda = super.vllm;
 
   # XXX: consider upstreaming these
   writers = super.writers // {

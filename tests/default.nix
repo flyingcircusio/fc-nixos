@@ -32,7 +32,11 @@ in
   # When in doubt, it's better to write our own test or copy&paste from nixpkgs.
   # inherit (pkgs.nixosTests)
 
-  ai-api-gateway = callTest ./ai-api-gateway.nix { };
+  # The skvaider tests are generally limited by the fact that VLLM can't really
+  # do much on a CPU. See PL-135538. Both tests need to be augmented once
+  # we have more leverage here.
+  skvaider = callTest ./skvaider.nix { };
+  #skvaider-pytest = callTest ./skvaider-pytest.nix { };
   alloy = callTest ./alloy.nix { };
   antivirus = callTest ./antivirus.nix { };
   audit = callTest ./audit.nix { };
@@ -63,6 +67,7 @@ in
   k3s_monitoring = callTest ./k3s/monitoring.nix { };
   kernelconfig = {
     default = callTest ./kernelconfig.nix { };
+    gpu = callTest ./kernelconfig-gpu.nix { };
     verification = callTest ./kernelconfig-verification.nix { };
   };
   kernelversions = callTest ./kernelversions.nix { };

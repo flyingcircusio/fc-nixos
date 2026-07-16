@@ -7,6 +7,40 @@
     # the raid service after decoupling fc-sensuplugins.
     "megacli"
     "consul"
+
+    # lib.licenses.nvidiaCudaRedist — CUDA Toolkit End User License Agreement
+    "cuda-merged"
+    "cuda_cuobjdump"
+    "cuda_gdb"
+    "cuda_nvcc"
+    "cuda_nvdisasm"
+    "cuda_nvprune"
+    "cuda_cccl"
+    "cuda_cudart"
+    "cuda_cupti"
+    "cuda_cuxxfilt"
+    "cuda_nvml_dev"
+    "cuda_nvrtc"
+    "cuda_nvtx"
+    "cuda_profiler_api"
+    "cuda_sanitizer_api"
+    "libcublas"
+    "libcufft"
+    "libcurand"
+    "libcusolver"
+    "libnvjitlink"
+    "libcusparse"
+    "libnpp"
+    "libcufile"
+    # lib.licenses.cudnnCuSPARSELt — cuSPARSELt EULA (different from CUDA EULA)
+    "libcusparse_lt"
+    # lib.licenses.cudnn — cuDNN SUPPLEMENT TO SOFTWARE LICENSE AGREEMENT
+    # (different from CUDA EULA; redistributable = false — internal use only)
+    "cudnn"
+    # lib.licenses.unfreeRedistributable — NVIDIA Software License
+    "nvidia-settings"
+    "nvidia-x11"
+
   ];
 
   permittedInsecurePackages = [
