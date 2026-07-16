@@ -26,15 +26,24 @@ let
 
   inherit (import (nixpkgs + "/lib")) recursiveUpdate;
 
-  mergedNixpkgsConfig = recursiveUpdate config {
-    allowUnfreePredicate =
-      pkg:
-      elem (getName pkg) nixpkgsConfig.allowedUnfreePackageNames
-      || (config.allowUnfreePredicate or (_: false)) pkg;
+  mergedNixpkgsConfig =
+    recursiveUpdate config {
+      allowUnfreePredicate =
+        pkg:
+        elem (getName pkg) nixpkgsConfig.allowedUnfreePackageNames
+        || (config.allowUnfreePredicate or (_: false)) pkg;
 
-    permittedInsecurePackages =
-      nixpkgsConfig.permittedInsecurePackages ++ (config.permittedInsecurePackages or [ ]);
-  };
+      permittedInsecurePackages =
+        nixpkgsConfig.permittedInsecurePackages ++ (config.permittedInsecurePackages or [ ]);
+    }
+    // {
+      inherit (nixpkgsConfig)
+        cudaSupport
+        cudaCapabilities
+        cudaForwardCompat
+        rocmSupport
+        ;
+    };
 in
 import nixpkgs {
   overlays = overlays ++ [ (import ./pkgs/overlay.nix) ];
