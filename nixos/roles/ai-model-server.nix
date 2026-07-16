@@ -256,6 +256,7 @@ in
           users.skvaider = {
             description = "Skvaider user";
             group = "service";
+            extraGroups = [ "docker" ];
             isSystemUser = true;
           };
         };
