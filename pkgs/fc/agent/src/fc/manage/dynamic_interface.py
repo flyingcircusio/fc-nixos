@@ -126,7 +126,7 @@ def fc_dynamic_interface(
 def parse_ipaddress(address: str) -> Optional[IPAddress]:
     try:
         return IPAddress(address)
-    except:
+    except Exception:
         return None
 
 
@@ -167,21 +167,13 @@ def attach_interface(
             # create and configure vxlan device
             check_call(
                 [
-                    "ip",
-                    "link",
-                    "add",
-                    vxlan,
-                    "type",
-                    "vxlan",
-                    "id",
-                    str(net_id),
-                    "local",
-                    str(vtep_address),
-                    "dstport",
-                    str(VXLAN_PORT),
+                    "ip", "link", "add", vxlan, "type", "vxlan",
+                    "id", str(net_id),
+                    "local", str(vtep_address),
+                    "dstport", str(VXLAN_PORT),
                     "nolearning",
                 ]
-            )
+            )  # fmt: off
             check_call(["ip", "link", "set", vxlan, "addrgenmode", "none"])
 
             # create bridge interface
@@ -191,18 +183,12 @@ def attach_interface(
             check_call(["ip", "link", "set", vxlan, "master", bridge])
             check_call(
                 [
-                    "ip",
-                    "link",
-                    "set",
-                    vxlan,
-                    "type",
-                    "bridge_slave",
-                    "learning",
-                    "off",
-                    "neigh_suppress",
-                    "on",
+                    "ip", "link", "set", vxlan,
+                    "type", "bridge_slave",
+                    "learning", "off",
+                    "neigh_suppress", "on",
                 ]
-            )
+            )  # fmt: off
 
             # set interfaces up
             check_call(["ip", "link", "set", vxlan, "up"])
@@ -229,8 +215,7 @@ def detach_interface(interface: str):
 
     with locked(log, context.lock_dir, "dynamic_interfaces.lock"):
         check_call(["ip", "link", "set", interface, "nomaster"])
-
-        # XXX: delete guest iface here too?
+        check_call(["ip", "link", "delete", interface])
 
         ifaces = list_all_interfaces()
         remaining = []

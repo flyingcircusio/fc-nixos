@@ -268,11 +268,12 @@ in
       text = ''
         #!${pkgs.stdenv.shell}
         INTERFACE="$1"
-        VLAN=$(echo $INTERFACE | sed 's/t\([a-zA-Z]\+\)[0-9]\+/\1/')
+        VLAN=$(echo $INTERFACE | ${pkgs.gnused}/bin/sed 's/t\([a-zA-Z]\+\)[0-9]\+/\1/')
         BRIDGE="br''${VLAN}"
 
         ${pkgs.iproute2}/bin/ip link set "$INTERFACE" nomaster
         ${pkgs.iproute2}/bin/ip link set "$INTERFACE" down
+        ${pkgs.iproute2}/bin/ip link delete "$INTERFACE"
       '';
       mode = "0744";
     };
@@ -300,9 +301,10 @@ in
         #!${pkgs.stdenv.shell}
         INTERFACE="$1"
 
-        ${pkgs.iproute2}/bin/ip link set $INTERFACE down
-        ${pkgs.iproute2}/bin/ip address flush dev $INTERFACE
-        ${pkgs.iproute2}/bin/ip link set $INTERFACE nomaster
+        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" down
+        ${pkgs.iproute2}/bin/ip address flush dev "$INTERFACE"
+        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" nomaster
+        ${pkgs.iproute2}/bin/ip link delete "$INTERFACE"
       '';
       mode = "0744";
     };
