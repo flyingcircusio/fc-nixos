@@ -1,3 +1,11 @@
+# Release 2026_029
+
+## NixOS XX.XX platform
+
+- physical hosts: explicitly load more filesystem kernel modules to fix an intermittent issue where servers would occasionally fail to recognize the boot partition during startup (PL-135585)
+
+
+
 # Release 2026_028
 
 
