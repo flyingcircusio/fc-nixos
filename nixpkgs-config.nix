@@ -1,6 +1,17 @@
 # Common nixpkgs config used by platform code (nixos/platform/default.nix)
 # and our customized nixpkgs from ./default.nix.
 {
+
+  # We need to keep nixpkgs.config kinda centralized and homogenous to avoid
+  # combinatorial issues with the important-packages list.
+  # See PL-135603.
+  cudaSupport = true;
+  cudaCapabilities = [
+    "12.0" # Blackwell / RTX PRO 6000 (Workstation)
+  ];
+  cudaForwardCompat = true;
+  rocmSupport = false;
+
   allowedUnfreePackageNames = [
     # TODO: megacli is only used on physical machines but pulled in by
     # fc-sensuplugins and thus needed on all machines. Should be moved to
