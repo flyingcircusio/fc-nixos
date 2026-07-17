@@ -248,14 +248,14 @@ in
                 "listen.owner" = config.services.httpd.user;
                 "listen.group" = config.services.httpd.group;
                 "pm" = "dynamic";
-                "pm.max_children" = (toString role.fpmMaxChildren);
-                "pm.start_servers" = "5";
-                "pm.min_spare_servers" = "5";
-                "pm.max_spare_servers" = "10";
+                "pm.max_children" = role.fpmMaxChildren;
+                "pm.start_servers" = 5;
+                "pm.min_spare_servers" = 5;
+                "pm.max_spare_servers" = 10;
                 "slowlog" = "/var/log/httpd/${vhost.name}-slow.log";
                 "request_slowlog_timeout" = "6s";
-                "request_slowlog_trace_depth" = "100";
-                "catch_workers_output" = "true";
+                "request_slowlog_trace_depth" = 100;
+                "catch_workers_output" = true;
               }
             );
           } vhost.pool; # only contains override values
@@ -277,10 +277,6 @@ in
           }
         ];
       };
-
-      # required for PL-132312 hotfix: httpd needs to be restarted after the update to create new log.
-      # Can be removed again at some point.
-      systemd.services.httpd.restartTriggers = [ "2024-03-14-PL-132312" ];
 
       systemd.tmpfiles.rules = [
         "d /var/log/httpd 2750 root service"

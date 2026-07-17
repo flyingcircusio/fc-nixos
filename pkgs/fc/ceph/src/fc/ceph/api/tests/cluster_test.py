@@ -1,4 +1,4 @@
-import pkg_resources
+from pathlib import Path
 import pytest
 
 from ..cluster import Cluster
@@ -6,8 +6,9 @@ from ..cluster import Cluster
 
 @pytest.fixture
 def cluster():
+    # The file only exists in the code, but not in the built library
     return Cluster(
-        pkg_resources.resource_filename(__name__, "fixtures/ceph.conf")
+        Path(__file__).parent / "fixtures/ceph.conf"
     )
 
 

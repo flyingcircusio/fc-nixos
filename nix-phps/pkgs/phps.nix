@@ -15,6 +15,9 @@ let
 
   inherit (prev.stdenv.cc) isClang;
 
+  # Change to true to force building with Clang, to allow reproducing some Darwin build failures on Linux.
+  useClang = false;
+
   _mkArgs =
     args:
 
@@ -39,6 +42,61 @@ let
               # Patch to make it build with autoconf >= 2.72
               # Source: https://aur.archlinux.org/packages/php56-ldap?all_deps=1#comment-954506
               ./patches/php56-autoconf.patch
+
+              # Fix build with Clang 21
+              ./patches/php56-ext-ereg-Avoid-K-R-style-function-declarations.patch
+
+              # Fix build of C++ extensions with Clang 21
+              # This should be handled by the following patch but zend_hash.h and zend_string.h
+              # do not apply cleanly.
+              # https://github.com/php/php-src/commit/af66ad28571fc3d55c33bd3b301a5508192bcdac
+              ./patches/php56-headers-no-register.patch
+
+              # Remove trailing spaces to allow later patches to apply.
+              (prev.pkgs.fetchpatch {
+                url = "https://github.com/php/php-src/commit/b7a7b1a624c97945c0aaa49d46ae996fc0bdb6bc.patch";
+                hash = "sha256-seoHNu+8YxyxFRb1MZC2MJEr8n64KvrPs8FtPTjuNJQ=";
+                includes = [
+                  "main/reentrancy.c"
+                ];
+              })
+
+              # Fix leak in configure script, required for aa405b7da270595d349d0596ad31305a41d4b1c0.
+              (prev.pkgs.fetchpatch {
+                url = "https://github.com/php/php-src/commit/1bdffee820d92f558d883bd1aa41bebc739e2980.patch";
+                hash = "sha256-YzrA6vWxTsmby0zCqSiSr5MDqJZwPHsPW0mrGJvc/pQ=";
+              })
+            ]
+            ++ lib.optionals (lib.versionOlder args.version "7.1") [
+              # Building the bundled intl extension fails with Clang 21
+              (prev.pkgs.fetchpatch {
+                url = "https://github.com/php/php-src/commit/af66ad28571fc3d55c33bd3b301a5508192bcdac.patch";
+                hash =
+                  if lib.versionOlder args.version "7.0" then
+                    "sha256-z7AZAjHaox7cqZteYAlYQQqmpFUVCr9wtF5PED1qPcU="
+                  else
+                    "sha256-Lvt0WJLlHzpCB/3JpVBe75Ljgz1CavBupf8YL8KNX2Y=";
+                decode =
+                  if lib.versionOlder args.version "7.0" then
+                    "sed 's/zend_always_inline/inline/;/register const unsigned char \\*e/{s/$/\\n/}; /\\/main\\/snprintf.h/,$ s/size_t/int/g;s/void \\*))/void * TSRMLS_DC) TSRMLS_DC)/;s/(void);/(TSRMLS_D);/'"
+                  else
+                    "cat";
+                excludes = lib.optionals (lib.versionOlder args.version "7.0") [
+                  "ext/standard/php_smart_string.h"
+                  # Handled in php56-headers-no-register.patch
+                  "Zend/zend_hash.h"
+                  "Zend/zend_string.h"
+                ];
+              })
+            ]
+            ++ lib.optionals (lib.versionOlder args.version "7.2") [
+              # Add include guard to php_config.h
+              # Prevents linkage issue in C++ extensions on Clang 21
+              (prev.pkgs.fetchpatch {
+                url = "https://github.com/php/php-src/commit/8d8d7ed822a01664479aa8e01e3ea05a00c3d628.patch";
+                hash = "sha256-wv7gqdYERRRmK46ltZJzTritq5rzffI/FTFPo7dHWQY=";
+                decode = "sed 's/configure.ac/configure.in/'";
+              })
             ]
             ++ lib.optionals (lib.versions.majorMinor args.version == "7.2") [
               # Building the bundled intl extension fails on Mac OS.
@@ -46,6 +104,38 @@ let
               (prev.pkgs.fetchurl {
                 url = "https://bugs.php.net/patch-display.php?bug_id=76826&patch=bug76826.poc.0.patch&revision=1538723399&download=1";
                 hash = "sha256-6JoyxVir3AG3VC6Q0uKrfb/ZFjs9/db+uZg3ssBdqzw=";
+              })
+            ]
+            ++ lib.optionals (lib.versionOlder args.version "7.3") [
+              # Update autoconf files to prepare for later patches.
+              # Picked from https://github.com/php/php-src/commit/4371945b8b71e000ee060b9da668a6eea032df32
+              (
+                if lib.versionOlder args.version "7.0" then
+                  ./patches/php56-autoconf-ifelse.patch
+                else if lib.versionOlder args.version "7.1" then
+                  ./patches/php70-autoconf-ifelse.patch
+                else if lib.versionOlder args.version "7.2" then
+                  ./patches/php71-autoconf-ifelse.patch
+                else
+                  ./patches/php72-autoconf-ifelse.patch
+              )
+
+              # Fix sprintf detection
+              # https://github.com/php/php-src/commit/aa405b7da270595d349d0596ad31305a41d4b1c0
+              (prev.pkgs.fetchpatch {
+                url = "https://github.com/php/php-src/commit/aa405b7da270595d349d0596ad31305a41d4b1c0.patch";
+                hash =
+                  if lib.versionOlder args.version "7.1" then
+                    "sha256-cyjxpX9KATekkdFsmoZN6dxIMDuFpJLKLXBvgobvNc0="
+                  else if lib.versionOlder args.version "7.2" then
+                    "sha256-OF0jS4SKv+fAA6EMh9D0Vzbx8z5NdkreyKiLAJPozH8="
+                  else
+                    "sha256-wg2Wk3gjzGAxqCfFa1S7bg5ex4gOR+EJ4XhnVzanPZI=";
+                decode =
+                  if lib.versionOlder args.version "7.2" then
+                    "sed 's/configure.ac/configure.in/;${lib.optionalString (lib.versionOlder args.version "7.1") " s/char buf\\[3\\];/char buf[3]; /; s/if (!dir)/if (!dir) /"}'"
+                  else
+                    "cat";
               })
             ]
             ++ lib.optionals (lib.versionOlder args.version "7.4") [
@@ -57,6 +147,27 @@ let
                 includes = [
                   "build/libtool.m4"
                 ];
+              })
+
+              # Fix build with clang 21
+              (prev.pkgs.fetchpatch {
+                url = "https://github.com/php/php-src/commit/2b28f7189144a21e753dbc09efadd571121a82b9.patch";
+                hash =
+                  if lib.versionOlder args.version "7.0" then
+                    "sha256-wajJHBRRi9yvyAiA3ZlOQyn0Xk70U57l4n5TbU8KLxU="
+                  else if lib.versionOlder args.version "7.3" then
+                    "sha256-neYqTfeTkT+LUqEv8cwTL09EJndQb48suLbVRbbalto="
+                  else
+                    "sha256-VJBhSc+cta12RcCK42HLhrhEFEpHaN5Rwy/acAGTAsQ=";
+                excludes = [
+                  "acinclude.m4"
+                  "win32/readdir.c"
+                ];
+                decode =
+                  if lib.versionOlder args.version "7.3" then
+                    "sed '/int php_scandir/,/size_t/s//int/;/php_gmtime_r/,/#endif/s~~#endif /* BEOS */~${lib.optionalString (lib.versionOlder args.version "7.0") ";s/zend_long maxlifetime/int maxlifetime TSRMLS_DC/;s/zend_stat_t/struct stat/"}'"
+                  else
+                    "cat";
               })
             ]
             ++ lib.optionals (lib.versionOlder args.version "8.1") [
@@ -93,6 +204,19 @@ let
                     ];
                   }
               )
+            ]
+            ++ lib.optionals (lib.versionOlder args.version "8.2") [
+              # Fix build with clang 21
+              # https://github.com/php/php-src/commit/04f5da4b772a9d2320e151796a13d800695d3ee5
+              (prev.pkgs.fetchpatch {
+                url = "https://github.com/php/php-src/commit/04f5da4b772a9d2320e151796a13d800695d3ee5.patch";
+                hash =
+                  if lib.versionOlder args.version "7.1" then
+                    "sha256-mgjlg+8VosOpObBzflidnFRvI8q/ZIhR4YB1RGixDfg="
+                  else
+                    "sha256-ppLh0LSSEasIF5qL910luXKE7AB2Y33FMOVu5SFir2o=";
+                decode = if lib.versionOlder args.version "7.1" then "sed 's/uint32_t/php_uint32/'" else "cat";
+              })
             ];
 
           configureFlags =
@@ -152,14 +276,14 @@ let
                 "-Wno-deprecated-declarations"
                 "-Wno-incompatible-${lib.optionalString isClang "function-"}pointer-types"
                 "-Wno-incompatible-pointer-types-discards-qualifiers"
-              ]
-              ++ lib.optionals (lib.versionOlder args.version "8.0") [
-                "-Wno-implicit-int"
-                "-Wno-implicit-function-declaration"
-              ]
-              ++ lib.optionals (lib.versionAtLeast args.version "7.3" && lib.versionOlder args.version "7.4") [
-                "-Wno-int-conversion"
               ];
+
+            NIX_LDFLAGS =
+              lib.optionals (lib.versionOlder args.version "8.0" && prev.stdenv.hostPlatform.isDarwin)
+                [
+                  # Fix missing symbols
+                  "-lresolv"
+                ];
           };
         };
 
@@ -171,17 +295,31 @@ let
           prevArgs:
 
           # Only pass these attributes if the package function actually expects them.
-          lib.filterAttrs (key: _v: builtins.hasAttr key prevArgs) {
-            inherit libxml2 libxslt pcre2;
+          lib.filterAttrs (key: _v: builtins.hasAttr key prevArgs) (
+            {
+              inherit libxml2 libxslt pcre2;
 
-            # For passing pcre2 to stuff called with callPackage in php-packages.nix.
-            pkgs =
-              prev
-              // (lib.makeScope prev.newScope (self: {
-                inherit libxml2 libxslt pcre2;
-              }));
-          }
+              # For passing pcre2 to stuff called with callPackage in php-packages.nix.
+              pkgs =
+                prev
+                // (lib.makeScope prev.newScope (
+                  self:
+                  {
+                    inherit libxml2 libxslt pcre2;
+                  }
+                  // lib.optionalAttrs useClang {
+                    stdenv = prev.clangStdenv;
+                  }
+                ));
+            }
+            // lib.optionalAttrs useClang {
+              stdenv = prev.clangStdenv;
+            }
+          )
         );
+    }
+    // lib.optionalAttrs useClang {
+      stdenv = prev.clangStdenv;
     }
     // args;
 

@@ -88,7 +88,7 @@ let
     MATOMO_PLUGIN_COPY_DIR = "${extraPluginsDir}/";
   };
 
-  phpEnv = mapAttrs (n: v: "'${v}'") (
+  phpEnv = (
     environment
     // {
       PATH = lib.makeBinPath matomoPathExtra;

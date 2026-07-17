@@ -2,7 +2,7 @@ import time
 from subprocess import CalledProcessError
 from unittest.mock import MagicMock
 
-import pkg_resources
+from pathlib import Path
 import pytest
 
 from ..cluster import Cluster
@@ -13,7 +13,7 @@ from ..rbdimage import RBDImage
 @pytest.fixture
 def cluster():
     return Cluster(
-        pkg_resources.resource_filename(__name__, "fixtures/ceph.conf")
+       Path(__file__).parent / "fixtures/ceph.conf"
     )
 
 
