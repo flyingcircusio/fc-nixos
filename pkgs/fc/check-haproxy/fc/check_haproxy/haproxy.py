@@ -51,7 +51,7 @@ class HAProxyLog(nagiosplugin.Resource):
             dtype=[
                 ("t_tot", numpy.int32),
                 ("err", numpy.uint16),
-                ("url", "80a"),
+                ("url", "80S"),
             ],
         )
 
