@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-150.0.7871.114",
+    "name": "chromedriver-unwrapped-150.0.7871.124",
     "pname": "chromedriver-unwrapped",
-    "version": "150.0.7871.114"
+    "version": "150.0.7871.124"
   },
   "chromium": {
-    "name": "chromium-150.0.7871.114",
+    "name": "chromium-150.0.7871.124",
     "pname": "chromium",
-    "version": "150.0.7871.114"
+    "version": "150.0.7871.124"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.5",
@@ -175,9 +175,9 @@
     "version": "2.4.4"
   },
   "element-web": {
-    "name": "element-web-1.12.22",
+    "name": "element-web-1.12.23",
     "pname": "element-web",
-    "version": "1.12.22"
+    "version": "1.12.23"
   },
   "erlang": {
     "name": "erlang-28.5.0.3",
@@ -210,9 +210,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-152.0.5",
+    "name": "firefox-152.0.6",
     "pname": "firefox",
-    "version": "152.0.5"
+    "version": "152.0.6"
   },
   "gcc": {
     "name": "gcc-wrapper-15.2.0",
@@ -395,9 +395,9 @@
     "version": "1.36.2+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.6.4",
+    "name": "keycloak-26.7.0",
     "pname": "keycloak",
-    "version": "26.6.4"
+    "version": "26.7.0"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-4.2.3",
