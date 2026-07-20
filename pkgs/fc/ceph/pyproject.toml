@@ -12,25 +12,31 @@ authors = [
   { name = "Flying Circus Internet Operations GmbH", email = "mail@flyingcircus.io" },
 ]
 dependencies = [
+    # keep-sorted start
+    "IPy",
     "nagiosplugin",
     "requests",
     "rich",
-    "IPy",
+    # keep-sorted end
 ]
 
 [dependency-groups]
-# NOTE: Please keep this sorted!
+
 dev = [
+    # keep-sorted start
+    "pytest",
     "pytest-cov",
     "pytest-patterns",
     "pytest-timeout",
-    "pytest",
+    # keep-sorted end
 ]
 
 [project.scripts]
+# keep-sorted start
 fc-ceph="fc.ceph.main:ceph"
 fc-luks="fc.ceph.main:luks"
 fc-s3users = "fc.ceph.s3users_main:main"
+# keep-sorted end
 
 [tool.black]
 line-length = 80

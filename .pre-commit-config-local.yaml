@@ -7,3 +7,7 @@ repos:
       entry: nixfmt
       language: system
       files: \.nix$
+- repo: https://github.com/google/keep-sorted
+  rev: v0.9.1
+  hooks:
+    - id: keep-sorted

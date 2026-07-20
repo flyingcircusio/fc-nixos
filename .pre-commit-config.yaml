@@ -32,3 +32,7 @@ repos:
     language: system
     name: nixfmt
   repo: local
+- repo: https://github.com/google/keep-sorted
+  rev: v0.9.1
+  hooks:
+    - id: keep-sorted
