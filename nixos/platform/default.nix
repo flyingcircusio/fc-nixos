@@ -295,6 +295,8 @@ in
 
         # Output management
         "systemd.log_target=kmsg"
+        "log_buf_len=8388608" # 8MiB kernel ring buffer for bootup messages
+        "systemd.log_ratelimit_kmsg=0" # disable systemd early-boot rate limiting when logging to kmsg
       ];
 
       kernel.sysctl = {
