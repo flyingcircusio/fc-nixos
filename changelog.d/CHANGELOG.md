@@ -1,3 +1,11 @@
+# Release 2026_030
+
+## NixOS XX.XX platform
+
+- router: add 26.05 release to IPXE (PL-134240)
+
+
+
 # Release 2026_029
 
 ## NixOS XX.XX platform
