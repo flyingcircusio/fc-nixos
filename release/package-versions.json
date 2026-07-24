@@ -65,9 +65,9 @@
     "version": "3.125"
   },
   "calibre": {
-    "name": "calibre-9.10.0",
+    "name": "calibre-9.11.0",
     "pname": "calibre",
-    "version": "9.10.0"
+    "version": "9.11.0"
   },
   "ceph": {
     "name": "ceph-14.2.22",
@@ -210,9 +210,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-152.0.6",
+    "name": "firefox-153.0",
     "pname": "firefox",
-    "version": "152.0.6"
+    "version": "153.0"
   },
   "gcc": {
     "name": "gcc-wrapper-15.2.0",
@@ -1110,9 +1110,9 @@
     "version": "8.0.2"
   },
   "vim": {
-    "name": "vim-9.2.0389",
+    "name": "vim-9.2.0541",
     "pname": "vim",
-    "version": "9.2.0389"
+    "version": "9.2.0541"
   },
   "vinyl-cache": {
     "name": "vinyl-cache-9.0.1",
