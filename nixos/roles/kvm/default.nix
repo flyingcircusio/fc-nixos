@@ -19,6 +19,7 @@ let
 
   # virtual ipv4 gateway address selected by 254-169=85, with each
   # octet +85 mod 256 the preceding octet
+  # XXX duplicated in fc.qemu
   virtualGatewayV4 = "169.254.83.168";
   virtualGatewayV6 = "fe80::1";
 
@@ -29,6 +30,14 @@ let
     name = "fc-update-ubuntu";
     runtimeInputs = with pkgs; [ wget ];
     text = (lib.readFile ./update-ubuntu.sh);
+  };
+
+  noopScript = {
+    text = ''
+      #!${pkgs.stdenv.shell}
+      : # BBB noop
+    '';
+    mode = "0744";
   };
 
 in
@@ -209,16 +218,17 @@ in
         };
 
         network = rec {
+          underlay_loopback = fclib.underlay.loopback or null;
+
+          # BBB PL-135610 - Need to be kept to allow bi-directional migrations
+          # with older fc-nixos incarnations.
           tap-ifup-bridged = "/etc/kvm/kvm-ifup";
           tap-ifdown-bridged = "/etc/kvm/kvm-ifdown";
           tap-ifup-routed = "/etc/kvm/kvm-ifup-vrf";
           tap-ifdown-routed = "/etc/kvm/kvm-ifdown-vrf";
           tap-ifup-dynamic = "/etc/kvm/kvm-ifup-dynamic";
           tap-ifdown-dynamic = "/etc/kvm/kvm-ifdown-dynamic";
-
-          # legacy config aliases. these keys have been renamed in
-          # fc.qemu to use the linktype enc field for selecting the
-          # interface up and down scripts.
+          # legacy, also BBB
           tap-ifup-bridge = tap-ifup-bridged;
           tap-ifdown-bridge = tap-ifdown-bridged;
           tap-ifup-vrf = tap-ifup-routed;
@@ -243,93 +253,14 @@ in
 
     environment.etc."qemu/fc-qemu.conf".source = fcQemuConfFormat.generate "fc-qemu.conf" cfg.settings;
 
-    # This needs to stay as is because the path is kept alive during live
-    # migration.
-    environment.etc."kvm/kvm-ifup" = {
-      text = ''
-        #!${pkgs.stdenv.shell}
-        # Wire up Qemu tap devices to the bridge of the corresponding VLAN.
-        # Interface names are expected to be of the form `t<VLAN><ifnumber>`, for example:
-        # tsrv0, tsrv1, tfe0, ...
-        set -e
-
-        INTERFACE="$1"
-        VLAN=$(echo $INTERFACE | ${pkgs.gnused}/bin/sed 's/t\([a-zA-Z]\+\)[0-9]\+/\1/')
-        BRIDGE="br''${VLAN}"
-
-        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" up
-        ${pkgs.iproute2}/bin/ip link set mtu $(< /sys/class/net/br''${VLAN}/mtu) dev "$INTERFACE"
-        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" master "$BRIDGE"
-      '';
-      mode = "0744";
-    };
-
-    environment.etc."kvm/kvm-ifdown" = {
-      text = ''
-        #!${pkgs.stdenv.shell}
-        INTERFACE="$1"
-        VLAN=$(echo $INTERFACE | ${pkgs.gnused}/bin/sed 's/t\([a-zA-Z]\+\)[0-9]\+/\1/')
-        BRIDGE="br''${VLAN}"
-
-        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" nomaster
-        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" down
-        ${pkgs.iproute2}/bin/ip link delete "$INTERFACE"
-      '';
-      mode = "0744";
-    };
-
-    environment.etc."kvm/kvm-ifup-vrf" = {
-      text = ''
-        #!${pkgs.stdenv.shell}
-        INTERFACE="$1"
-        VLAN=$(echo $INTERFACE | sed 's/t\([a-zA-Z]\+\)[0-9]\+/\1/')
-        VRF="vrf''${VLAN}"
-
-        ${pkgs.iproute2}/bin/ip link set $INTERFACE master $VRF
-
-        # add addresses idempotently
-        ${pkgs.iproute2}/bin/ip address replace ${virtualGatewayV4}/16 dev $INTERFACE
-        ${pkgs.iproute2}/bin/ip address replace ${virtualGatewayV6}/64 dev $INTERFACE
-
-        ${pkgs.iproute2}/bin/ip link set $INTERFACE up
-      '';
-      mode = "0744";
-    };
-
-    environment.etc."kvm/kvm-ifdown-vrf" = {
-      text = ''
-        #!${pkgs.stdenv.shell}
-        INTERFACE="$1"
-
-        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" down
-        ${pkgs.iproute2}/bin/ip address flush dev "$INTERFACE"
-        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" nomaster
-        ${pkgs.iproute2}/bin/ip link delete "$INTERFACE"
-      '';
-      mode = "0744";
-    };
-
-    environment.etc."kvm/kvm-ifup-dynamic" = {
-      text = ''
-        #!${pkgs.stdenv.shell}
-
-        ${lib.optionalString (fclib.underlay != null) ''
-          ${lib.getExe' pkgs.fc.agent "fc-dynamic-interface"} attach "$1" ${fclib.underlay.loopback}
-        ''}
-      '';
-      mode = "0744";
-    };
-
-    environment.etc."kvm/kvm-ifdown-dynamic" = {
-      text = ''
-        #!${pkgs.stdenv.shell}
-
-        ${lib.optionalString (fclib.underlay != null) ''
-          ${lib.getExe' pkgs.fc.agent "fc-dynamic-interface"} detach "$1"
-        ''}
-      '';
-      mode = "0744";
-    };
+    # BBB PL-135610 - Need to be kept to allow bi-directional migrations
+    # with older fc-nixos incarnations.
+    environment.etc."kvm/kvm-ifup" = noopScript;
+    environment.etc."kvm/kvm-ifdown" = noopScript;
+    environment.etc."kvm/kvm-ifup-vrf" = noopScript;
+    environment.etc."kvm/kvm-ifdown-vrf" = noopScript;
+    environment.etc."kvm/kvm-ifup-dynamic" = noopScript;
+    environment.etc."kvm/kvm-ifdown-dynamic" = noopScript;
 
     flyingcircus.services.consul.enable = true;
     flyingcircus.services.consul.watches = [
@@ -380,6 +311,7 @@ in
     ]);
 
     systemd.services.fc-qemu-reattach-taps = {
+      # XXX pull into fc.qemu networking as a direct helper script?
       description = "Reattach all VM taps if needed.";
 
       path = [
@@ -412,6 +344,7 @@ in
     };
 
     systemd.services.fc-qemu-reattach-vrf-taps = lib.mkIf (fclib.network ? pub) {
+      # XXX pull into fc.qemu networking as a direct helper script?
       description = "Reattach all VM taps to VRF devices if needed.";
 
       path = [
@@ -483,7 +416,7 @@ in
       '';
 
       serviceConfig = {
-        Type = "oneshot";
+        Type = "simple";
         RemainAfterExit = true;
       };
 
