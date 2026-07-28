@@ -1075,9 +1075,9 @@
     "version": "10.1.55"
   },
   "tomcat9": {
-    "name": "apache-tomcat-9.0.118",
+    "name": "apache-tomcat-9.0.120",
     "pname": "apache-tomcat",
-    "version": "9.0.118"
+    "version": "9.0.120"
   },
   "unifi": {
     "name": "unifi-controller-10.2.105",
