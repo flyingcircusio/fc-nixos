@@ -261,22 +261,19 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   docsplit = super.callPackage ./docsplit { };
 
-  # Heavy build, required to not OOM the customer machine
-  # Currently disabled because it fails to build in Nixpkgs and I (leona - maintainer in Nixpkgs)
-  # don't know the solution.
-  # discourseWithNixosPlugins = super.discourse.override {
-  #   plugins = (
-  #     with super.discourse.plugins;
-  #     [
-  #       discourse-bbcode-color
-  #       discourse-docs
-  #       discourse-events
-  #       discourse-prometheus
-  #       discourse-saved-searches
-  #       discourse-yearly-review
-  #     ]
-  #   );
-  # };
+  discourseWithNixosPlugins = super.discourse.override {
+    plugins = (
+      with super.discourse.plugins;
+      [
+        discourse-bbcode-color
+        discourse-docs
+        discourse-events
+        discourse-prometheus
+        discourse-saved-searches
+        discourse-yearly-review
+      ]
+    );
+  };
 
   dool = super.dool.overrideAttrs (old: {
     patches = old.patches or [ ] ++ [ ./dool-interface-altnames.patch ];
