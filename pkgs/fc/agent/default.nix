@@ -17,9 +17,9 @@
 }:
 
 let
-  pytest-structlog = pyPackages.buildPythonPackage rec {
+  pytest-structlog = pyPackages.buildPythonPackage (finalAttrs: {
     pname = "pytest-structlog";
-    version = "0.6-cb82f00";
+    version = "1.2";
     pyproject = true;
     build-system = with pyPackages; [
       setuptools
@@ -28,15 +28,15 @@ let
     src = fetchFromGitHub {
       owner = "wimglenn";
       repo = "pytest-structlog";
-      rev = "cb82f00cfc47696a36797a6eeb9f65ad6e727f19";
-      hash = "sha256-ktLsdEtxfiWhCTTaKowBoAAijOF9640m5XV/rdahpl0=";
+      rev = "v${finalAttrs.version}";
+      hash = "sha256-4QzqlJStAF83lGgtfRB5cKGybmatWMQo0g9l0PZzfGw=";
     };
 
-    buildInputs = with pyPackages; [
+    dependencies = with pyPackages; [
       pytest
       structlog
     ];
-  };
+  });
 
   stamina = pyPackages.buildPythonPackage rec {
     pname = "stamina";
@@ -48,12 +48,12 @@ let
       hash = "sha256-sWzj1S1liqdduBP8amZht3Cr/qkV9yzaSOMl8qeFR4Y=";
     };
 
-    nativeBuildInputs = with pyPackages; [
+    build-system = with pyPackages; [
       hatchling
       hatch-vcs
       hatch-fancy-pypi-readme
     ];
-    propagatedBuildInputs = with pyPackages; [
+    dependencies = with pyPackages; [
       structlog
       tenacity
       typing-extensions
