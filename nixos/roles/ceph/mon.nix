@@ -186,6 +186,13 @@ in
             package = cephPkgs.fc-ceph;
             groups = [ "sensuclient" ];
           }
+          {
+            commands = [
+              "bin/rbd trash ls"
+            ];
+            package = cephPkgs.ceph;
+            groups = [ "sensuclient" ];
+          }
         ];
 
         flyingcircus.services.sensu-client.checks = {
@@ -200,6 +207,17 @@ in
             notification = "Ceph cluster is unhealthy";
             command = "sudo ${cephPkgs.fc-ceph}/bin/${checkClusterCmd}";
             interval = 60;
+          };
+          rbd_trash = {
+            notification = "Unexpected rbd images found in trash.";
+            command = ''
+              if [ $(sudo ${cephPkgs.ceph}/bin/rbd trash ls | ${pkgs.coreutils}/bin/wc -l) -ne 0 ]; then
+                echo '`rbd trash ls`: Unexpected rbd images found in trash.' \
+                  'We do not regularly use trash so far, contact the Infra' \
+                  'team if you see a need to do so.'
+              fi
+            '';
+            interval = 600;
           };
         };
         flyingcircus.services.ceph = {
