@@ -90,362 +90,358 @@ in
         + ''"select version()" || exit 2'';
 
     in
-    lib.mkMerge [
-      (lib.mkIf (enabledRolesCount > 0) {
-        assertions = [
-          {
-            assertion = enabledRolesCount == 1;
-            message = "MariaDB roles are mutually exclusive. Only one may be enabled.";
-          }
-        ];
-
-        users.extraUsers.mariadb = {
-          group = "mariadb";
-          shell = "/run/current-system/sw/bin/bash";
-          home = lib.mkForce "/srv/mariadb";
-          # ensure we can properly set things up first time
-          createHome = true;
-          isSystemUser = true;
-        };
-
-        users.groups.mariadb = { };
-
-        flyingcircus.passwordlessSudoRules = [
-          # Service users may switch to the mariadb system user
-          {
-            commands = [ "ALL" ];
-            groups = [
-              "sudo-srv"
-              "service"
-            ];
-            runAs = "mariadb";
-          }
-        ];
-
-        systemd.tmpfiles.rules = [
-          "d /var/log/mariadb 0755 mariadb service 90d"
-          "f /var/log/mariadb/mariadb.slow 0640 mariadb service -"
-          # Cleanup files that are not required anymore and confusing
-          "r /root/.my.cnf"
-          "r ${toString localConfigPath}/mariadb.passwd"
-        ];
-
-        # Note that this does not use platform defaults, by using priority 100.
-        # postrotate command taken from https://www.percona.com/blog/2013/04/18/rotating-mysql-slow-logs-safely/
-        services.logrotate.settings = {
-          "/var/log/mariadb/mariadb.slow" = {
-            priority = 100;
-            rotate = 10;
-            frequency = "weekly";
-            maxsize = "2G";
-            compress = true;
-            create = "0640 mariadb service";
-            postrotate = ''
-              ${package}/bin/mariadb -e \
-                    'select @@global.long_query_time into @lqt_save; set global long_query_time=1.9; select sleep(2); FLUSH LOGS; select sleep(2); set global long_query_time=@lqt_save;'
-            '';
-            missingok = true;
-          };
-        };
-
-        environment.etc."local/mariadb/test.foo".text = ''
-          this is not a valid config file
-        '';
-
-        services.mysql = {
-          enable = true;
-          inherit package;
-          user = "mariadb";
-          dataDir = "/srv/mariadb";
-          configFile =
-            let
-              cfg = config.services.mysql;
-              format = lib.generators.toINI { listsAsDuplicateKeys = true; };
-            in
-            builtins.toFile "my.cnf" (
-              (format cfg.settings)
-              + (lib.optionalString (pathExists localConfigPath) ''
-                !includedir ${localConfigPath}
-              '')
-            );
-          settings =
-            let
-              charset = "utf8mb4";
-              collation = "utf8mb4_unicode_ci";
-            in
+    lib.mkIf (enabledRolesCount > 0) (
+      lib.mkMerge [
+        {
+          assertions = [
             {
-              mysqld = {
-                default-storage-engine = "innodb";
-                skip-external-locking = true;
-                skip-name-resolve = true;
-                max_allowed_packet = "512M";
-                bulk_insert_buffer_size = "128M";
-                tmp_table_size = "512M";
-                max_heap_table_size = "512M";
-                lower-case-table-names = "0";
-                max_connect_errors = "20";
-                default_storage_engine = "InnoDB";
-                table_definition_cache = "512";
-                open_files_limit = "65535";
-                sysdate-is-now = "ON";
-                sql_mode = "NO_ENGINE_SUBSTITUTION";
+              assertion = enabledRolesCount == 1;
+              message = "MariaDB roles are mutually exclusive. Only one may be enabled.";
+            }
+          ];
 
-                log_slow_verbosity = "full";
-                slow_query_log = "ON";
-                long_query_time = "0.1";
-                log_slow_slave_statements = "ON";
-                slow_query_log_file = "/var/log/mariadb/mariadb.slow";
-                log_slow_admin_statements = "ON";
+          users.extraUsers.mariadb = {
+            group = "mariadb";
+            shell = "/run/current-system/sw/bin/bash";
+            home = lib.mkForce "/srv/mariadb";
+            # ensure we can properly set things up first time
+            createHome = true;
+            isSystemUser = true;
+          };
 
-                init-connect = "SET NAMES ${charset} COLLATE ${collation}";
-                character-set-server = "${charset}";
-                collation-server = "${collation}";
-                character_set_server = "${charset}";
-                collation_server = "${collation}";
+          users.groups.mariadb = { };
 
-                interactive_timeout = "28800";
-                wait_timeout = "28800";
-                connect_timeout = "10";
+          flyingcircus.passwordlessSudoRules = [
+            # Service users may switch to the mariadb system user
+            {
+              commands = [ "ALL" ];
+              groups = [
+                "sudo-srv"
+                "service"
+              ];
+              runAs = "mariadb";
+            }
+          ];
 
-                bind-address = "${lib.concatStringsSep "," cfg.listenAddresses}";
+          systemd.tmpfiles.rules = [
+            "d /var/log/mariadb 0755 mariadb service 90d"
+            "f /var/log/mariadb/mariadb.slow 0640 mariadb service -"
+            # Cleanup files that are not required anymore and confusing
+            "r /root/.my.cnf"
+            "r ${toString localConfigPath}/mariadb.passwd"
+          ];
 
-                max_connections = "1000";
-                thread_cache_size = "128";
-                myisam-recover-options = "FORCE";
-                key_buffer_size = "64M";
-                table_open_cache = "1000";
-                # myisam-recover = "FORCE";
+          # Note that this does not use platform defaults, by using priority 100.
+          # postrotate command taken from https://www.percona.com/blog/2013/04/18/rotating-mysql-slow-logs-safely/
+          services.logrotate.settings = {
+            "/var/log/mariadb/mariadb.slow" = {
+              priority = 100;
+              rotate = 10;
+              frequency = "weekly";
+              maxsize = "2G";
+              compress = true;
+              create = "0640 mariadb service";
+              postrotate = ''
+                ${package}/bin/mariadb -e \
+                      'select @@global.long_query_time into @lqt_save; set global long_query_time=1.9; select sleep(2); FLUSH LOGS; select sleep(2); set global long_query_time=@lqt_save;'
+              '';
+              missingok = true;
+            };
+          };
 
-                # * InnoDB
-                innodb_buffer_pool_size = "${toString (current_memory * cfg.bufferMemoryPercentage / 100)}M";
-                innodb_log_buffer_size = "64M";
-                innodb_file_per_table = "1";
-                innodb_read_io_threads = "${toString (cores * 4)}";
-                innodb_write_io_threads = "${toString (cores * 4)}";
-                # Percentage. Probably needs local tuning depending on the workload.
-                innodb_doublewrite = "1";
-                innodb_log_file_size = "512M";
-                innodb_flush_method = "O_DSYNC";
-                innodb_open_files = "800";
-                innodb_stats_on_metadata = "0";
-                innodb_lock_wait_timeout = "120";
+          services.mysql = {
+            enable = true;
+            inherit package;
+            user = "mariadb";
+            dataDir = "/srv/mariadb";
+            configFile =
+              let
+                cfg = config.services.mysql;
+                format = lib.generators.toINI { listsAsDuplicateKeys = true; };
+              in
+              builtins.toFile "my.cnf" (
+                (format cfg.settings)
+                + (lib.optionalString (pathExists localConfigPath) ''
+                  !includedir ${localConfigPath}
+                '')
+              );
+            settings =
+              let
+                charset = "utf8mb4";
+                collation = "utf8mb4_unicode_ci";
+              in
+              {
+                mysqld = {
+                  default-storage-engine = "innodb";
+                  skip-external-locking = true;
+                  skip-name-resolve = true;
+                  max_allowed_packet = "512M";
+                  bulk_insert_buffer_size = "128M";
+                  tmp_table_size = "512M";
+                  max_heap_table_size = "512M";
+                  lower-case-table-names = "0";
+                  max_connect_errors = "20";
+                  default_storage_engine = "InnoDB";
+                  table_definition_cache = "512";
+                  open_files_limit = "65535";
+                  sysdate-is-now = "ON";
+                  sql_mode = "NO_ENGINE_SUBSTITUTION";
+
+                  log_slow_verbosity = "full";
+                  slow_query_log = "ON";
+                  long_query_time = "0.1";
+                  log_slow_slave_statements = "ON";
+                  slow_query_log_file = "/var/log/mariadb/mariadb.slow";
+                  log_slow_admin_statements = "ON";
+
+                  init-connect = "SET NAMES ${charset} COLLATE ${collation}";
+                  character-set-server = "${charset}";
+                  collation-server = "${collation}";
+                  character_set_server = "${charset}";
+                  collation_server = "${collation}";
+
+                  interactive_timeout = "28800";
+                  wait_timeout = "28800";
+                  connect_timeout = "10";
+
+                  bind-address = "${lib.concatStringsSep "," cfg.listenAddresses}";
+
+                  max_connections = "1000";
+                  thread_cache_size = "128";
+                  myisam-recover-options = "FORCE";
+                  key_buffer_size = "64M";
+                  table_open_cache = "1000";
+                  # myisam-recover = "FORCE";
+
+                  # * InnoDB
+                  innodb_buffer_pool_size = "${toString (current_memory * cfg.bufferMemoryPercentage / 100)}M";
+                  innodb_log_buffer_size = "64M";
+                  innodb_file_per_table = "1";
+                  innodb_read_io_threads = "${toString (cores * 4)}";
+                  innodb_write_io_threads = "${toString (cores * 4)}";
+                  # Percentage. Probably needs local tuning depending on the workload.
+                  innodb_doublewrite = "1";
+                  innodb_log_file_size = "512M";
+                  innodb_flush_method = "O_DSYNC";
+                  innodb_open_files = "800";
+                  innodb_stats_on_metadata = "0";
+                  innodb_lock_wait_timeout = "120";
+                };
+
+                mysqldump = {
+                  quick = true;
+                  quote-names = true;
+                  max_allowed_packet = "512M";
+                };
+
+                isamchk.key_buffer = "16M";
               };
 
-              mysqldump = {
-                quick = true;
-                quote-names = true;
-                max_allowed_packet = "512M";
-              };
+            ensureUsers = [
+              {
+                name = "sensuclient";
+                ensurePermissions = {
+                  "sensuclient.*" = "SELECT";
+                };
+              }
+              {
+                name = "telegraf";
+                ensurePermissions = {
+                  "telegraf.*" = "SELECT";
+                };
+              }
+              {
+                name = "mariadb";
+                ensurePermissions = {
+                  "*.*" = "ALL PRIVILEGES";
+                };
+              }
+            ];
 
-              isamchk.key_buffer = "16M";
+            ensureDatabases = [
+              "sensuclient"
+              "telegraf"
+            ];
+          };
+
+          flyingcircus.localConfigDirs.mariadb = {
+            dir = (toString localConfigPath);
+            user = "mariadb";
+          };
+
+          environment.etc."local/mariadb/README.txt".text = ''
+            MariaDB (${package.name}) is running on this machine.
+
+            The root user is authenticated by socket auth with the `mariadb` and `root` system users.
+            If you want to add a password to this user, you can do this manually with interactive
+            SQL commands.
+
+            Config files from this directory (/etc/local/mariadb) are included in the
+            mariadb configuration. To set custom options, add a `local.cnf`
+            (or any other *.cnf) file here, and run `sudo fc-manage switch`.
+
+            ATTENTION: Changes to *.cnf files in this directory will restart MariaDB
+            to activate the new configuration.
+
+            For more information, see our documentation at
+            ${fclib.roleDocUrl "mariadb"}
+          '';
+
+          systemd.services.mysql.serviceConfig.ReadWritePaths = [ "/var/log/mariadb" ];
+
+          services.udev.extraRules = ''
+            # increase readahead for mariadb
+            SUBSYSTEM=="block", ACTION=="add|change", KERNEL=="vd[a-z]", ATTR{bdi/read_ahead_kb}="1024", ATTR{queue/read_ahead_kb}="1024"
+          '';
+
+          flyingcircus.services = {
+            sensu-client.checks.mariadb = {
+              notification = "MariaDB alive";
+              command = mariadbCheck;
             };
 
-          ensureUsers = [
+            telegraf.inputs.mysql = [
+              {
+                servers = [ "telegraf@unix(/run/mysqld/mysqld.sock)/?tls=false" ];
+              }
+            ];
+          };
+        }
+
+        {
+          flyingcircus.roles.statshost.prometheusMetricRelabel = [
             {
-              name = "sensuclient";
-              ensurePermissions = {
-                "sensuclient.*" = "SELECT";
-              };
+              source_labels = [
+                "__name__"
+                "command"
+              ];
+              # Only if there is no command set.
+              regex = "(mysql_commands)_(.+);$";
+              replacement = "\${2}";
+              target_label = "command";
             }
             {
-              name = "telegraf";
-              ensurePermissions = {
-                "telegraf.*" = "SELECT";
-              };
+              source_labels = [ "__name__" ];
+              regex = "(mysql_commands)_(.+)";
+              replacement = "\${1}_total";
+              target_label = "__name__";
             }
             {
-              name = "mariadb";
-              ensurePermissions = {
-                "*.*" = "ALL PRIVILEGES";
-              };
+              source_labels = [ "__name__" ];
+              regex = "(mysql_handler)_(.+)";
+              replacement = "\${2}";
+              target_label = "handler";
+            }
+            {
+              source_labels = [ "__name__" ];
+              regex = "(mysql_handler)_(.+)";
+              replacement = "mysql_handlers_total";
+              target_label = "__name__";
+            }
+            {
+              source_labels = [ "__name__" ];
+              regex = "(mysql_innodb_rows)_(.+)";
+              replacement = "\${2}";
+              target_label = "operation";
+            }
+            {
+              source_labels = [ "__name__" ];
+              regex = "(mysql_innodb_rows)_(.+)";
+              replacement = "mysql_innodb_row_ops_total";
+              target_label = "__name__";
+            }
+            {
+              source_labels = [ "__name__" ];
+              regex = "(mysql_innodb_buffer_pool_pages)_(.+)";
+              replacement = "\${2}";
+              target_label = "state";
+            }
+            {
+              source_labels = [ "__name__" ];
+              regex = "(mysql_innodb_buffer_pool_pages)_(.+)";
+              replacement = "mysql_buffer_pool_pages";
+              target_label = "__name__";
             }
           ];
+        }
 
-          ensureDatabases = [
-            "sensuclient"
-            "telegraf"
-          ];
-        };
-
-        flyingcircus.localConfigDirs.mariadb = {
-          dir = (toString localConfigPath);
-          user = "mariadb";
-        };
-
-        environment.etc."local/mariadb/README.txt".text = ''
-          MariaDB (${package.name}) is running on this machine.
-
-          The root user is authenticated by socket auth with the `mariadb` and `root` system users.
-          If you want to add a password to this user, you can do this manually with interactive
-          SQL commands.
-
-          Config files from this directory (/etc/local/mariadb) are included in the
-          mariadb configuration. To set custom options, add a `local.cnf`
-          (or any other *.cnf) file here, and run `sudo fc-manage switch`.
-
-          ATTENTION: Changes to *.cnf files in this directory will restart MariaDB
-          to activate the new configuration.
-
-          For more information, see our documentation at
-          ${fclib.roleDocUrl "mariadb"}
-        '';
-
-        systemd.services.mysql.serviceConfig.ReadWritePaths = [ "/var/log/mariadb" ];
-
-        services.udev.extraRules = ''
-          # increase readahead for mariadb
-          SUBSYSTEM=="block", ACTION=="add|change", KERNEL=="vd[a-z]", ATTR{bdi/read_ahead_kb}="1024", ATTR{queue/read_ahead_kb}="1024"
-        '';
-
-        flyingcircus.services = {
-          sensu-client.checks.mariadb = {
-            notification = "MariaDB alive";
-            command = mariadbCheck;
+        (lib.mkIf (!builtins.isNull lokiServer) {
+          systemd.services.alloy = lib.mkIf config.services.alloy.enable {
+            reloadTriggers = [ config.environment.etc."alloy/mariadb_slowlog.alloy".source ];
+            serviceConfig.SupplementaryGroups = [ "service" ];
           };
 
-          telegraf.inputs.mysql = [
-            {
-              servers = [ "telegraf@unix(/run/mysqld/mysqld.sock)/?tls=false" ];
+          environment.etc."alloy/mariadb_slowlog.alloy".text = ''
+            local.file_match "mariadb_slowlogs" {
+                path_targets = [{
+                    __path__ = "/var/log/mysql/mysql.slow",
+                    job_name = "mariadb/slowlogs",
+                }]
             }
-          ];
-        };
-      })
 
-      {
-        flyingcircus.roles.statshost.prometheusMetricRelabel = [
-          {
-            source_labels = [
-              "__name__"
-              "command"
-            ];
-            # Only if there is no command set.
-            regex = "(mysql_commands)_(.+);$";
-            replacement = "\${2}";
-            target_label = "command";
-          }
-          {
-            source_labels = [ "__name__" ];
-            regex = "(mysql_commands)_(.+)";
-            replacement = "\${1}_total";
-            target_label = "__name__";
-          }
-          {
-            source_labels = [ "__name__" ];
-            regex = "(mysql_handler)_(.+)";
-            replacement = "\${2}";
-            target_label = "handler";
-          }
-          {
-            source_labels = [ "__name__" ];
-            regex = "(mysql_handler)_(.+)";
-            replacement = "mysql_handlers_total";
-            target_label = "__name__";
-          }
-          {
-            source_labels = [ "__name__" ];
-            regex = "(mysql_innodb_rows)_(.+)";
-            replacement = "\${2}";
-            target_label = "operation";
-          }
-          {
-            source_labels = [ "__name__" ];
-            regex = "(mysql_innodb_rows)_(.+)";
-            replacement = "mysql_innodb_row_ops_total";
-            target_label = "__name__";
-          }
-          {
-            source_labels = [ "__name__" ];
-            regex = "(mysql_innodb_buffer_pool_pages)_(.+)";
-            replacement = "\${2}";
-            target_label = "state";
-          }
-          {
-            source_labels = [ "__name__" ];
-            regex = "(mysql_innodb_buffer_pool_pages)_(.+)";
-            replacement = "mysql_buffer_pool_pages";
-            target_label = "__name__";
-          }
-        ];
-      }
+            loki.source.file "mariadb_slowlogs" {
+                targets    = local.file_match.mariadb_slowlogs.targets
+                forward_to = [loki.process.mariadb_slowlogs.receiver]
+            }
 
-      (lib.mkIf (!builtins.isNull lokiServer) {
-        systemd.services.alloy = lib.mkIf config.services.alloy.enable {
-          reloadTriggers = [ config.environment.etc."alloy/mariadb_slowlog.alloy".source ];
-          serviceConfig.SupplementaryGroups = [ "service" ];
-        };
+            loki.process "mariadb_slowlogs" {
+                forward_to = [loki.write.fcio_rg_loki.receiver]
 
-        environment.etc."alloy/mariadb_slowlog.alloy".text = ''
-          local.file_match "mariadb_slowlogs" {
-              path_targets = [{
-                  __path__ = "/var/log/mysql/mysql.slow",
-                  job_name = "mariadb/slowlogs",
-              }]
-          }
-
-          loki.source.file "mariadb_slowlogs" {
-              targets    = local.file_match.mariadb_slowlogs.targets
-              forward_to = [loki.process.mariadb_slowlogs.receiver]
-          }
-
-          loki.process "mariadb_slowlogs" {
-              forward_to = [loki.write.fcio_rg_loki.receiver, loki.echo.stdout.receiver]
-
-              stage.multiline {
-                  firstline = "^# Time:"
-              }
-
-              stage.regex {
-                  // the patterns are separated by a non-greedy match-everything
-                  // the query pattern matches everything after the first line that doesnt start with a '#'
-                  // since this is a regular regex, the order of these capture groups is very important
-                  // when in doubt, check the slow log file itself for the correct order
-                  expression = "${
-                    lib.escape [ "\"" "\\" ] (
-                      "(?s)^.*?"
-                      + (builtins.concatStringsSep ".*?" [
-                        "Time: (?P<time>[0-9: ]+)"
-                        "User@Host: (?P<user>\\S+) @ (?P<host>\\S+)"
-                        "Schema:\\s+(?P<schema>\\S*?)?"
-                        "Query_time:\\s+(?P<query_time>\\S+)"
-                        "Lock_time:\\s+(?P<lock_time>[0-9.]+)"
-                        "Rows_sent:\\s+(?P<rows_sent>\\d+)"
-                        "Rows_examined:\\s+(?P<rows_examined>\\d+)"
-                        "Rows_affected:\\s+(?P<rows_affected>\\d+)"
-                        "Bytes_sent:\\s+(?P<bytes_sent>\\d+)"
-                        "SET timestamp=\\d+;"
-                        "\\n(?P<query>[^#](?s:.+))"
-                      ])
-                    )
-                  }"
-              }
-
-              stage.timestamp {
-                  source = "time"
-                  format = "060102 15:04:05"
-                  location = "CET"
-              }
-
-              stage.structured_metadata {
-                values = {
-                  user = "",
-                  host = "",
-                  schema = "",
-                  query_time = "",
-                  lock_time = "",
-                  rows_sent = "",
-                  rows_examined = "",
-                  rows_affected = "",
-                  bytes_sent = "",
+                stage.multiline {
+                    firstline = "^# Time:"
                 }
-              }
 
-              stage.output {
-                  source = "query"
-              }
-          }
+                stage.regex {
+                    // the patterns are separated by a non-greedy match-everything
+                    // the query pattern matches everything after the first line that doesnt start with a '#'
+                    // since this is a regular regex, the order of these capture groups is very important
+                    // when in doubt, check the slow log file itself for the correct order
+                    expression = "${
+                      lib.escape [ "\"" "\\" ] (
+                        "(?s)^.*?"
+                        + (builtins.concatStringsSep ".*?" [
+                          "Time: (?P<time>[0-9: ]+)"
+                          "User@Host: (?P<user>\\S+) @ (?P<host>\\S+)"
+                          "Schema:\\s+(?P<schema>\\S*?)?"
+                          "Query_time:\\s+(?P<query_time>\\S+)"
+                          "Lock_time:\\s+(?P<lock_time>[0-9.]+)"
+                          "Rows_sent:\\s+(?P<rows_sent>\\d+)"
+                          "Rows_examined:\\s+(?P<rows_examined>\\d+)"
+                          "Rows_affected:\\s+(?P<rows_affected>\\d+)"
+                          "Bytes_sent:\\s+(?P<bytes_sent>\\d+)"
+                          "SET timestamp=\\d+;"
+                          "\\n(?P<query>[^#](?s:.+))"
+                        ])
+                      )
+                    }"
+                }
 
-          loki.echo "stdout" {}
-        '';
-      })
-    ];
+                stage.timestamp {
+                    source = "time"
+                    format = "060102 15:04:05"
+                    location = "CET"
+                }
+
+                stage.structured_metadata {
+                  values = {
+                    user = "",
+                    host = "",
+                    schema = "",
+                    query_time = "",
+                    lock_time = "",
+                    rows_sent = "",
+                    rows_examined = "",
+                    rows_affected = "",
+                    bytes_sent = "",
+                  }
+                }
+
+                stage.output {
+                    source = "query"
+                }
+            }
+          '';
+        })
+      ]
+    );
 }
