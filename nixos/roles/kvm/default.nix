@@ -23,7 +23,7 @@ let
   virtualGatewayV4 = "169.254.83.168";
   virtualGatewayV6 = "fe80::1";
 
-  vrfInterfaces = lib.filterAttrs (n: v: v.routed or false) fclib.network;
+  vrfInterfaces = lib.filterAttrs (_: v: (v.linktype or null) == "routed") fclib.network;
   vrfV6Resolvers = iface: map (net: "${net.network}1") iface.v6.networkAttrs;
 
   ubuntuUpdateScript = pkgs.writeShellApplication {
