@@ -60,9 +60,9 @@
     "version": "2.7.2"
   },
   "cacert": {
-    "name": "nss-cacert-3.125",
+    "name": "nss-cacert-3.126",
     "pname": "nss-cacert",
-    "version": "3.125"
+    "version": "3.126"
   },
   "calibre": {
     "name": "calibre-9.11.0",
@@ -405,9 +405,9 @@
     "version": "3.20.2"
   },
   "libffi": {
-    "name": "libffi-3.5.2",
+    "name": "libffi-3.7.0",
     "pname": "libffi",
-    "version": "3.5.2"
+    "version": "3.7.0"
   },
   "libgcrypt": {
     "name": "libgcrypt-1.12.2",
@@ -435,9 +435,9 @@
     "version": "4.2.1"
   },
   "libtiff": {
-    "name": "libtiff-4.7.1",
+    "name": "libtiff-4.7.2",
     "pname": "libtiff",
-    "version": "4.7.1"
+    "version": "4.7.2"
   },
   "libwebp": {
     "name": "libwebp-1.6.0",
