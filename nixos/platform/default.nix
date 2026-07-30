@@ -469,6 +469,11 @@ in
         attrByPath [ "static" "ntpServers" loc ] [ "pool.ntp.org" ] cfg;
     };
 
+    # Restart cron when it is terminated, e.g. by systemd-oomd.
+    systemd.services.cron = lib.mkIf config.services.cron.enable {
+      serviceConfig.Restart = fclib.mkPlatform "always";
+    };
+
     system.activationScripts =
       let
         cfgDirs = cfg.localConfigDirs;
