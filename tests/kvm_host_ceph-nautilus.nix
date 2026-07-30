@@ -50,8 +50,8 @@ import ./make-test-python.nix (
           stb
         ];
         imports = [
-          <fc/nixos>
-          <fc/nixos/roles>
+          ../nixos
+          ../nixos/roles
         ];
 
         # Use the default flags defined by fc-qemu regardless of
