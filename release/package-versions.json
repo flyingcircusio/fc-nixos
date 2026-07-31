@@ -60,9 +60,9 @@
     "version": "2.7.2"
   },
   "cacert": {
-    "name": "nss-cacert-3.125",
+    "name": "nss-cacert-3.126",
     "pname": "nss-cacert",
-    "version": "3.125"
+    "version": "3.126"
   },
   "calibre": {
     "name": "calibre-9.11.0",
@@ -175,14 +175,14 @@
     "version": "2.4.4"
   },
   "element-web": {
-    "name": "element-web-1.12.23",
+    "name": "element-web-1.12.24",
     "pname": "element-web",
-    "version": "1.12.23"
+    "version": "1.12.24"
   },
   "erlang": {
-    "name": "erlang-28.5.0.3",
+    "name": "erlang-28.5.0.4",
     "pname": "erlang",
-    "version": "28.5.0.3"
+    "version": "28.5.0.4"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -210,9 +210,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-153.0",
+    "name": "firefox-153.0.1",
     "pname": "firefox",
-    "version": "153.0"
+    "version": "153.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-15.2.0",
@@ -405,9 +405,9 @@
     "version": "3.20.2"
   },
   "libffi": {
-    "name": "libffi-3.5.2",
+    "name": "libffi-3.7.0",
     "pname": "libffi",
-    "version": "3.5.2"
+    "version": "3.7.0"
   },
   "libgcrypt": {
     "name": "libgcrypt-1.12.2",
@@ -435,9 +435,9 @@
     "version": "4.2.1"
   },
   "libtiff": {
-    "name": "libtiff-4.7.1",
+    "name": "libtiff-4.7.2",
     "pname": "libtiff",
-    "version": "4.7.1"
+    "version": "4.7.2"
   },
   "libwebp": {
     "name": "libwebp-1.6.0",
@@ -500,9 +500,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.6.3",
+    "name": "mastodon-4.6.4",
     "pname": "mastodon",
-    "version": "4.6.3"
+    "version": "4.6.4"
   },
   "matomo": {
     "name": "matomo-5.12.0",
@@ -510,9 +510,9 @@
     "version": "5.12.0"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-1.157.1",
+    "name": "matrix-synapse-1.157.2",
     "pname": "matrix-synapse",
-    "version": "1.157.1"
+    "version": "1.157.2"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.3",
