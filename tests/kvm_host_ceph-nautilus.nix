@@ -64,9 +64,18 @@ import ./make-test-python.nix (
         flyingcircus.static.mtus.stb = 1500;
 
         # Override some fc-qemu.conf values to match the values expected by tests
-        flyingcircus.roles.kvm_host.settings = {
-          qemu.binary-generation = lib.mkForce 2;
-        };
+
+        flyingcircus.roles.kvm_host.settings =
+          let
+            deploymentOverride = "${testPackage.testdata}/deployment-settings-overrides.nix";
+          in
+          if builtins.pathExists deploymentOverride then
+            import deploymentOverride { inherit lib; }
+          else
+            # TODO: clean up when removing Ceph Nautilus support
+            {
+              qemu.binary-generation = lib.mkForce 2;
+            };
 
         systemd.timers.fc-ceph-load-vm-images.enable = lib.mkForce false;
         systemd.timers.fc-ceph-mon-update-client-keys.enable = lib.mkForce false;

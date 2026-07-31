@@ -94,6 +94,11 @@ py.buildPythonPackage (finalAttrs: {
 
   name = "fc.qemu-${version}";
 
+  outputs = [
+    "out"
+    "testdata"
+  ];
+
   dontStrip = true;
 
   pyproject = true;
@@ -159,6 +164,8 @@ py.buildPythonPackage (finalAttrs: {
 
   postInstall = ''
     cp -Pr $src/share $out/share
+    mkdir $testdata
+    cp -r $src/tests/testdata/. $testdata || true  # fallback for previous revisions not providing testdata
   '';
 
   nativeCheckInputs = finalAttrs.passthru.nativeCheckInputs;
