@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-150.0.7871.186",
+    "name": "chromedriver-unwrapped-151.0.7922.71",
     "pname": "chromedriver-unwrapped",
-    "version": "150.0.7871.186"
+    "version": "151.0.7922.71"
   },
   "chromium": {
-    "name": "chromium-150.0.7871.186",
+    "name": "chromium-151.0.7922.71",
     "pname": "chromium",
-    "version": "150.0.7871.186"
+    "version": "151.0.7922.71"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.5",
@@ -465,14 +465,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.97",
+    "name": "linux-6.12.100",
     "pname": "linux",
-    "version": "6.12.97"
+    "version": "6.12.100"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.18.40",
+    "name": "linux-6.18.41",
     "pname": "linux",
-    "version": "6.18.40"
+    "version": "6.18.41"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -575,9 +575,9 @@
     "version": "24.18.0"
   },
   "nodejs_22": {
-    "name": "nodejs-22.23.1",
+    "name": "nodejs-22.23.2",
     "pname": "nodejs",
-    "version": "22.23.1"
+    "version": "22.23.2"
   },
   "nodejs_24": {
     "name": "nodejs-24.18.0",
@@ -720,9 +720,9 @@
     "version": "8.4.23"
   },
   "php85": {
-    "name": "php-with-extensions-8.5.8",
+    "name": "php-with-extensions-8.5.9",
     "pname": "php-with-extensions",
-    "version": "8.5.8"
+    "version": "8.5.9"
   },
   "phpPackages.composer": {
     "name": "composer-2.10.2",
@@ -965,9 +965,9 @@
     "version": "4.5.1"
   },
   "redis": {
-    "name": "redis-8.8.0",
+    "name": "redis-8.8.1",
     "pname": "redis",
-    "version": "8.8.0"
+    "version": "8.8.1"
   },
   "rich-cli": {
     "name": "rich-cli-1.8.1",
