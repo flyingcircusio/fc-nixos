@@ -40,9 +40,9 @@
     "version": "5.3p9"
   },
   "bind": {
-    "name": "bind-9.20.23",
+    "name": "bind-9.20.26",
     "pname": "bind",
-    "version": "9.20.23"
+    "version": "9.20.26"
   },
   "binutils": {
     "name": "binutils-wrapper-2.46",
@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-150.0.7871.186",
+    "name": "chromedriver-unwrapped-151.0.7922.71",
     "pname": "chromedriver-unwrapped",
-    "version": "150.0.7871.186"
+    "version": "151.0.7922.71"
   },
   "chromium": {
-    "name": "chromium-150.0.7871.186",
+    "name": "chromium-151.0.7922.71",
     "pname": "chromium",
-    "version": "150.0.7871.186"
+    "version": "151.0.7922.71"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.5",
@@ -120,9 +120,9 @@
     "version": "1.9.9"
   },
   "containerd": {
-    "name": "containerd-2.3.1",
+    "name": "containerd-2.3.3",
     "pname": "containerd",
-    "version": "2.3.1"
+    "version": "2.3.3"
   },
   "coreutils": {
     "name": "coreutils-9.11",
@@ -210,9 +210,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-153.0.1",
+    "name": "firefox-153.0.3",
     "pname": "firefox",
-    "version": "153.0.1"
+    "version": "153.0.3"
   },
   "gcc": {
     "name": "gcc-wrapper-15.2.0",
@@ -465,14 +465,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.97",
+    "name": "linux-6.12.101",
     "pname": "linux",
-    "version": "6.12.97"
+    "version": "6.12.101"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.18.40",
+    "name": "linux-6.18.42",
     "pname": "linux",
-    "version": "6.18.40"
+    "version": "6.18.42"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -575,9 +575,9 @@
     "version": "24.18.0"
   },
   "nodejs_22": {
-    "name": "nodejs-22.23.1",
+    "name": "nodejs-22.23.2",
     "pname": "nodejs",
-    "version": "22.23.1"
+    "version": "22.23.2"
   },
   "nodejs_24": {
     "name": "nodejs-24.18.0",
@@ -670,14 +670,14 @@
     "version": "5.0.5"
   },
   "percona-server": {
-    "name": "percona-server-8.4.8-8",
+    "name": "percona-server-8.4.10-10",
     "pname": "percona-server",
-    "version": "8.4.8-8"
+    "version": "8.4.10-10"
   },
   "percona-server_8_4": {
-    "name": "percona-server-8.4.8-8",
+    "name": "percona-server-8.4.10-10",
     "pname": "percona-server",
-    "version": "8.4.8-8"
+    "version": "8.4.10-10"
   },
   "percona-xtrabackup_8_4": {
     "name": "percona-xtrabackup-8.4.0-4",
@@ -705,24 +705,24 @@
     "version": "8.0.30"
   },
   "php82": {
-    "name": "php-with-extensions-8.2.32",
+    "name": "php-with-extensions-8.2.33",
     "pname": "php-with-extensions",
-    "version": "8.2.32"
+    "version": "8.2.33"
   },
   "php83": {
-    "name": "php-with-extensions-8.3.32",
+    "name": "php-with-extensions-8.3.33",
     "pname": "php-with-extensions",
-    "version": "8.3.32"
+    "version": "8.3.33"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.23",
+    "name": "php-with-extensions-8.4.24",
     "pname": "php-with-extensions",
-    "version": "8.4.23"
+    "version": "8.4.24"
   },
   "php85": {
-    "name": "php-with-extensions-8.5.8",
+    "name": "php-with-extensions-8.5.9",
     "pname": "php-with-extensions",
-    "version": "8.5.8"
+    "version": "8.5.9"
   },
   "phpPackages.composer": {
     "name": "composer-2.10.2",
@@ -965,9 +965,9 @@
     "version": "4.5.1"
   },
   "redis": {
-    "name": "redis-8.8.0",
+    "name": "redis-8.8.1",
     "pname": "redis",
-    "version": "8.8.0"
+    "version": "8.8.1"
   },
   "rich-cli": {
     "name": "rich-cli-1.8.1",
