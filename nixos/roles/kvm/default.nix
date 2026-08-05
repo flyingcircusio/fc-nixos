@@ -40,6 +40,11 @@ let
     mode = "0744";
   };
 
+  # qemu+nautilus is pinned to an old fc.qemu version which expects
+  # guest tap interface setup to be performed by fc-nixos
+  noopScriptWithNautilusFallback =
+    content: if cfg.cephRelease == "nautilus" then content else noopScript;
+
 in
 {
   options = {
@@ -255,10 +260,66 @@ in
 
     # BBB PL-135610 - Need to be kept to allow bi-directional migrations
     # with older fc-nixos incarnations.
-    environment.etc."kvm/kvm-ifup" = noopScript;
-    environment.etc."kvm/kvm-ifdown" = noopScript;
-    environment.etc."kvm/kvm-ifup-vrf" = noopScript;
-    environment.etc."kvm/kvm-ifdown-vrf" = noopScript;
+    environment.etc."kvm/kvm-ifup" = noopScriptWithNautilusFallback {
+      text = ''
+        #!${pkgs.stdenv.shell}
+        # Wire up Qemu tap devices to the bridge of the corresponding VLAN.
+        # Interface names are expected to be of the form `t<VLAN><ifnumber>`, for example:
+        # tsrv0, tsrv1, tfe0, ...
+        set -e
+
+        INTERFACE="$1"
+        VLAN=$(echo $INTERFACE | ${pkgs.gnused}/bin/sed 's/t\([a-zA-Z]\+\)[0-9]\+/\1/')
+        BRIDGE="br''${VLAN}"
+
+        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" up
+        ${pkgs.iproute2}/bin/ip link set mtu $(< /sys/class/net/br''${VLAN}/mtu) dev "$INTERFACE"
+        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" master "$BRIDGE"
+      '';
+      mode = "0744";
+    };
+    environment.etc."kvm/kvm-ifdown" = noopScriptWithNautilusFallback {
+      text = ''
+        #!${pkgs.stdenv.shell}
+        INTERFACE="$1"
+        VLAN=$(echo $INTERFACE | ${pkgs.gnused}/bin/sed 's/t\([a-zA-Z]\+\)[0-9]\+/\1/')
+        BRIDGE="br''${VLAN}"
+
+        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" nomaster
+        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" down
+        ${pkgs.iproute2}/bin/ip link delete "$INTERFACE"
+      '';
+      mode = "0744";
+    };
+    environment.etc."kvm/kvm-ifup-vrf" = noopScriptWithNautilusFallback {
+      text = ''
+        #!${pkgs.stdenv.shell}
+        INTERFACE="$1"
+        VLAN=$(echo $INTERFACE | sed 's/t\([a-zA-Z]\+\)[0-9]\+/\1/')
+        VRF="vrf''${VLAN}"
+
+        ${pkgs.iproute2}/bin/ip link set $INTERFACE master $VRF
+
+        # add addresses idempotently
+        ${pkgs.iproute2}/bin/ip address replace ${virtualGatewayV4}/16 dev $INTERFACE
+        ${pkgs.iproute2}/bin/ip address replace ${virtualGatewayV6}/64 dev $INTERFACE
+
+        ${pkgs.iproute2}/bin/ip link set $INTERFACE up
+      '';
+      mode = "0744";
+    };
+    environment.etc."kvm/kvm-ifdown-vrf" = noopScriptWithNautilusFallback {
+      text = ''
+        #!${pkgs.stdenv.shell}
+        INTERFACE="$1"
+
+        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" down
+        ${pkgs.iproute2}/bin/ip address flush dev "$INTERFACE"
+        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" nomaster
+        ${pkgs.iproute2}/bin/ip link delete "$INTERFACE"
+      '';
+      mode = "0744";
+    };
     environment.etc."kvm/kvm-ifup-dynamic" = noopScript;
     environment.etc."kvm/kvm-ifdown-dynamic" = noopScript;
 
