@@ -419,7 +419,9 @@ in
 
     # Upstream cron.service sets no Restart=, so an OOM kill (SIGKILL by
     # systemd-oomd) leaves the daemon dead. Enable cron and restart it on
-    # termination. mkPlatform overrides upstream's mkDefault (prio 1000).
+    # termination.
+    # upstream uses cron.enable = mkDefault ... (prio 1000), mkPlatform
+    # overrides it
     services.cron.enable = fclib.mkPlatform true;
     systemd.services.cron = lib.mkIf config.services.cron.enable {
       serviceConfig.Restart = fclib.mkPlatform "always";
