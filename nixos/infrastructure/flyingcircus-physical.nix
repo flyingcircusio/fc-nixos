@@ -53,6 +53,15 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") (
           "vfat"
         ];
 
+        # We have seen sporadic boot issues where an ext4 filesystem could not be mounted due to the kernel module not
+        # being loaded at mount time.
+        # ext4 was an available kernel module then.
+        # Until we figured out which bug this is, load ext4 by default in the initrd.
+        # PL-135613
+        initrd.kernelModules = [
+          "ext4"
+        ];
+
         # not relevant for boot stage1
         kernelModules = [
           "dm_mirror" # LVM disk migration scenarios
