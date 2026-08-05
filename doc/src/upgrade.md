@@ -116,6 +116,14 @@ This change affects the configuration options:
 - `services.phpfpm.extraConfig`
 - `services.phpfpm.settings`
 
+## GitLab
+
+The database metadata backend for the container registry is now enabled by default on new installations.
+Existing installations get prepared, i.e. a database is created by default and GitLab container registry connects to it
+and uses it only when the whole filesystem metadata storage was migrated to the database.
+
+New installations also use the `gitlab-container-registry` system user for the GitLab container registry
+instead of the `docker-registry` user. This behavior can be modified with the `services.gitlab.registry.user` option.
 
 ## Other notable changes
 
