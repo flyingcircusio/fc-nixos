@@ -17,25 +17,24 @@ classifiers = [
     "Topic :: System :: Systems Administration",
 ]
 
-
 requires-python = "==3.12.*"
-# NOTE: Please keep this sorted!
 dependencies = [
+    # keep-sorted start
+    "PyYAML>=6",
     "click",
     "configobj",
     "iso8601",
     "netaddr",
     "pendulum",
     "python-dateutil",
-    "PyYAML>=6",
     "requests",
     "rich",
     "shortuuid",
     "stamina",
     "structlog",
     "typer",
+    # keep-sorted end
 ]
-# NOTE: Please keep this sorted!
 
 [build-system]
 requires = ["setuptools >= 61.0"]
@@ -44,44 +43,46 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where = ["src/"]
 include = [
-        "fc.maintenance",
-        "fc.maintenance.lib",
-        "fc.maintenance.activity",
-        "fc.manage",
-        "fc.util",
+    # keep-sorted start
+    "fc.maintenance",
+    "fc.maintenance.activity",
+    "fc.maintenance.lib",
+    "fc.manage",
+    "fc.util",
+    # keep-sorted end
 ]
 
 [project.optional-dependencies]
-# NOTE: Please keep this sorted!
 test = [
+    # keep-sorted start
     "freezegun>=0.3",
     "pytest-cov",
     "pytest-mock",
     "pytest-structlog",
     "pytest>=3",
     "responses",
+    # keep-sorted end
+
 ]
 linux = ["pystemd", "systemd"]
 slurm = ["pyslurm"]
-# NOTE: Please keep this sorted!
-
 
 [dependency-groups]
-# NOTE: Please keep this sorted!
 dev = [
+    # keep-sorted start
     "freezegun>=0.3",
     "pytest-cov",
     "pytest-mock",
     "pytest-structlog",
     "pytest>=3",
     "responses",
+    # keep-sorted end
 ]
-# NOTE: Please keep this sorted!
 
 [project.scripts]
-# NOTE: Please keep this sorted!
-fc-backy-publish = "fc.manage.backy:publish"
+# keep-sorted start
 fc-backy = "fc.manage.backy:main"
+fc-backy-publish = "fc.manage.backy:publish"
 fc-collect-garbage = "fc.manage.collect_garbage:app"
 fc-create-vm = "fc.manage.createvm:main"
 fc-directory = "fc.util.directory:directory_cli"
@@ -99,7 +100,7 @@ fc-slurm = "fc.manage.slurm:app"
 fc-systemd = "fc.manage.systemd:app"
 fc-zones = "fc.manage.zones:update"
 fctl = "fc.util.fctl:app"
-# NOTE: Please keep this sorted!
+# keep-sorted end
 
 [tool.black]
 line-length = 80

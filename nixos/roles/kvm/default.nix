@@ -19,10 +19,11 @@ let
 
   # virtual ipv4 gateway address selected by 254-169=85, with each
   # octet +85 mod 256 the preceding octet
+  # XXX duplicated in fc.qemu
   virtualGatewayV4 = "169.254.83.168";
   virtualGatewayV6 = "fe80::1";
 
-  vrfInterfaces = lib.filterAttrs (n: v: v.routed or false) fclib.network;
+  vrfInterfaces = lib.filterAttrs (_: v: (v.linktype or null) == "routed") fclib.network;
   vrfV6Resolvers = iface: map (net: "${net.network}1") iface.v6.networkAttrs;
 
   ubuntuUpdateScript = pkgs.writeShellApplication {
@@ -30,6 +31,19 @@ let
     runtimeInputs = with pkgs; [ wget ];
     text = (lib.readFile ./update-ubuntu.sh);
   };
+
+  noopScript = {
+    text = ''
+      #!${pkgs.stdenv.shell}
+      : # BBB noop
+    '';
+    mode = "0744";
+  };
+
+  # qemu+nautilus is pinned to an old fc.qemu version which expects
+  # guest tap interface setup to be performed by fc-nixos
+  noopScriptWithNautilusFallback =
+    content: if cfg.cephRelease == "nautilus" then content else noopScript;
 
 in
 {
@@ -208,11 +222,22 @@ in
           burst-factor = 2;
         };
 
-        network = {
-          tap-ifup-bridge = "/etc/kvm/kvm-ifup";
-          tap-ifdown-bridge = "/etc/kvm/kvm-ifdown";
-          tap-ifup-vrf = "/etc/kvm/kvm-ifup-vrf";
-          tap-ifdown-vrf = "/etc/kvm/kvm-ifdown-vrf";
+        network = rec {
+          underlay_loopback = fclib.underlay.loopback or null;
+
+          # BBB PL-135610 - Need to be kept to allow bi-directional migrations
+          # with older fc-nixos incarnations.
+          tap-ifup-bridged = "/etc/kvm/kvm-ifup";
+          tap-ifdown-bridged = "/etc/kvm/kvm-ifdown";
+          tap-ifup-routed = "/etc/kvm/kvm-ifup-vrf";
+          tap-ifdown-routed = "/etc/kvm/kvm-ifdown-vrf";
+          tap-ifup-dynamic = "/etc/kvm/kvm-ifup-dynamic";
+          tap-ifdown-dynamic = "/etc/kvm/kvm-ifdown-dynamic";
+          # legacy, also BBB
+          tap-ifup-bridge = tap-ifup-bridged;
+          tap-ifdown-bridge = tap-ifdown-bridged;
+          tap-ifup-vrf = tap-ifup-routed;
+          tap-ifdown-vrf = tap-ifdown-routed;
         };
 
         consul = {
@@ -233,9 +258,9 @@ in
 
     environment.etc."qemu/fc-qemu.conf".source = fcQemuConfFormat.generate "fc-qemu.conf" cfg.settings;
 
-    # This needs to stay as is because the path is kept alive during live
-    # migration.
-    environment.etc."kvm/kvm-ifup" = {
+    # BBB PL-135610 - Need to be kept to allow bi-directional migrations
+    # with older fc-nixos incarnations.
+    environment.etc."kvm/kvm-ifup" = noopScriptWithNautilusFallback {
       text = ''
         #!${pkgs.stdenv.shell}
         # Wire up Qemu tap devices to the bridge of the corresponding VLAN.
@@ -247,27 +272,26 @@ in
         VLAN=$(echo $INTERFACE | ${pkgs.gnused}/bin/sed 's/t\([a-zA-Z]\+\)[0-9]\+/\1/')
         BRIDGE="br''${VLAN}"
 
-        ${pkgs.iproute2}/bin/ip link set $INTERFACE up
-        ${pkgs.iproute2}/bin/ip link set mtu $(< /sys/class/net/br''${VLAN}/mtu) dev $INTERFACE
-        ${pkgs.bridge-utils}/bin/brctl addif $BRIDGE $INTERFACE
+        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" up
+        ${pkgs.iproute2}/bin/ip link set mtu $(< /sys/class/net/br''${VLAN}/mtu) dev "$INTERFACE"
+        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" master "$BRIDGE"
       '';
       mode = "0744";
     };
-
-    environment.etc."kvm/kvm-ifdown" = {
+    environment.etc."kvm/kvm-ifdown" = noopScriptWithNautilusFallback {
       text = ''
         #!${pkgs.stdenv.shell}
         INTERFACE="$1"
-        VLAN=$(echo $INTERFACE | sed 's/t\([a-zA-Z]\+\)[0-9]\+/\1/')
+        VLAN=$(echo $INTERFACE | ${pkgs.gnused}/bin/sed 's/t\([a-zA-Z]\+\)[0-9]\+/\1/')
         BRIDGE="br''${VLAN}"
 
-        ${pkgs.bridge-utils}/bin/brctl delif $BRIDGE $INTERFACE
-        ${pkgs.iproute2}/bin/ip link set $INTERFACE down
+        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" nomaster
+        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" down
+        ${pkgs.iproute2}/bin/ip link delete "$INTERFACE"
       '';
       mode = "0744";
     };
-
-    environment.etc."kvm/kvm-ifup-vrf" = {
+    environment.etc."kvm/kvm-ifup-vrf" = noopScriptWithNautilusFallback {
       text = ''
         #!${pkgs.stdenv.shell}
         INTERFACE="$1"
@@ -284,18 +308,20 @@ in
       '';
       mode = "0744";
     };
-
-    environment.etc."kvm/kvm-ifdown-vrf" = {
+    environment.etc."kvm/kvm-ifdown-vrf" = noopScriptWithNautilusFallback {
       text = ''
         #!${pkgs.stdenv.shell}
         INTERFACE="$1"
 
-        ${pkgs.iproute2}/bin/ip link set $INTERFACE down
-        ${pkgs.iproute2}/bin/ip address flush dev $INTERFACE
-        ${pkgs.iproute2}/bin/ip link set $INTERFACE nomaster
+        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" down
+        ${pkgs.iproute2}/bin/ip address flush dev "$INTERFACE"
+        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" nomaster
+        ${pkgs.iproute2}/bin/ip link delete "$INTERFACE"
       '';
       mode = "0744";
     };
+    environment.etc."kvm/kvm-ifup-dynamic" = noopScript;
+    environment.etc."kvm/kvm-ifdown-dynamic" = noopScript;
 
     flyingcircus.services.consul.enable = true;
     flyingcircus.services.consul.watches = [
@@ -346,6 +372,7 @@ in
     ]);
 
     systemd.services.fc-qemu-reattach-taps = {
+      # XXX pull into fc.qemu networking as a direct helper script?
       description = "Reattach all VM taps if needed.";
 
       path = [
@@ -378,6 +405,7 @@ in
     };
 
     systemd.services.fc-qemu-reattach-vrf-taps = lib.mkIf (fclib.network ? pub) {
+      # XXX pull into fc.qemu networking as a direct helper script?
       description = "Reattach all VM taps to VRF devices if needed.";
 
       path = [
@@ -449,7 +477,7 @@ in
       '';
 
       serviceConfig = {
-        Type = "oneshot";
+        Type = "simple";
         RemainAfterExit = true;
       };
 

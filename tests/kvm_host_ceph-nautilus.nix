@@ -50,8 +50,8 @@ import ./make-test-python.nix (
           stb
         ];
         imports = [
-          <fc/nixos>
-          <fc/nixos/roles>
+          ../nixos
+          ../nixos/roles
         ];
 
         # Use the default flags defined by fc-qemu regardless of
@@ -257,10 +257,12 @@ import ./make-test-python.nix (
             interfaces:
               fe:
                 mac: aa-bb-cc-00-ee-ff
-                networks:
+                networks: {}
+                network_number: 2
               srv:
                 mac: aa-bb-cc-dd-ee-ff
-                networks:
+                networks: {}
+                network_number: 3
             kvm_host: host1
             memory: 256
             location: test

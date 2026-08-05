@@ -39,17 +39,19 @@ let
     i: i.policy != "vxlan" && i.policy != "underlay"
   ) managedInterfaces;
 
-  # These are interfaces configured as one would expect in a traditional
-  # Linux environment: they receive addresses and are attached to some link.
-  simpleAddressedInterfaces = filter (
-    i: !(i.policy == "underlay") && !(i.policy == "vxlan" && i.routed)
+  # These are interfaces which behave and have addresses configured as
+  # if they were connected to a simple layer 2 switch. This set of
+  # interfaces is disjoint to the set which contains the underlay
+  # loopback and any routed layer 3 interfaces.
+  switchedInterfaces = filter (
+    i: !(i.policy == "underlay") && !(i.policy == "vxlan" && i.linktype == "routed")
   ) managedInterfaces;
 
   bridgedInterfaces = filter (i: i.bridged) managedInterfaces;
 
   vxlanInterfaces = filter (i: i.policy == "vxlan") managedInterfaces;
 
-  vxlanVrfInterfaces = filter (i: i.routed) vxlanInterfaces;
+  vxlanVrfInterfaces = filter (i: i.linktype == "routed") vxlanInterfaces;
 
   ethernetLinks =
     let
@@ -300,7 +302,7 @@ in
 
               mtu = interface.mtu;
             })
-          ) simpleAddressedInterfaces)
+          ) switchedInterfaces)
           ++
 
             ####################################################################
@@ -508,7 +510,7 @@ in
                   " advertise-svi-ip"
                   "exit-vni"
                 ]
-              ) (filter (i: !i.routed) vxlanInterfaces)
+              ) (filter (i: i.linktype == "bridged") vxlanInterfaces)
             }
            exit-address-family
            !
@@ -1176,7 +1178,7 @@ in
           interval = 300;
           command =
             let
-              ifaces = filter (i: !i.routed) vxlanInterfaces;
+              ifaces = filter (i: i.linktype != "routed") vxlanInterfaces;
               args = lib.concatMapStringsSep " " (iface: "-n " + (toString iface.vlanId)) ifaces;
             in
             "sudo -g frrvty ${pkgs.fc.check-rib-integrity}/bin/check_rib_integrity check-evpn-rib ${args}";
