@@ -417,11 +417,15 @@ in
       // (filterAttrs (n: v: n != "commands" && n != "package") e)
     ) cfg.passwordlessSudoPackages;
 
-    services = {
-      # upstream uses cron.enable = mkDefault ... (prio 1000), mkPlatform
-      # overrides it
-      cron.enable = fclib.mkPlatform true;
+    # Upstream cron.service sets no Restart=, so an OOM kill (SIGKILL by
+    # systemd-oomd) leaves the daemon dead. Enable cron and restart it on
+    # termination. mkPlatform overrides upstream's mkDefault (prio 1000).
+    services.cron.enable = fclib.mkPlatform true;
+    systemd.services.cron = lib.mkIf config.services.cron.enable {
+      serviceConfig.Restart = fclib.mkPlatform "always";
+    };
 
+    services = {
       fail2ban = {
         enable = fclib.mkPlatform true;
         maxretry = fclib.mkPlatform 5;
@@ -467,11 +471,6 @@ in
           loc = attrByPath [ "parameters" "location" ] "" cfg.enc;
         in
         attrByPath [ "static" "ntpServers" loc ] [ "pool.ntp.org" ] cfg;
-    };
-
-    # Restart cron when it is terminated, e.g. by systemd-oomd.
-    systemd.services.cron = lib.mkIf config.services.cron.enable {
-      serviceConfig.Restart = fclib.mkPlatform "always";
     };
 
     system.activationScripts =
