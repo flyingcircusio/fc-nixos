@@ -342,7 +342,7 @@ in
           enableACME = true;
           forceSSL = true;
           locations."/" = {
-            proxyPass = "http://127.0.0.1:${toString config.services.gitlab.registry.port}";
+            proxyPass = "http://${toString config.services.gitlab.registry.settings.http.addr}";
             extraConfig = ''
               client_max_body_size 2000M;
               proxy_read_timeout 900;

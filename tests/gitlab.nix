@@ -50,7 +50,7 @@ import ./make-test-python.nix (
             enableACME = lib.mkForce false;
           };
 
-          flyingcircus.roles.postgresql16.enable = true;
+          flyingcircus.roles.postgresql17.enable = true;
 
           flyingcircus.services.redis.password = lib.mkForce "test";
 
@@ -113,8 +113,8 @@ import ./make-test-python.nix (
         gitlab.wait_for_file("/run/gitlab/gitlab-workhorse.socket")
         gitlab.wait_for_file("/srv/gitlab/state/tmp/sockets/gitlab.socket")
 
-        gitlab.systemctl("restart docker-registry.service")
-        gitlab.wait_for_unit("docker-registry.service")
+        gitlab.systemctl("restart gitlab-container-registry.service")
+        gitlab.wait_for_unit("gitlab-container-registry.service")
 
         gitlab.wait_until_succeeds("curl -sSf http://gitlab/users/sign_in")
 
@@ -151,7 +151,7 @@ import ./make-test-python.nix (
           gitlab.succeed("test -s /tmp/archive.tar.gz")
           gitlab.succeed("test -s /tmp/archive.tar.bz2")
 
-        with subtest("Test docker registry http is available"):
+        with subtest("Test gitlab container registry http is available"):
           gitlab.succeed("curl -sSf http://docker.gitlab")
       '';
   }

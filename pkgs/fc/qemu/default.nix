@@ -31,7 +31,7 @@ let
   # unreleased version
   py_consulate = py.buildPythonPackage rec {
     pname = "consulate";
-    version = "1.1.0"; # unreleased version
+    version = "1.1.1.dev0"; # unreleased version
     src = fetchFromGitHub {
       owner = "flyingcircusio";
       repo = "consulate";
