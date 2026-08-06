@@ -71,7 +71,7 @@ let
 
   sensuSourceAddress = head (filter (i: fclib.isIp4 i) (locationSensuServer.ips));
 
-  routedVrfsEnabled = any (net: net.routed or false) (attrValues fclib.network);
+  routedVrfsEnabled = any (net: net.linktype == "routed") (attrValues fclib.network);
 in
 {
   options = {
@@ -373,7 +373,7 @@ in
           interval = 600;
           command =
             let
-              nets = filter (n: n.routed or false) (attrValues fclib.network);
+              nets = filter (n: n.linktype == "routed") (attrValues fclib.network);
             in
             "${pkgs.fc.check-vrf-default-routes}/bin/check_vrf_default_routes ${
               lib.concatMapStringsSep " " (n: n.vrfInterface) nets

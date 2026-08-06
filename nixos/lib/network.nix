@@ -38,7 +38,7 @@ let
         ])
       ) encInterfaces;
       invalidLinktypesCount = length (attrNames invalidLinktypes);
-      dynamicInterfaces = lib.filterAttrs (_: value: value.linktype or null == "dynamic") encInterfaces;
+      dynamicInterfaces = lib.filterAttrs (_: value: value.linktype == "dynamic") encInterfaces;
       dynamicCount = length (attrNames dynamicInterfaces);
 
       commonConditions = [
@@ -524,6 +524,7 @@ rec {
         lo = {
           vlan = "lo";
           policy = "unmanaged";
+          linktype = "bridged";
           dualstack = {
             addresses = [
               "127.0.0.1"

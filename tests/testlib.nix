@@ -211,6 +211,7 @@ rec {
             interfaces = mapAttrs (name: vid: {
               mac = "52:54:00:12:0${toString vid}:0${toString test_node_id}";
               bridged = false;
+              linktype = "bridged";
               networks = {
                 "192.168.${toString vid}.0/24" = [ "192.168.${toString vid}.${toString id}" ];
                 "2001:db8:${toString vid}::/64" = [ "2001:db8:${toString vid}::${toString id}" ];

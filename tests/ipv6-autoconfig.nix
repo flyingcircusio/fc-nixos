@@ -28,6 +28,7 @@ import ./make-test-python.nix (
               interfaces.srv.policy = "vxlan";
               interfaces.ul = {
                 policy = "underlay";
+                linktype = "bridged";
                 nics = map (link: {
                   mac = "52:54:00:12:${lib.toLower (lib.toHexString link)}:0${toString testNodeId}";
                   external_label = "phys/${toString link}";
