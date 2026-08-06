@@ -144,6 +144,20 @@ in
             [ ];
         description = "IPv6 DNS resolvers to be advertised in DHCPv6";
       };
+
+      masqueradeNetworks = mkOption {
+        type = types.listOf (types.addCheck types.str fclib.isIp4);
+        description = "List of IPv4 source networks which should get masqueraded upon egress";
+        default = [
+          "172.16.0.0/12"
+          "10.0.0.0/8"
+        ];
+      };
+      masqueradeSourceAddress = mkOption {
+        type = types.nullOr (types.addCheck types.str fclib.isIp4);
+        description = "Source address to be applied when applying masquerading rules to outgoing traffic";
+        default = null;
+      };
     };
   };
 
@@ -302,14 +316,24 @@ in
       ]
     );
 
-    networking.nat.extraCommands = ''
-      #############
-      # Masquerading rules for the uplink interfaces
-      ${lib.concatMapStringsSep "\n" (iface: ''
-        iptables -t nat -A nixos-nat-post -o ${iface} -s 172.16.0.0/12 -j MASQUERADE
-        iptables -t nat -A nixos-nat-post -o ${iface} -s 10.0.0.0/8 -j MASQUERADE
-      '') uplinkInterfaces}
-    '';
+    networking.nat.extraCommands =
+      let
+        masqueradeTarget =
+          if role.masqueradeSourceAddress != null then
+            "SNAT --to ${role.masqueradeSourceAddress}"
+          else
+            "MASQUERADE";
+      in
+      ''
+        #############
+        # Masquerading rules for the uplink interfaces
+        ${lib.concatMapStringsSep "\n" (
+          iface:
+          lib.concatMapStringsSep "\n" (
+            net: "iptables -t nat -A nixos-nat-post -o ${iface} -s ${net} -j ${masqueradeTarget}"
+          ) role.masqueradeNetworks
+        ) uplinkInterfaces}
+      '';
 
     networking.firewall.extraStopCommands = ''
       ip46tables -D FORWARD -j fc-router-forward || true
