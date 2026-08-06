@@ -17,7 +17,7 @@ let
   buildEnv = pkgs.python3.withPackages (
     ps: with ps; [
       linkify-it-py
-      myst-docutils
+      myst-parser
       sphinx
       sphinx-copybutton
       sphinx-rtd-theme
