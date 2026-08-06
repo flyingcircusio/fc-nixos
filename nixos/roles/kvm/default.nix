@@ -45,6 +45,37 @@ let
   noopScriptWithNautilusFallback =
     content: if cfg.cephRelease == "nautilus" then content else noopScript;
 
+  # XXX tap reattachment is currently not implemented in fc.qemu, need
+  # to use the old script implementations for handling reattachment.
+  nautilusIfupScript = pkgs.writeShellScriptBin "nautilus-kvm-ifup" ''
+    # Wire up Qemu tap devices to the bridge of the corresponding VLAN.
+    # Interface names are expected to be of the form `t<VLAN><ifnumber>`, for example:
+    # tsrv0, tsrv1, tfe0, ...
+    set -e
+
+    INTERFACE="$1"
+    VLAN=$(echo $INTERFACE | ${pkgs.gnused}/bin/sed 's/t\([a-zA-Z]\+\)[0-9]\+/\1/')
+    BRIDGE="br''${VLAN}"
+
+    ${pkgs.iproute2}/bin/ip link set "$INTERFACE" up
+    ${pkgs.iproute2}/bin/ip link set mtu $(< /sys/class/net/br''${VLAN}/mtu) dev "$INTERFACE"
+    ${pkgs.iproute2}/bin/ip link set "$INTERFACE" master "$BRIDGE"
+  '';
+
+  nautilusIfupVrfScript = pkgs.writeShellScriptBin "nautilus-kvm-ifup-vrf" ''
+    INTERFACE="$1"
+    VLAN=$(echo $INTERFACE | sed 's/t\([a-zA-Z]\+\)[0-9]\+/\1/')
+    VRF="vrf''${VLAN}"
+
+    ${pkgs.iproute2}/bin/ip link set $INTERFACE master $VRF
+
+    # add addresses idempotently
+    ${pkgs.iproute2}/bin/ip address replace ${virtualGatewayV4}/16 dev $INTERFACE
+    ${pkgs.iproute2}/bin/ip address replace ${virtualGatewayV6}/64 dev $INTERFACE
+
+    ${pkgs.iproute2}/bin/ip link set $INTERFACE up
+  '';
+
 in
 {
   options = {
@@ -261,21 +292,7 @@ in
     # BBB PL-135610 - Need to be kept to allow bi-directional migrations
     # with older fc-nixos incarnations.
     environment.etc."kvm/kvm-ifup" = noopScriptWithNautilusFallback {
-      text = ''
-        #!${pkgs.stdenv.shell}
-        # Wire up Qemu tap devices to the bridge of the corresponding VLAN.
-        # Interface names are expected to be of the form `t<VLAN><ifnumber>`, for example:
-        # tsrv0, tsrv1, tfe0, ...
-        set -e
-
-        INTERFACE="$1"
-        VLAN=$(echo $INTERFACE | ${pkgs.gnused}/bin/sed 's/t\([a-zA-Z]\+\)[0-9]\+/\1/')
-        BRIDGE="br''${VLAN}"
-
-        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" up
-        ${pkgs.iproute2}/bin/ip link set mtu $(< /sys/class/net/br''${VLAN}/mtu) dev "$INTERFACE"
-        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" master "$BRIDGE"
-      '';
+      source = lib.getExe' nautilusIfupScript "nautilus-kvm-ifup";
       mode = "0744";
     };
     environment.etc."kvm/kvm-ifdown" = noopScriptWithNautilusFallback {
@@ -292,20 +309,7 @@ in
       mode = "0744";
     };
     environment.etc."kvm/kvm-ifup-vrf" = noopScriptWithNautilusFallback {
-      text = ''
-        #!${pkgs.stdenv.shell}
-        INTERFACE="$1"
-        VLAN=$(echo $INTERFACE | sed 's/t\([a-zA-Z]\+\)[0-9]\+/\1/')
-        VRF="vrf''${VLAN}"
-
-        ${pkgs.iproute2}/bin/ip link set $INTERFACE master $VRF
-
-        # add addresses idempotently
-        ${pkgs.iproute2}/bin/ip address replace ${virtualGatewayV4}/16 dev $INTERFACE
-        ${pkgs.iproute2}/bin/ip address replace ${virtualGatewayV6}/64 dev $INTERFACE
-
-        ${pkgs.iproute2}/bin/ip link set $INTERFACE up
-      '';
+      source = lib.getExe' nautilusIfupVrfScript "nautilus-kvm-ifup-vrf";
       mode = "0744";
     };
     environment.etc."kvm/kvm-ifdown-vrf" = noopScriptWithNautilusFallback {
@@ -372,7 +376,7 @@ in
     ]);
 
     systemd.services.fc-qemu-reattach-taps = {
-      # XXX pull into fc.qemu networking as a direct helper script?
+      # XXX pull into fc.qemu networking as a direct helper script
       description = "Reattach all VM taps if needed.";
 
       path = [
@@ -383,7 +387,7 @@ in
       script = ''
         for interface in $(ip -j link show |  jq '.[] | .ifname' -r | egrep '^t(srv|fe)'); do
           echo "Ensuring attachment of $interface"
-          /etc/kvm/kvm-ifup $interface || true
+          ${lib.getExe' nautilusIfupScript "nautilus-kvm-ifup"} $interface || true
         done
       '';
 
@@ -405,7 +409,7 @@ in
     };
 
     systemd.services.fc-qemu-reattach-vrf-taps = lib.mkIf (fclib.network ? pub) {
-      # XXX pull into fc.qemu networking as a direct helper script?
+      # XXX pull into fc.qemu networking as a direct helper script
       description = "Reattach all VM taps to VRF devices if needed.";
 
       path = [
@@ -416,7 +420,7 @@ in
       script = ''
         for interface in $(ip -j link show |  jq '.[] | .ifname' -r | egrep '^tpub'); do
           echo "Ensuring attachment of $interface"
-          /etc/kvm/kvm-ifup-vrf $interface || true
+          ${lib.getExe' nautilusIfupVrfScript "nautilus-kvm-ifup-vrf"} $interface || true
         done
       '';
 
