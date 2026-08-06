@@ -1,3 +1,13 @@
+# Release 2026_032
+
+## NixOS XX.XX platform
+
+- Adjust the alloy configuration for the mariadb slowlog to only be added if the role is active. (PL-135621)
+
+- physical hosts: explicitly load ext4 kernel module in initrd (PL-135613)
+
+
+
 # Release 2026_031
 
 
