@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-151.0.7922.71",
+    "name": "chromedriver-unwrapped-151.0.7922.75",
     "pname": "chromedriver-unwrapped",
-    "version": "151.0.7922.71"
+    "version": "151.0.7922.75"
   },
   "chromium": {
-    "name": "chromium-151.0.7922.71",
+    "name": "chromium-151.0.7922.75",
     "pname": "chromium",
-    "version": "151.0.7922.71"
+    "version": "151.0.7922.75"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.5",
@@ -130,9 +130,9 @@
     "version": "9.11"
   },
   "coturn": {
-    "name": "coturn-4.13.1",
+    "name": "coturn-4.16.0",
     "pname": "coturn",
-    "version": "4.13.1"
+    "version": "4.16.0"
   },
   "curl": {
     "name": "curl-8.21.0",
@@ -180,9 +180,9 @@
     "version": "1.12.24"
   },
   "erlang": {
-    "name": "erlang-28.5.0.4",
+    "name": "erlang-28.5.0.5",
     "pname": "erlang",
-    "version": "28.5.0.4"
+    "version": "28.5.0.5"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -210,9 +210,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-153.0.1",
+    "name": "firefox-153.0.3",
     "pname": "firefox",
-    "version": "153.0.1"
+    "version": "153.0.3"
   },
   "gcc": {
     "name": "gcc-wrapper-15.3.0",
@@ -845,9 +845,9 @@
     "version": "18.4"
   },
   "prometheus": {
-    "name": "prometheus-3.13.1",
+    "name": "prometheus-3.13.2",
     "pname": "prometheus",
-    "version": "3.13.1"
+    "version": "3.13.2"
   },
   "prosody": {
     "name": "prosody-13.0.6",
@@ -955,9 +955,9 @@
     "version": "4.2.5"
   },
   "rclone": {
-    "name": "rclone-1.74.4",
+    "name": "rclone-1.75.0",
     "pname": "rclone",
-    "version": "1.74.4"
+    "version": "1.75.0"
   },
   "re2c": {
     "name": "re2c-4.5.1",
