@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-151.0.7922.71",
+    "name": "chromedriver-unwrapped-151.0.7922.75",
     "pname": "chromedriver-unwrapped",
-    "version": "151.0.7922.71"
+    "version": "151.0.7922.75"
   },
   "chromium": {
-    "name": "chromium-151.0.7922.71",
+    "name": "chromium-151.0.7922.75",
     "pname": "chromium",
-    "version": "151.0.7922.71"
+    "version": "151.0.7922.75"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.5",
@@ -180,9 +180,9 @@
     "version": "1.12.24"
   },
   "erlang": {
-    "name": "erlang-28.5.0.4",
+    "name": "erlang-28.5.0.5",
     "pname": "erlang",
-    "version": "28.5.0.4"
+    "version": "28.5.0.5"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -235,9 +235,9 @@
     "version": "2.54.0"
   },
   "gitaly": {
-    "name": "gitaly-18.11.7",
+    "name": "gitaly-19.0.4",
     "pname": "gitaly",
-    "version": "18.11.7"
+    "version": "19.0.4"
   },
   "github-runner": {
     "name": "github-runner-2.335.1",
@@ -245,24 +245,24 @@
     "version": "2.335.1"
   },
   "gitlab": {
-    "name": "gitlab-18.11.7",
+    "name": "gitlab-19.0.4",
     "pname": "gitlab",
-    "version": "18.11.7"
+    "version": "19.0.4"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-4.39.0",
+    "name": "gitlab-container-registry-4.40.2",
     "pname": "gitlab-container-registry",
-    "version": "4.39.0"
+    "version": "4.40.2"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.11.7",
+    "name": "gitlab-ee-19.0.4",
     "pname": "gitlab-ee",
-    "version": "18.11.7"
+    "version": "19.0.4"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.11.7",
+    "name": "gitlab-pages-19.0.4",
     "pname": "gitlab-pages",
-    "version": "18.11.7"
+    "version": "19.0.4"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-18.11.3",
@@ -270,9 +270,9 @@
     "version": "18.11.3"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.11.7",
+    "name": "gitlab-workhorse-19.0.4",
     "pname": "gitlab-workhorse",
-    "version": "18.11.7"
+    "version": "19.0.4"
   },
   "glibc": {
     "name": "glibc-2.42-67",
@@ -310,9 +310,9 @@
     "version": "3.3.11"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.2-27",
+    "name": "imagemagick-7.1.2-29",
     "pname": "imagemagick",
-    "version": "7.1.2-27"
+    "version": "7.1.2-29"
   },
   "inetutils": {
     "name": "inetutils-2.7",
@@ -330,9 +330,9 @@
     "version": "1.9.5"
   },
   "jdk": {
-    "name": "openjdk-21.0.12+2",
+    "name": "openjdk-21.0.12+8",
     "pname": "openjdk",
-    "version": "21.0.12+2"
+    "version": "21.0.12+8"
   },
   "jetbrains.jdk": {
     "name": "jetbrains-jdk-jcef-25.0.2-b329.72",
@@ -340,9 +340,9 @@
     "version": "25.0.2-b329.72"
   },
   "jetty": {
-    "name": "jetty-12.1.9",
+    "name": "jetty-12.1.10",
     "pname": "jetty",
-    "version": "12.1.9"
+    "version": "12.1.10"
   },
   "jicofo": {
     "name": "jicofo-1.0-1153",
@@ -365,9 +365,9 @@
     "version": "1.8.2"
   },
   "jre": {
-    "name": "openjdk-21.0.12+2",
+    "name": "openjdk-21.0.12+8",
     "pname": "openjdk",
-    "version": "21.0.12+2"
+    "version": "21.0.12+8"
   },
   "k3s": {
     "name": "k3s-1.35.6+k3s1",
@@ -405,9 +405,9 @@
     "version": "3.20.2"
   },
   "libffi": {
-    "name": "libffi-3.7.0",
+    "name": "libffi-3.7.1",
     "pname": "libffi",
-    "version": "3.7.0"
+    "version": "3.7.1"
   },
   "libgcrypt": {
     "name": "libgcrypt-1.12.2",
@@ -465,14 +465,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.101",
+    "name": "linux-6.12.102",
     "pname": "linux",
-    "version": "6.12.101"
+    "version": "6.12.102"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.18.42",
+    "name": "linux-6.18.43",
     "pname": "linux",
-    "version": "6.18.42"
+    "version": "6.18.43"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -570,9 +570,9 @@
     "version": "2.34.8"
   },
   "nodejs": {
-    "name": "nodejs-24.18.0",
+    "name": "nodejs-24.18.1",
     "pname": "nodejs",
-    "version": "24.18.0"
+    "version": "24.18.1"
   },
   "nodejs_22": {
     "name": "nodejs-22.23.2",
@@ -580,9 +580,9 @@
     "version": "22.23.2"
   },
   "nodejs_24": {
-    "name": "nodejs-24.18.0",
+    "name": "nodejs-24.18.1",
     "pname": "nodejs",
-    "version": "24.18.0"
+    "version": "24.18.1"
   },
   "nspr": {
     "name": "nspr-4.39",
@@ -600,9 +600,9 @@
     "version": "2.16"
   },
   "openjdk": {
-    "name": "openjdk-21.0.12+2",
+    "name": "openjdk-21.0.12+8",
     "pname": "openjdk",
-    "version": "21.0.12+2"
+    "version": "21.0.12+8"
   },
   "openjpeg": {
     "name": "openjpeg-2.5.4",
