@@ -50,7 +50,7 @@ import ./make-test-python.nix (
             enableACME = lib.mkForce false;
           };
 
-          flyingcircus.roles.postgresql16.enable = true;
+          flyingcircus.roles.postgresql17.enable = true;
 
           flyingcircus.services.redis.password = lib.mkForce "test";
 
