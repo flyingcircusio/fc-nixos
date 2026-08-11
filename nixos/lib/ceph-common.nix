@@ -7,8 +7,8 @@ let
   # TODO: Once all ceph packages have a similar structure, those can be
   # generated from this list (let's wait for pacific to see if the structure holds)
   releaseOrder = [
-    "nautilus"
     "pacific"
+    "nautilus"
   ];
   cephReleaseType = types.enum releaseOrder;
   defaultRelease = "nautilus";
