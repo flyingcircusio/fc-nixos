@@ -40,12 +40,12 @@ let
 
   stamina = pyPackages.buildPythonPackage rec {
     pname = "stamina";
-    version = "23.1.0";
+    version = "25.1.0";
     format = "pyproject";
 
     src = fetchPypi {
       inherit pname version;
-      hash = "sha256-sWzj1S1liqdduBP8amZht3Cr/qkV9yzaSOMl8qeFR4Y=";
+      hash = "sha256-rWdICXlq5AUSs7YpbPregm79Y4Y/8sovWfgGNC6R6Uo=";
     };
 
     nativeBuildInputs = with pyPackages; [
