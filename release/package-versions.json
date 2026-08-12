@@ -240,9 +240,9 @@
     "version": "19.0.4"
   },
   "github-runner": {
-    "name": "github-runner-2.335.1",
+    "name": "github-runner-2.336.0",
     "pname": "github-runner",
-    "version": "2.335.1"
+    "version": "2.336.0"
   },
   "gitlab": {
     "name": "gitlab-19.0.4",
@@ -465,14 +465,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.102",
+    "name": "linux-6.12.103",
     "pname": "linux",
-    "version": "6.12.102"
+    "version": "6.12.103"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.18.43",
+    "name": "linux-6.18.44",
     "pname": "linux",
-    "version": "6.18.43"
+    "version": "6.18.44"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
