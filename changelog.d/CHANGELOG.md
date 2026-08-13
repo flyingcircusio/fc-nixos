@@ -1,3 +1,18 @@
+# Release 2026_033
+
+## Impact
+
+- GitLab has been updated to version 19. Instances require a PostgreSQL database update to version 17.
+
+
+## NixOS XX.XX platform
+
+- imporve early boot logging for physical and virtual machines (PL-135546)
+
+  adjust buffer size and rate limiting settings to get rid off `Too many messages being logged to kmsg, ignoring`
+
+
+
 # Release 2026_032
 
 ## NixOS XX.XX platform
