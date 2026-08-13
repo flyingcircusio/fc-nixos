@@ -133,6 +133,7 @@ py.buildPythonPackage (finalAttrs: {
     nativeCheckInputs = [
       file
       openssh
+      procps # pkill
       py.pytest_patterns
       py.pytest
       py.pytest-xdist
