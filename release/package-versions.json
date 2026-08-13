@@ -165,9 +165,9 @@
     "version": "29.6.2"
   },
   "docker-compose": {
-    "name": "docker-compose-5.1.4",
+    "name": "docker-compose-5.4.0",
     "pname": "docker-compose",
-    "version": "5.1.4"
+    "version": "5.4.0"
   },
   "dovecot": {
     "name": "dovecot-2.4.4",
@@ -210,9 +210,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-153.0.3",
+    "name": "firefox-153.0.4",
     "pname": "firefox",
-    "version": "153.0.3"
+    "version": "153.0.4"
   },
   "gcc": {
     "name": "gcc-wrapper-15.2.0",
@@ -240,9 +240,9 @@
     "version": "19.0.4"
   },
   "github-runner": {
-    "name": "github-runner-2.335.1",
+    "name": "github-runner-2.336.0",
     "pname": "github-runner",
-    "version": "2.335.1"
+    "version": "2.336.0"
   },
   "gitlab": {
     "name": "gitlab-19.0.4",
@@ -465,14 +465,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.102",
+    "name": "linux-6.12.103",
     "pname": "linux",
-    "version": "6.12.102"
+    "version": "6.12.103"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.18.43",
+    "name": "linux-6.18.44",
     "pname": "linux",
-    "version": "6.18.43"
+    "version": "6.18.44"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -750,9 +750,9 @@
     "version": "127"
   },
   "postfix": {
-    "name": "postfix-3.11.5",
+    "name": "postfix-3.11.6",
     "pname": "postfix",
-    "version": "3.11.5"
+    "version": "3.11.6"
   },
   "postgresql": {
     "name": "postgresql-17.10",
