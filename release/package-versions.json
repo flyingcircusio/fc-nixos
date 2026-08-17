@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-151.0.7922.108",
+    "name": "chromedriver-unwrapped-151.0.7922.137",
     "pname": "chromedriver-unwrapped",
-    "version": "151.0.7922.108"
+    "version": "151.0.7922.137"
   },
   "chromium": {
-    "name": "chromium-151.0.7922.108",
+    "name": "chromium-151.0.7922.137",
     "pname": "chromium",
-    "version": "151.0.7922.108"
+    "version": "151.0.7922.137"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.5",
@@ -105,9 +105,9 @@
     "version": "7.5"
   },
   "clamav": {
-    "name": "clamav-1.4.4",
+    "name": "clamav-1.4.6",
     "pname": "clamav",
-    "version": "1.4.4"
+    "version": "1.4.6"
   },
   "cmake": {
     "name": "cmake-4.1.6",
@@ -860,14 +860,14 @@
     "version": "3.13.14"
   },
   "python311": {
-    "name": "python3-3.11.15",
+    "name": "python3-3.11.16",
     "pname": "python3",
-    "version": "3.11.15"
+    "version": "3.11.16"
   },
   "python312": {
-    "name": "python3-3.12.13",
+    "name": "python3-3.12.14",
     "pname": "python3",
-    "version": "3.12.13"
+    "version": "3.12.14"
   },
   "python3Packages.boto3": {
     "name": "python3.13-boto3-1.42.31",
