@@ -1365,6 +1365,11 @@ in
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
+          # Timeouts necessary to prevent switch-to-configuration from blocking.
+          # Allow a very generous amount of time for routes to appear…
+          TimeoutStart = config.systemd.services.frr.startLimitIntervalSec * 2;
+          #… but if they don't, fail for good because that is an unexpected result in need of manual investigation.
+          Restart = "no";
         };
       };
     })
