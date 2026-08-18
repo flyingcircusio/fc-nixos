@@ -65,9 +65,9 @@
     "version": "3.126"
   },
   "calibre": {
-    "name": "calibre-9.11.0",
+    "name": "calibre-9.13.0",
     "pname": "calibre",
-    "version": "9.11.0"
+    "version": "9.13.0"
   },
   "ceph": {
     "name": "ceph-14.2.22",
@@ -500,9 +500,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.6.5",
+    "name": "mastodon-4.6.6",
     "pname": "mastodon",
-    "version": "4.6.5"
+    "version": "4.6.6"
   },
   "matomo": {
     "name": "matomo-5.12.0",
@@ -755,9 +755,9 @@
     "version": "3.11.6"
   },
   "postgresql": {
-    "name": "postgresql-17.10",
+    "name": "postgresql-17.11",
     "pname": "postgresql",
-    "version": "17.10"
+    "version": "17.11"
   },
   "postgresql14Packages.postgis": {
     "name": "postgis-3.6.4",
@@ -820,29 +820,29 @@
     "version": "1.2.2"
   },
   "postgresql_14": {
-    "name": "postgresql-14.23",
+    "name": "postgresql-14.24",
     "pname": "postgresql",
-    "version": "14.23"
+    "version": "14.24"
   },
   "postgresql_15": {
-    "name": "postgresql-15.18",
+    "name": "postgresql-15.19",
     "pname": "postgresql",
-    "version": "15.18"
+    "version": "15.19"
   },
   "postgresql_16": {
-    "name": "postgresql-16.14",
+    "name": "postgresql-16.15",
     "pname": "postgresql",
-    "version": "16.14"
+    "version": "16.15"
   },
   "postgresql_17": {
-    "name": "postgresql-17.10",
+    "name": "postgresql-17.11",
     "pname": "postgresql",
-    "version": "17.10"
+    "version": "17.11"
   },
   "postgresql_18": {
-    "name": "postgresql-18.4",
+    "name": "postgresql-18.6",
     "pname": "postgresql",
-    "version": "18.4"
+    "version": "18.6"
   },
   "prometheus": {
     "name": "prometheus-3.12.0",
@@ -975,9 +975,9 @@
     "version": "1.8.1"
   },
   "roundcube": {
-    "name": "roundcube-1.7.2",
+    "name": "roundcube-1.7.3",
     "pname": "roundcube",
-    "version": "1.7.2"
+    "version": "1.7.3"
   },
   "rsync": {
     "name": "rsync-3.4.4",
