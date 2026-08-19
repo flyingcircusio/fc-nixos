@@ -8,6 +8,7 @@
 .envrc
 /*.sublime-*
 .devenv/
+.venv/
 __pycache__/
 bin/
 channels
