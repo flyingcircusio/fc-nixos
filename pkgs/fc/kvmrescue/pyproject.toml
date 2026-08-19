@@ -1,0 +1,20 @@
+# Type-checking config only -- this is not a package.
+#
+# fc-kvmrescue.py is a standalone `uv run --script` tool that declares its
+# dependencies inline (PEP 723), so there is nothing for an editor to resolve
+# imports against by default. `cp .envrc.example .envrc && direnv allow` keeps
+# .venv in sync with that block; without direnv, do it by hand with:
+#
+#     VIRTUAL_ENV=.venv uv sync --script fc-kvmrescue.py --active
+#
+# re-running it whenever the inline `dependencies` change.
+#
+# Most editors only read this from the workspace root, so open this
+# directory as its own workspace to pick it up.
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+
+[tool.ruff]
+line-length = 80
