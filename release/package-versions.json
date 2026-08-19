@@ -210,9 +210,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-153.0.4",
+    "name": "firefox-154.0",
     "pname": "firefox",
-    "version": "153.0.4"
+    "version": "154.0"
   },
   "gcc": {
     "name": "gcc-wrapper-15.2.0",
@@ -235,9 +235,9 @@
     "version": "2.54.0"
   },
   "gitaly": {
-    "name": "gitaly-19.0.4",
+    "name": "gitaly-19.2.4",
     "pname": "gitaly",
-    "version": "19.0.4"
+    "version": "19.2.4"
   },
   "github-runner": {
     "name": "github-runner-2.336.0",
@@ -245,9 +245,9 @@
     "version": "2.336.0"
   },
   "gitlab": {
-    "name": "gitlab-19.0.4",
+    "name": "gitlab-19.2.4",
     "pname": "gitlab",
-    "version": "19.0.4"
+    "version": "19.2.4"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.40.2",
@@ -255,24 +255,24 @@
     "version": "4.40.2"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-19.0.4",
+    "name": "gitlab-ee-19.2.4",
     "pname": "gitlab-ee",
-    "version": "19.0.4"
+    "version": "19.2.4"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-19.0.4",
+    "name": "gitlab-pages-19.2.4",
     "pname": "gitlab-pages",
-    "version": "19.0.4"
+    "version": "19.2.4"
   },
   "gitlab-runner": {
-    "name": "gitlab-runner-18.11.3",
+    "name": "gitlab-runner-19.0.0",
     "pname": "gitlab-runner",
-    "version": "18.11.3"
+    "version": "19.0.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-19.0.4",
+    "name": "gitlab-workhorse-19.2.4",
     "pname": "gitlab-workhorse",
-    "version": "19.0.4"
+    "version": "19.2.4"
   },
   "glibc": {
     "name": "glibc-2.42-67",
@@ -290,9 +290,9 @@
     "version": "2.4.9"
   },
   "go": {
-    "name": "go-1.26.5",
+    "name": "go-1.26.6",
     "pname": "go",
-    "version": "1.26.5"
+    "version": "1.26.6"
   },
   "grafana": {
     "name": "grafana-13.0.6",
@@ -405,9 +405,9 @@
     "version": "3.20.2"
   },
   "libffi": {
-    "name": "libffi-3.7.1",
+    "name": "libffi-3.8.0",
     "pname": "libffi",
-    "version": "3.7.1"
+    "version": "3.8.0"
   },
   "libgcrypt": {
     "name": "libgcrypt-1.12.2",
@@ -570,9 +570,9 @@
     "version": "2.34.8"
   },
   "nodejs": {
-    "name": "nodejs-24.18.1",
+    "name": "nodejs-24.19.0",
     "pname": "nodejs",
-    "version": "24.18.1"
+    "version": "24.19.0"
   },
   "nodejs_22": {
     "name": "nodejs-22.23.2",
@@ -580,14 +580,14 @@
     "version": "22.23.2"
   },
   "nodejs_24": {
-    "name": "nodejs-24.18.1",
+    "name": "nodejs-24.19.0",
     "pname": "nodejs",
-    "version": "24.18.1"
+    "version": "24.19.0"
   },
   "nspr": {
-    "name": "nspr-4.39",
+    "name": "nspr-4.40",
     "pname": "nspr",
-    "version": "4.39"
+    "version": "4.40"
   },
   "nss_latest": {
     "name": "nss-3.126",
@@ -625,9 +625,9 @@
     "version": "3.5.0"
   },
   "openssh": {
-    "name": "openssh-10.4p1",
+    "name": "openssh-10.5p1",
     "pname": "openssh",
-    "version": "10.4p1"
+    "version": "10.5p1"
   },
   "openssl": {
     "name": "openssl-3.6.3",
@@ -735,9 +735,9 @@
     "version": "0.29.2"
   },
   "podman": {
-    "name": "podman-5.8.2",
+    "name": "podman-5.8.6",
     "pname": "podman",
-    "version": "5.8.2"
+    "version": "5.8.6"
   },
   "poetry": {
     "name": "poetry-2.4.1",
@@ -855,9 +855,9 @@
     "version": "13.0.6"
   },
   "python3": {
-    "name": "python3-3.13.14",
+    "name": "python3-3.13.15",
     "pname": "python3",
-    "version": "3.13.14"
+    "version": "3.13.15"
   },
   "python311": {
     "name": "python3-3.11.16",
