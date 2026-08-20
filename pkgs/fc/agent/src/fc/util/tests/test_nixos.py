@@ -7,6 +7,7 @@ import pytest
 import structlog
 
 from fc.util import nixos
+from fc.util.channel import Channel
 from fc.util.tests import PollingFakePopen
 
 structlog.configure(wrapper_class=structlog.BoundLogger)
@@ -14,6 +15,13 @@ structlog.configure(wrapper_class=structlog.BoundLogger)
 FC_CHANNEL = (
     "https://hydra.flyingcircus.io/build/93111/download/1/nixexprs.tar.xz"
 )
+
+
+@pytest.fixture
+def mock_resolve_url_redirects(monkeypatch):
+    m = mock.Mock()
+    m.side_effect = lambda url: url
+    monkeypatch.setattr("fc.util.nixos.resolve_url_redirects", m)
 
 
 def test_get_fc_channel_build(log):
@@ -28,9 +36,12 @@ def test_get_fc_channel_build_should_warn_for_non_fc_channel(log):
     assert log.has("no-fc-channel-url", channel_url=invalid_channel)
 
 
-def test_build_system_with_changes(log, monkeypatch, tmp_path):
-    channel = (
-        "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"
+def test_build_with_changes(
+    log, monkeypatch, tmp_path, mock_resolve_url_redirects
+):
+    channel = Channel(
+        log,
+        "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz",
     )
     system_path = "/nix/store/v49jzgwblcn9vkrmpz92kzw5pkbsn0vz-nixos-system-test-21.05.1367.817a5b0"
     build_output = textwrap.dedent(
@@ -44,7 +55,7 @@ def test_build_system_with_changes(log, monkeypatch, tmp_path):
     )
 
     cmd = shlex.split(
-        f"nix-build --no-build-output <nixpkgs/nixos> -A system -I {channel} --out-link /run/fc-agent-test -v"
+        f"nix-build --no-build-output <nixpkgs/nixos> -A system -I {channel.resolved_url} --out-link /run/fc-agent-test -v"
     )
 
     nix_build_fake = PollingFakePopen(
@@ -58,7 +69,7 @@ def test_build_system_with_changes(log, monkeypatch, tmp_path):
     )
 
     eval_warnings_file = tmp_path / "fcio_nix_eval_warnings"
-    built_system_path = nixos.build_system(
+    built_system_path = nixos.build(
         channel,
         build_options=["-v"],
         out_link="/run/fc-agent-test",
@@ -81,15 +92,16 @@ def test_build_system_with_changes(log, monkeypatch, tmp_path):
     assert eval_warnings_file.exists()
 
 
-def test_build_system_unchanged(log, monkeypatch):
-    channel = (
-        "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"
+def test_build_unchanged(log, monkeypatch, mock_resolve_url_redirects):
+    channel = Channel(
+        log,
+        "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz",
     )
     system_path = "/nix/store/v49jzgwblcn9vkrmpz92kzw5pkbsn0vz-nixos-system-test-21.05.1367.817a5b0"
     build_output = "\n"
 
     cmd = shlex.split(
-        f"nix-build --no-build-output <nixpkgs/nixos> -A system -I {channel} --no-out-link"
+        f"nix-build --no-build-output <nixpkgs/nixos> -A system -I {channel.resolved_url} --no-out-link"
     )
 
     nix_build_fake = PollingFakePopen(
@@ -102,7 +114,7 @@ def test_build_system_unchanged(log, monkeypatch):
         "fc.util.nixos.system_closure_size", lambda *args: 2_000_000
     )
 
-    built_system_path = nixos.build_system(
+    built_system_path = nixos.build(
         channel, eval_warnings_file=Path("/dev/null")
     )
 
@@ -117,9 +129,10 @@ def test_build_system_unchanged(log, monkeypatch):
     assert log.has("system-build-succeeded", changed=False)
 
 
-def test_build_system_fail(log, monkeypatch):
-    channel = (
-        "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"
+def test_build_fail(log, monkeypatch, mock_resolve_url_redirects):
+    channel = Channel(
+        log,
+        "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz",
     )
     system_path = "/nix/store/v49jzgwblcn9vkrmpz92kzw5pkbsn0vz-nixos-system-test-21.05.1367.817a5b0"
     build_output = textwrap.dedent(
@@ -131,7 +144,7 @@ def test_build_system_fail(log, monkeypatch):
     )
 
     cmd = shlex.split(
-        f"nix-build --no-build-output -I {channel} <nixpkgs/nixos> -A system --no-out-link"
+        f"nix-build --no-build-output <nixpkgs/nixos> -A system -I {channel.resolved_url} --no-out-link"
     )
 
     nix_build_fake = PollingFakePopen(
@@ -146,7 +159,7 @@ def test_build_system_fail(log, monkeypatch):
     monkeypatch.setattr("subprocess.Popen", popen_mock)
 
     with pytest.raises(nixos.BuildFailed):
-        nixos.build_system(channel, eval_warnings_file=Path("/dev/null"))
+        nixos.build(channel, eval_warnings_file=Path("/dev/null"))
 
     assert log.has("system-build-failed", stderr=build_output.strip())
 
@@ -495,7 +508,7 @@ def test_find_nix_build_error_oneline():
 def dirsetup(tmp_path):
     drv = tmp_path / "abcdef-linux-4.4.27"
     drv.mkdir()
-    bzImage = (drv / "bzImage")
+    bzImage = drv / "bzImage"
     bzImage.touch()
     current = tmp_path / "current"
     current.mkdir()
@@ -564,3 +577,156 @@ B="bad quoting'
 
     with pytest.raises(AssertionError):
         assert nixos.os_release(tmp_path)
+
+
+def prepare_channel(version, tmp_path, monkeypatch, specialisation=None):
+    log = structlog.get_logger()
+    channel = Channel(log, "file://")
+    channel.system_path = tmp_path / "new_system"
+
+    variations = [""]
+    if specialisation:
+        variations.append(f"specialisation/{specialisation}")
+
+    for p in variations:
+        path = channel.system_path / p
+        path.mkdir(parents=True)
+        os_release = path / "etc/os-release"
+        os_release.parent.mkdir()
+        os_release.write_text(f"VERSION_ID={version}")
+        s_t_c = path / "bin/switch-to-configuration"
+        s_t_c.parent.mkdir()
+        s_t_c.write_text("#!/bin/sh\n")
+        s_t_c.chmod(0o777)
+
+    check_call = mock.Mock()
+    monkeypatch.setattr("subprocess.check_call", check_call)
+
+    return channel
+
+
+@pytest.fixture
+def tmp_current_os_release(tmp_path, monkeypatch):
+    current_os_release = tmp_path / "etc/os-release"
+    current_os_release.parent.mkdir(parents=True)
+    monkeypatch.setattr("fc.util.nixos.CURRENT_SYSTEM", tmp_path)
+    return current_os_release
+
+
+def test_switch_to_config_reboot_on_upgrade_no_specialisation(
+    log, tmp_path, tmp_current_os_release, monkeypatch
+):
+    tmp_current_os_release.write_text("VERSION_ID=24.11")
+
+    channel = prepare_channel("25.05", tmp_path, monkeypatch)
+    nixos.switch_to_configuration(
+        system_path=channel.system_path, specialisation="", lock_dir=tmp_path
+    )
+
+    assert log.has(
+        "release-change-requires-reboot",
+        current_release="24.11",
+        next_release="25.05",
+    )
+    assert log.has(
+        "reboot-scheduled",
+        _replace_msg="WILL REBOOT IN 1 SECONDS. PRESS Ctrl-C TO ABORT.",
+    )
+    assert log.has("system-switch-succeeded")
+
+
+def test_switch_to_config_reboot_on_upgrade_specialisation_keep(
+    log, tmp_path, monkeypatch, tmp_current_os_release
+):
+    tmp_current_os_release.write_text("VERSION_ID=24.11")
+
+    channel = prepare_channel("25.05", tmp_path, monkeypatch, "primary")
+    nixos.switch_to_configuration(
+        system_path=channel.system_path,
+        specialisation="primary",
+        lock_dir=tmp_path,
+    )
+
+    assert log.has(
+        "release-change-requires-reboot",
+        current_release="24.11",
+        next_release="25.05",
+    )
+    assert log.has(
+        "reboot-scheduled",
+        _replace_msg="WILL REBOOT IN 1 SECONDS. PRESS Ctrl-C TO ABORT.",
+    )
+    assert log.has("system-switch-succeeded")
+
+
+def test_switch_to_config_reboot_on_upgrade_specialisation_change(
+    log, tmp_path, monkeypatch, tmp_current_os_release
+):
+    tmp_current_os_release.write_text("VERSION_ID=24.11")
+
+    channel = prepare_channel("25.05", tmp_path, monkeypatch, "primary")
+    nixos.switch_to_configuration(
+        system_path=channel.system_path,
+        specialisation="primary",
+        lock_dir=tmp_path,
+    )
+
+    assert log.has(
+        "release-change-requires-reboot",
+        current_release="24.11",
+        next_release="25.05",
+    )
+    assert log.has(
+        "reboot-scheduled",
+        _replace_msg="WILL REBOOT IN 1 SECONDS. PRESS Ctrl-C TO ABORT.",
+    )
+    assert log.has("system-switch-succeeded")
+
+
+def test_switch_to_config_no_reboot_on_same_version(
+    log, tmp_path, monkeypatch, tmp_current_os_release
+):
+    tmp_current_os_release.write_text("VERSION_ID=25.05")
+
+    channel = prepare_channel("25.05", tmp_path, monkeypatch)
+    nixos.switch_to_configuration(
+        system_path=channel.system_path, specialisation="", lock_dir=tmp_path
+    )
+
+    assert not log.has("release-change-requires-reboot")
+    assert not log.has("reboot-scheduled")
+    assert log.has("system-switch-succeeded")
+
+
+def test_switch_to_config_no_reboot_on_specialisation_keep(
+    log, tmp_path, monkeypatch, tmp_current_os_release
+):
+    tmp_current_os_release.write_text("VERSION_ID=25.05")
+
+    channel = prepare_channel("25.05", tmp_path, monkeypatch, "primary")
+    nixos.switch_to_configuration(
+        system_path=channel.system_path,
+        specialisation="primary",
+        lock_dir=tmp_path,
+    )
+
+    assert not log.has("release-change-requires-reboot")
+    assert not log.has("reboot-scheduled")
+    assert log.has("system-switch-succeeded")
+
+
+def test_switch_to_config_no_reboot_on_specialisation_change(
+    log, tmp_path, monkeypatch, tmp_current_os_release
+):
+    tmp_current_os_release.write_text("VERSION_ID=25.05")
+
+    channel = prepare_channel("25.05", tmp_path, monkeypatch, "primary")
+    nixos.switch_to_configuration(
+        system_path=channel.system_path,
+        specialisation="primary",
+        lock_dir=tmp_path,
+    )
+
+    assert not log.has("release-change-requires-reboot")
+    assert not log.has("reboot-scheduled")
+    assert log.has("system-switch-succeeded")
