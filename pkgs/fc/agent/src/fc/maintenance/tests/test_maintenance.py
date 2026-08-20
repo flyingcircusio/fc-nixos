@@ -522,7 +522,7 @@ def test_release_path(tmp_path, logger, log, monkeypatch):
 
     class PathAwareFakeUpdateActivity(FakeUpdateActivity):
         def _log_current_state(self):
-            # usually acquired through `nixos.build_system`, which returns a str
+            # usually acquired through `nixos.build`, which returns a str
             self.next_system = str(next_d)
 
     activity = PathAwareFakeUpdateActivity(

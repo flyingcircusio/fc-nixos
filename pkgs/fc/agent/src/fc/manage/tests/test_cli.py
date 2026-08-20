@@ -77,6 +77,7 @@ def test_invoke_switch(
         "enc": ENC,
         "specialisation": Specialisation.KEEP_CURRENT,
         "lock_dir": tmpdir,
+        "update_channel": False,
         "lazy": False,
         "show_trace": False,
         "switch_reboot": False,
@@ -110,30 +111,33 @@ def test_invoke_switch_should_not_drop_meaningful_cmd_output(
 
 
 @pytest.mark.parametrize("cmd", [["switch", "--update-channel"], ["-c"]])
-@unittest.mock.patch("fc.manage.manage.switch_with_update")
+@unittest.mock.patch("fc.manage.manage.switch")
 def test_invoke_switch_with_channel_update(
-    switch_with_update, log, logger, tmpdir, invoke_app, cmd
+    switch, log, logger, tmpdir, invoke_app, cmd
 ):
     invoke_app(*cmd)
     expected = {
-        "log": switch_with_update.call_args.kwargs["log"],
+        "log": switch.call_args.kwargs["log"],
         "enc": ENC,
         "specialisation": Specialisation.KEEP_CURRENT,
         "lock_dir": tmpdir,
+        "update_channel": True,
         "lazy": False,
         "show_trace": False,
         "switch_reboot": False,
     }
-    assert switch_with_update.call_args.kwargs == expected
+    assert switch.call_args.kwargs == expected
 
     assert log.has("fc-manage-start")
     assert log.has("fc-manage-succeeded")
 
 
 @pytest.mark.parametrize("cmd", [["update-enc"], ["-e"]])
+@unittest.mock.patch("fc.manage.manage.switch")
 @unittest.mock.patch("fc.util.enc.update_enc")
 def test_invoke_update_enc(
     update_enc,
+    switch,
     log,
     logger,
     invoke_app,
@@ -178,11 +182,11 @@ def test_invoke_switch_and_update_enc(
         ["-ce"],
     ],
 )
-@unittest.mock.patch("fc.manage.manage.switch_with_update")
+@unittest.mock.patch("fc.manage.manage.switch")
 @unittest.mock.patch("fc.util.enc.update_enc")
 def test_invoke_switch_with_channel_update_and_update_enc(
     update_enc,
-    switch_with_update,
+    switch,
     log,
     logger,
     invoke_app,
@@ -190,7 +194,7 @@ def test_invoke_switch_with_channel_update_and_update_enc(
 ):
     invoke_app(*cmd)
     update_enc.assert_called_once()
-    switch_with_update.assert_called_once()
+    switch.assert_called_once()
 
 
 # Tests for commands without old-style equivalent

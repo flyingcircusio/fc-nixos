@@ -181,8 +181,9 @@ def dry_activate(log, channel_url, show_trace=False):
         log,
         channel_url,
     )
-    channel.build(show_trace=show_trace)
-    return channel.dry_activate()
+    return nixos.dry_activate_channel(
+        channel=channel, show_trace=show_trace, log=log
+    )
 
 
 def initial_switch_if_needed(log, enc, lock_dir) -> bool:
@@ -215,23 +216,9 @@ def initial_switch_if_needed(log, enc, lock_dir) -> bool:
         ),
     )
     try:
-        out_link = "/run/fc-agent-built-system"
-        system_path = nixos.build_system(out_link=out_link, log=log)
-        nixos.register_system_profile(system_path, log)
-        # New system is registered, delete the temporary result link.
-        os.unlink(out_link)
-        nixos.switch_to_system(
-            system_path,
-            lazy=False,
-            # There is a slight potential that this does cause a distro
-            # change, because the user may have updated the ENC faster than
-            # we booted the first time, but I think this chance is relatively
-            # negligible and hasn't bitten us before.
-            switch_type="switch",
-            log=log,
-        )
+        nixos.switch(specialisation="", log=log, lock_dir=lock_dir, lazy=False)
     except Exception:
-        log.warn(
+        log.warning(
             "fc-manage-initial-build-failed",
             _replace_msg=(
                 "Initial build failed (stage 1), but we can still continue and "
@@ -257,8 +244,13 @@ def initial_switch_if_needed(log, enc, lock_dir) -> bool:
 
     # The NixOS configuration also checks INITIAL_RUN_MARKER. As it's still
     # present, the system will build without roles.
-    switch_with_update(
-        log, enc, Specialisation.BASE_CONFIG, lock_dir, lazy=True
+    switch(
+        log,
+        enc,
+        Specialisation.BASE_CONFIG,
+        lock_dir,
+        update_channel=True,
+        lazy=True,
     )
 
     INITIAL_RUN_MARKER.unlink()
@@ -279,6 +271,7 @@ def switch(
     enc,
     specialisation: str | Specialisation,
     lock_dir: Path,
+    update_channel: bool,
     lazy=False,
     show_trace=False,
     switch_reboot=False,
@@ -290,6 +283,10 @@ def switch(
     """
     channel_url = enc.get("parameters", {}).get("environment_url")
     environment = enc.get("parameters", {}).get("environment")
+    current_channel = Channel.current(log, "nixos")
+
+    # When nixos.switch recieves None as channel, the current one on the system gets used.
+    channel_to_build = None
 
     if channel_url:
         channel_from_url = Channel(
@@ -310,66 +307,7 @@ def switch(
                 environment=environment,
             )
             channel_to_build = channel_from_url
-        else:
-            channel_to_build = Channel.current(log, "nixos")
-            if channel_to_build != channel_from_url:
-                log.debug(
-                    "fc-manage-update-available",
-                    current_channel_url=channel_to_build.resolved_url,
-                    new_channel_url=channel_from_url.resolved_url,
-                    environment=environment,
-                )
-    else:
-        log.warn(
-            "fc-manage-no-channel-url",
-            _replace_msg=(
-                "Couldn't find a channel URL in ENC data. Continuing with the "
-                "cached system channel."
-            ),
-        )
-
-        channel_to_build = Channel.current(log, "nixos")
-
-    if channel_to_build:
-        return channel_to_build.switch(
-            specialisation,
-            lock_dir,
-            lazy,
-            show_trace,
-            switch_reboot,
-        )
-    return False
-
-
-def switch_with_update(
-    log,
-    enc,
-    specialisation: str | Specialisation,
-    lock_dir: Path,
-    lazy=False,
-    show_trace=False,
-    switch_reboot=False,
-) -> bool:
-    channel_url = enc.get("parameters", {}).get("environment_url")
-    environment = enc.get("parameters", {}).get("environment")
-
-    if channel_url:
-        channel = Channel(
-            log,
-            channel_url,
-            name="nixos",
-            environment=environment,
-        )
-        # Update nixos channel if it's not a local checkout
-        if channel.is_local:
-            log.info(
-                "channel-update-skip-local",
-                _replace_msg=(
-                    "Skip channel update because it doesn't make sense with "
-                    "local dev checkouts."
-                ),
-            )
-        else:
+        elif update_channel:
             log.info(
                 "fc-manage-rebuild-with-update",
                 _replace_msg=(
@@ -379,19 +317,35 @@ def switch_with_update(
                 environment=environment,
                 channel=channel_url,
             )
-            channel.load_nixos()
+            channel_to_build = channel_from_url
+        else:
+            if current_channel != channel_from_url:
+                log.debug(
+                    "fc-manage-update-available",
+                    current_channel_url=current_channel.resolved_url,
+                    new_channel_url=channel_from_url.resolved_url,
+                    environment=environment,
+                )
     else:
-        channel = Channel.current(log, "nixos")
+        log.warning(
+            "fc-manage-no-channel-url",
+            _replace_msg=(
+                "Couldn't find a channel URL in ENC data. Continuing with the "
+                "cached system channel."
+            ),
+        )
 
-    if not channel:
+    if not (current_channel or channel_to_build):
         return False
 
-    return channel.switch(
-        specialisation,
-        lock_dir,
-        lazy,
-        show_trace,
-        switch_reboot,
+    return nixos.switch(
+        channel=channel_to_build,
+        specialisation=specialisation,
+        lock_dir=lock_dir,
+        lazy=lazy,
+        show_trace=show_trace,
+        switch_reboot=switch_reboot,
+        log=log,
     )
 
 
@@ -408,8 +362,6 @@ def switch_to_configuration(
     """
 
     system_path = Path("/nix/var/nix/profiles/system").resolve()
-    switch_path = nixos.get_specialisation_path_for_system(
-        system_path, specialisation, log
+    nixos.switch_to_configuration(
+        system_path, specialisation, lock_dir, lazy=False
     )
-    with locked(log, lock_dir, "switch_to_configuration.lock"):
-        nixos.switch_to_system(switch_path, lazy, "test", log=log)
