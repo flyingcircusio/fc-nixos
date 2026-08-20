@@ -12,6 +12,7 @@ let
 
   cfg = config.services.solr;
 
+  newCli = lib.versionAtLeast cfg.package.version "10";
 in
 
 {
@@ -75,7 +76,7 @@ in
         SOLR_HOME = "${cfg.stateDir}/data";
         LOG4J_PROPS = "${cfg.stateDir}/log4j2.xml";
         SOLR_LOGS_DIR = "${cfg.stateDir}/logs";
-        SOLR_PORT = "${toString cfg.port}";
+        ${if newCli then "SOLR_PORT_LISTEN" else "SOLR_PORT"} = "${toString cfg.port}";
       };
       path = with pkgs; [
         gawk
@@ -98,8 +99,26 @@ in
       serviceConfig = {
         User = cfg.user;
         Group = cfg.group;
-        ExecStart = "${cfg.package}/bin/solr start -f -a \"${concatStringsSep " " cfg.extraJavaOptions}\"";
-        ExecStop = "${cfg.package}/bin/solr stop";
+        ExecStart =
+          let
+            optionFormat = optionName: {
+              option = if newCli && lib.stringLength optionName > 1 then "--${optionName}" else "-${optionName}";
+              sep = null;
+              explicitBool = false;
+            };
+            args = lib.cli.toCommandLineShell optionFormat {
+              foreground = true;
+              ${if newCli then "jvm-opts" else "addlopts"} = lib.optional (cfg.extraJavaOptions != [ ]) (
+                concatStringsSep " " cfg.extraJavaOptions
+              );
+              user-managed = newCli;
+            };
+          in
+          "${lib.getExe cfg.package} start ${args}";
+
+        ExecStop = "${lib.getExe cfg.package} stop";
+        LimitNOFILE = 65000;
+        LimitNPROC = 65000;
       };
     };
 

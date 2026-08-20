@@ -130,6 +130,7 @@ in
   router = callSubTests ./router { };
   sensuclient = callTest ./sensuclient.nix { };
   servicecheck = callTest ./servicecheck.nix { };
+  solr = callTest ./solr.nix { };
   statshost-global = callTest ./statshost/statshost-global.nix { };
   statshost-master = callTest ./statshost/statshost-master.nix { };
   sudo = callTest ./sudo.nix { };
