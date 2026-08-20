@@ -176,26 +176,16 @@ def switch_cmd(
         )
 
         try:
-            if update_channel:
-                keep_cmd_output |= fc.manage.manage.switch_with_update(
-                    log=log,
-                    enc=enc,
-                    specialisation=specialisation,
-                    lock_dir=context.lock_dir,
-                    lazy=lazy,
-                    show_trace=context.show_trace or show_trace,
-                    switch_reboot=switch_with_reboot,
-                )
-            else:
-                keep_cmd_output |= fc.manage.manage.switch(
-                    log=log,
-                    enc=enc,
-                    specialisation=specialisation,
-                    lock_dir=context.lock_dir,
-                    lazy=lazy,
-                    show_trace=context.show_trace or show_trace,
-                    switch_reboot=switch_with_reboot,
-                )
+            keep_cmd_output |= fc.manage.manage.switch(
+                log=log,
+                enc=enc,
+                specialisation=specialisation,
+                lock_dir=context.lock_dir,
+                update_channel=update_channel,
+                lazy=lazy,
+                show_trace=context.show_trace or show_trace,
+                switch_reboot=switch_with_reboot,
+            )
         except nixos.ChannelException:
             raise Exit(2)
 
@@ -415,26 +405,16 @@ def fc_manage(
             )
 
         try:
-            if switch_with_update:
-                keep_cmd_output |= fc.manage.manage.switch_with_update(
-                    log=log,
-                    enc=enc,
-                    specialisation=specialisation,
-                    lock_dir=lock_dir,
-                    lazy=False,
-                    show_trace=show_trace,
-                    switch_reboot=False,
-                )
-            elif switch:
-                keep_cmd_output |= fc.manage.manage.switch(
-                    log=log,
-                    enc=enc,
-                    specialisation=specialisation,
-                    lock_dir=lock_dir,
-                    lazy=False,
-                    show_trace=show_trace,
-                    switch_reboot=False,
-                )
+            keep_cmd_output |= fc.manage.manage.switch(
+                log=log,
+                enc=enc,
+                specialisation=specialisation,
+                lock_dir=lock_dir,
+                update_channel=switch_with_update,
+                lazy=False,
+                show_trace=show_trace,
+                switch_reboot=False,
+            )
         except nixos.ChannelException:
             raise Exit(2)
 
