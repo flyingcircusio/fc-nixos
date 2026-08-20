@@ -1,3 +1,17 @@
+# Release 2026_034
+
+## NixOS XX.XX platform
+
+- cron: restart the daemon after unexpected termination (PL-135543)
+
+- network-online.target: on physical machines, fails-stop when no FRR-based routes appear (PL-135151)
+
+- KVM hosts: reduce keepalive check's critical threshold (PL-135533)
+
+  This speeds up visibility of KVM host crashes in our alerting.
+
+
+
 # Release 2026_033
 
 ## Impact
