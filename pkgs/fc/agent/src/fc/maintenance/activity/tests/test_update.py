@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 import textwrap
 from io import StringIO
 from logging import Logger
@@ -209,6 +210,14 @@ def test_update_merge_more_unit_changes_is_a_significant_update(activity):
     }
 
 
+@fixture()
+def mock_resolve_url_redirects(monkeypatch):
+    m = Mock()
+    m.side_effect = lambda url: url
+    monkeypatch.setattr("fc.util.nixos.resolve_url_redirects", m)
+    return m
+
+
 @fixture
 def nixos_mock(monkeypatch):
     import fc.util.nixos
@@ -265,7 +274,7 @@ def nixos_mock(monkeypatch):
     mocked.system_kernel = fake_changed_system_kernel
     mocked.resolve_url_redirects = lambda url: url
     mocked.os_release = fake_os_release
-    mocked.build_system.return_value = NEXT_SYSTEM_PATH
+    mocked.build.return_value = NEXT_SYSTEM_PATH
     mocked.current_nixos_channel_url.return_value = CURRENT_CHANNEL_URL
     mocked.dry_activate_system.return_value = UNIT_CHANGES
     mocked.current_system.return_value = CURRENT_SYSTEM_PATH
@@ -307,11 +316,15 @@ def test_update_activity_loading_outdated_serialization_should_work(
     assert activity.__rich__()
 
 
-def test_update_activity_prepare(log, logger, tmp_path, activity, nixos_mock):
+def test_update_activity_prepare(
+    log, logger, tmp_path, activity, nixos_mock, mock_resolve_url_redirects
+):
     activity.prepare()
 
-    nixos_mock.build_system.assert_called_once_with(
-        NEXT_CHANNEL_URL, out_link="/run/next-system", log=activity.log
+    nixos_mock.build.assert_called_once_with(
+        Channel(activity.log, NEXT_CHANNEL_URL),
+        out_link="/run/next-system",
+        log=activity.log,
     )
 
     nixos_mock.dry_activate_system.assert_called_once_with(
@@ -439,7 +452,7 @@ def test_update_release_change_reboot_required(
 
 
 def test_update_activity_run_boot_only(
-    log, nixos_mock: Mock, activity: UpdateActivity, logger: Logger
+    log, nixos_mock: Mock, activity: UpdateActivity, logger: Logger, mock_resolve_url_redirects: Mock
 ):
     activity.run()
 
@@ -449,8 +462,8 @@ def test_update_activity_run_boot_only(
     nixos_mock.update_system_channel.assert_called_with(
         activity.next_channel_url, log=activity.log
     )
-    nixos_mock.build_system.assert_called_with(
-        activity.next_channel_url, log=activity.log
+    nixos_mock.build.assert_called_with(
+        Channel(activity.log, activity.next_channel_url), log=activity.log
     )
     nixos_mock.register_system_profile.assert_called_with(
         NEXT_SYSTEM_PATH, log=activity.log
@@ -562,7 +575,7 @@ def test_update_activity_switch_boot_succeeds_and_switch_test_fails(
     assert log.has("update-run-succeeded")
 
 
-def test_update_activity_run_unchanged(log, nixos_mock, activity):
+def test_update_activity_run_unchanged(log, nixos_mock: Mock, activity: UpdateActivity):
     # Mock nixos.current_system() to return the same as next_system
     nixos_mock.current_system.return_value = activity.next_system
 
@@ -571,7 +584,7 @@ def test_update_activity_run_unchanged(log, nixos_mock, activity):
     nixos_mock.update_system_channel.assert_called_with(
         activity.next_channel_url, log=activity.log
     )
-    nixos_mock.build_system.assert_not_called()
+    nixos_mock.build.assert_not_called()
 
     assert activity.returncode == 0
 
@@ -589,8 +602,10 @@ def test_update_activity_run_update_system_channel_fails(
     assert log.has("update-run-error", returncode=1)
 
 
-def test_update_activity_build_system_fails(log, nixos_mock, activity):
-    nixos_mock.build_system.side_effect = BuildFailed(
+def test_update_activity_build_system_fails(
+    log, nixos_mock: Mock, activity: UpdateActivity, mock_resolve_url_redirects: Mock
+):
+    nixos_mock.build.side_effect = BuildFailed(
         msg="msg", stdout="stdout", stderr="stderr"
     )
 
@@ -601,7 +616,7 @@ def test_update_activity_build_system_fails(log, nixos_mock, activity):
 
 
 def test_update_activity_register_system_profile_fails(
-    log, nixos_mock, activity
+    log, nixos_mock: Mock, activity: UpdateActivity, mock_resolve_url_redirects: Mock
 ):
     nixos_mock.register_system_profile.side_effect = RegisterFailed(
         msg="msg", stdout="stdout", stderr="stderr"
@@ -613,7 +628,9 @@ def test_update_activity_register_system_profile_fails(
     assert log.has("update-run-error", returncode=3)
 
 
-def test_update_activity_switch_to_system_fails(log, nixos_mock, activity):
+def test_update_activity_switch_to_system_fails(
+    log, nixos_mock: Mock, activity: UpdateActivity, mock_resolve_url_redirects: Mock
+):
     nixos_mock.switch_to_system.side_effect = SwitchFailed(stdout="stdout")
 
     activity.run()
@@ -622,7 +639,9 @@ def test_update_activity_switch_to_system_fails(log, nixos_mock, activity):
     assert log.has("update-run-tempfail", returncode=state.EXIT_TEMPFAIL)
 
 
-def test_update_activity_switch_if_no_release_change(log, nixos_mock, activity):
+def test_update_activity_switch_if_no_release_change(
+    log, nixos_mock: Mock, activity: UpdateActivity, mock_resolve_url_redirects: Mock
+):
     nixos_mock.os_release.return_value = {
         "BUILD_ID": "24.11.1111",
         "VERSION_ID": "24.11",
@@ -640,7 +659,9 @@ def test_update_activity_switch_if_no_release_change(log, nixos_mock, activity):
     ]
 
 
-def test_update_activity_boot_if_release_change(log, nixos_mock, activity):
+def test_update_activity_boot_if_release_change(
+    log, nixos_mock: Mock, activity: UpdateActivity, mock_resolve_url_redirects: Mock
+):
     nixos_mock.CURRENT_VERSION_ID = "24.11"
     nixos_mock.NEXT_VERSION_ID = "25.05"
     nixos_mock.CURRENT_BUILD_ID = "24.11.abcde.12345"
@@ -693,7 +714,9 @@ def test_update_activity_from_enc(
     assert activity
 
 
-def test_update_activity_with_nullable_nixos_properties(nixos_mock, activity):
+def test_update_activity_with_nullable_nixos_properties(
+    nixos_mock, activity, mock_resolve_url_redirects
+):
     """Set all potentially nullable mocked properties to None and ensure this does not
     cause crashes"""
     nixos_mock.current_fc_environment_name.return_value = None
