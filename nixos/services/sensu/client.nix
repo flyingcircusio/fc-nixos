@@ -46,6 +46,11 @@ let
         "name": "${config.networking.hostName}",
         "address": "${config.networking.hostName}",
         "subscriptions": ["default"],
+        ${
+          # default keepalive beacon interval is 20s. Overall additional delay throughout out alerting pipeline is about 110s.
+          lib.optionalString config.flyingcircus.roles.kvm_host.enable
+            ''"keepalive": {"thresholds": { "warning": 40, "critical": 80 }},''
+        }
         "signature": "${cfg.password}"
       },
       "rabbitmq": {
