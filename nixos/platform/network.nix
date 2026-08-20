@@ -111,6 +111,8 @@ let
 
   quoteLabel = replaceStrings [ "/" ] [ "-" ];
 
+  subsystemDevice = interface: "sys-subsystem-net-devices-${interface}.device";
+
   concatFuncWithIndent =
     func: indent:
     let
@@ -583,23 +585,26 @@ in
         ];
       }
       //
-
-        # These units performing network interface setup must be
-        # explicitly wanted by the multi-user target, otherwise they
-        # will not get initially added as the individual address units
-        # won't get restarted because triggering multi-user.target alone
-        # does not propagate to the network target, etc etc.
+        # Units performing network interface setup must be wanted by
+        # network.target (which is itself wanted by multi-user.target),
+        # and be partOf networking-scripted.target (the upstream
+        # scripted networking reset button).
         (listToAttrs (
-
           (map (
             iface:
             (lib.nameValuePair "${iface.link}-netdev" rec {
               description = "Ensure network device settings for ${iface.link}";
               wantedBy = [
-                "network-setup.service"
-                "multi-user.target"
+                "network.target"
+                (subsystemDevice iface.link)
               ];
-              requires = [ "network-setup.service" ];
+              partOf = [
+                "network.target"
+                "networking-scripted.target"
+              ];
+              after = [ "network-pre.target" ];
+              before = [ "network.target" ];
+              stopIfChanged = false;
               path = [
                 pkgs.nettools
                 pkgs.ethtool
@@ -608,7 +613,6 @@ in
                 pkgs.jq
                 pkgs.util-linux
               ];
-              stopIfChanged = false;
               script = ''
                 set -e
 
@@ -827,12 +831,15 @@ in
                   (lib.nameValuePair "${linkName}-netdev" rec {
                     description = "Dummy interface ${linkName}";
                     wantedBy = [
-                      "network-setup.service"
-                      "multi-user.target"
+                      "network.target"
+                      (subsystemDevice linkName)
                     ];
-                    before = wantedBy;
+                    partOf = [
+                      "network.target"
+                      "networking-scripted.target"
+                    ];
+                    before = [ "network.target" ];
                     after = [ "network-pre.service" ];
-                    requires = [ "network-setup.service" ];
                     path = [
                       pkgs.nettools
                       pkgs.procps
@@ -864,19 +871,20 @@ in
                     (lib.nameValuePair "${iface.link}-netdev" rec {
                       description = "VXLAN link device ${iface.link}";
                       wantedBy = [
-                        "network-setup.service"
-                        "multi-user.target"
+                        "network.target"
+                        (subsystemDevice iface.link)
                       ];
-                      before = wantedBy;
-                      requires = [
-                        "network-addresses-${fclib.underlay.interface}.service"
-                        "network-setup.service"
+                      partOf = [
+                        "network.target"
+                        "networking-scripted.target"
                       ];
-                      # do not order after network-setup.service as we already declare
-                      # a before= dependency.
+                      before = [ "network.target" ];
                       after = [
                         "network-addresses-${fclib.underlay.interface}.service"
                         "network-pre.target"
+                      ];
+                      requires = [
+                        "network-addresses-${fclib.underlay.interface}.service"
                       ];
                       reloadIfChanged = true;
                       path = [
@@ -930,9 +938,11 @@ in
                     iface:
                     (lib.nameValuePair "network-bridge-suppress-flooding-${iface.link}" {
                       description = "Ensure ARP/ND suppression is enabled for bridge port ${iface.link}";
-                      wantedBy = [ "multi-user.target" ];
-                      requires = [ "${iface.interface}-netdev.service" ];
+                      wantedBy = [ "network.target" ];
+                      partOf = [ "networking-scripted.target" ];
+                      before = [ "network.target" ];
                       after = [ "${iface.interface}-netdev.service" ];
+                      requires = [ "${iface.interface}-netdev.service" ];
                       stopIfChanged = false;
                       path = [ fclib.relaxedIp ];
                       script = ''
@@ -955,9 +965,11 @@ in
                   iface:
                   (lib.nameValuePair "network-bridge-disable-learning-${iface.link}" {
                     description = "Ensure MAC address learning is disabled for bridge port ${iface.link}";
-                    wantedBy = [ "multi-user.target" ];
-                    requires = [ "${iface.interface}-netdev.service" ];
+                    wantedBy = [ "network.target" ];
+                    partOf = [ "networking-scripted.target" ];
+                    before = [ "network.target" ];
                     after = [ "${iface.interface}-netdev.service" ];
+                    requires = [ "${iface.interface}-netdev.service" ];
                     stopIfChanged = false;
                     path = [ fclib.relaxedIp ];
                     script = ''
@@ -985,11 +997,12 @@ in
                       description = "Ensure underlay properties for ${iface.link}";
                       wantedBy = [
                         "network-addresses-${iface.link}.service"
-                        "multi-user.target"
+                        "network.target"
                       ];
-                      before = wantedBy;
                       requires = [ "${iface.link}-netdev.service" ];
+                      before = wantedBy;
                       after = requires;
+                      partOf = [ "networking-scripted.target" ];
                       path = [ pkgs.procps ];
                       script = ''
                         sysctl net.ipv4.conf.${iface.link}.rp_filter=0
@@ -1013,17 +1026,20 @@ in
                     lib.nameValuePair "${name}-netdev" {
                       description = "VRF Interface ${name}";
                       wantedBy = [
-                        "network-setup.service"
-                        "sys-subsystem-net-devices-${name}.device"
+                        "network.target"
+                        (subsystemDevice name)
                       ];
                       bindsTo = [ interfaceUnit ];
-                      requires = [ "network-setup.service" ];
+                      partOf = [
+                        "network.target"
+                        "networking-scripted.target"
+                      ];
                       after = [
                         "network-pre.target"
                         interfaceUnit
                       ];
                       before = [
-                        "network-setup.service"
+                        "network.target"
                         addressUnit
                       ];
                       serviceConfig.Type = "oneshot";
@@ -1057,10 +1073,14 @@ in
                       description = "Ensure fallback unreachable route for underlay prefixes";
                       wantedBy = [
                         "network-addresses-${fclib.underlay.interface}.service"
-                        "multi-user.target"
+                        "network.target"
                       ];
                       before = wantedBy;
-                      after = [ "${fclib.underlay.interface}-netdev.service" ];
+                      partOf = [ "networking-scripted.target" ];
+                      after = [
+                        "${fclib.underlay.interface}-netdev.service"
+                        "network-pre.target"
+                      ];
                       path = [ fclib.relaxedIp ];
                       stopIfChanged = false;
                       # https://docs.frrouting.org/en/stable-8.5/zebra.html#administrative-distance
