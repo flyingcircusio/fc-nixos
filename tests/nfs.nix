@@ -374,7 +374,7 @@ import ./make-test-python.nix (
 
           reset_specialisation()
 
-          with subtest("changing network-setup.service functions correctly"):
+          with subtest("changing network-local-commands.service functions correctly"):
               switch_to_specialisation("withOtherResolver")
         '';
       };
