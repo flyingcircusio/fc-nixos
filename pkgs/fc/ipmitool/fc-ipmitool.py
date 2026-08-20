@@ -43,8 +43,12 @@ exec_args = [
     "lanplus",
     "-H",
     host,
-    *ipmi_args,
 ]
+if "IPMI_PASSWORD" in os.environ:
+    # -E reads the password from the environment instead of prompting or
+    # taking it as a (ps-visible) argument
+    exec_args.append("-E")
+exec_args += ipmi_args
 
 exec_path = shutil.which("ipmitool")
 assert exec_path
