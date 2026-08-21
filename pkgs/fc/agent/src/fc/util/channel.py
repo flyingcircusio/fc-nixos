@@ -1,4 +1,6 @@
 import os.path as p
+from functools import cached_property
+from typing import Optional, Self
 
 from fc.util import nixos
 
@@ -6,7 +8,7 @@ from fc.util import nixos
 class Channel:
     is_local = False
 
-    def __init__(self, log, url, name="", environment=None, resolve_url=True):
+    def __init__(self, log, url, name="", environment=None):
         self.url = url
         self.name = name
         self.environment = environment
@@ -14,11 +16,6 @@ class Channel:
 
         if url.startswith("file://"):
             self.is_local = True
-            self.resolved_url = url.replace("file://", "")
-        elif resolve_url:
-            self.resolved_url = nixos.resolve_url_redirects(url)
-        else:
-            self.resolved_url = url
 
         self.log = log
 
@@ -43,38 +40,39 @@ class Channel:
             return self.resolved_url == other.resolved_url
         return NotImplemented
 
+    @cached_property
+    def resolved_url(self):
+        if self.url.startswith("file://"):
+            self.is_local = True
+            return self.url.replace("file://", "")
+        return nixos.resolve_url_redirects(self.url)
+
     @classmethod
-    def current(cls, log, channel_name):
+    def current(cls, log, channel_name: str) -> Optional["Channel"]:
         """Looks up existing channel by name.
         The URL found is usually already resolved (no redirects)
         so we don't do it again here. It can still be enabled with
         `resolve_url`, when needed.
         """
-        from fc.util.nixos import RE_FC_CHANNEL
+        from fc.util.nixos import RE_FC_CHANNEL, current_nixos_channel_url
 
-        if not p.exists("/root/.nix-channels"):
-            log.debug("channel-current-no-nix-channels-dir")
+        url = current_nixos_channel_url(channel_name, log)
+        if not url:
+            log.debug("channel-current-not-found", name=channel_name)
             return
-        with open("/root/.nix-channels") as f:
-            for line in f.readlines():
-                url, name = line.strip().split(" ", 1)
-                if name == channel_name:
-                    # We don't have to resolve the URL if it's a direct link
-                    # to a Hydra build product. This is the normal case for
-                    # running machines because the nixos channel is set to an
-                    # already resolved URL.
-                    # Resolve all other URLs, for example initial URLs used
-                    # during VM bootstrapping.
-                    resolve_url = RE_FC_CHANNEL.match(url) is None
-                    log.debug(
-                        "channel-current",
-                        url=url,
-                        name=name,
-                        resolve_url=resolve_url,
-                    )
-                    return Channel(log, url, name, resolve_url=resolve_url)
 
-        log.debug("channel-current-not-found", name=name)
+        # We don't have to resolve the URL if it's a direct link
+        # to a Hydra build product. This is the normal case for
+        # running machines because the nixos channel is set to an
+        # already resolved URL.
+        # Resolve all other URLs, for example initial URLs used
+        # during VM bootstrapping.
+        log.debug(
+            "channel-current",
+            url=url,
+            name=channel_name,
+        )
+        return Channel(log, url, channel_name)
 
     def load_nixos(self):
         self.log.debug(
