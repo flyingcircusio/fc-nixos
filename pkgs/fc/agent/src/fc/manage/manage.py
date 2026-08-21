@@ -103,7 +103,7 @@ def check(
         warnings.append("production VM uses local dev checkout.")
 
     # nixos channel checks (missing/malformed)
-    nixos_channel = nixos.current_nixos_channel_url(log)
+    nixos_channel = nixos.current_nixos_channel_url(log=log)
     if nixos_channel:
         build = nixos.get_fc_channel_build(nixos_channel, log)
         log.debug(
@@ -318,14 +318,6 @@ def switch(
                 channel=channel_url,
             )
             channel_to_build = channel_from_url
-        else:
-            if current_channel != channel_from_url:
-                log.debug(
-                    "fc-manage-update-available",
-                    current_channel_url=current_channel.resolved_url,
-                    new_channel_url=channel_from_url.resolved_url,
-                    environment=environment,
-                )
     else:
         log.warning(
             "fc-manage-no-channel-url",
@@ -335,8 +327,10 @@ def switch(
             ),
         )
 
-    if not (current_channel or channel_to_build):
-        return False
+    if switch_reboot:
+        intended_switch_type = "boot"
+    else:
+        intended_switch_type = "switch"
 
     return nixos.switch(
         channel=channel_to_build,
@@ -344,7 +338,7 @@ def switch(
         lock_dir=lock_dir,
         lazy=lazy,
         show_trace=show_trace,
-        switch_reboot=switch_reboot,
+        intended_switch_type=intended_switch_type,
         log=log,
     )
 
@@ -363,5 +357,5 @@ def switch_to_configuration(
 
     system_path = Path("/nix/var/nix/profiles/system").resolve()
     nixos.switch_to_configuration(
-        system_path, specialisation, lock_dir, lazy=False
+        system_path, specialisation, lock_dir, lazy, intended_switch_type="test"
     )
