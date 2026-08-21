@@ -591,7 +591,6 @@ def test_update_activity_from_enc(
         }
     }
 
-    mocked_responses.add(responses.HEAD, current_channel_url)
     mocked_responses.add(responses.HEAD, next_channel_url)
     monkeypatch.setattr(
         "fc.util.nixos.channel_version", (lambda c: next_version)

@@ -220,7 +220,7 @@ def current_nixos_channel_version() -> str:
     return "".join(open(f).read() for f in label_comp)
 
 
-def current_nixos_channel_url(log=_log) -> Optional[str]:
+def current_nixos_channel_url(channel_name="nixos", log=_log) -> Optional[str]:
     if not p.exists("/root/.nix-channels"):
         log.warn(
             "nix-channel-file-missing",
@@ -231,7 +231,7 @@ def current_nixos_channel_url(log=_log) -> Optional[str]:
         with open("/root/.nix-channels") as f:
             for line in f.readlines():
                 url, name = line.strip().split(" ", 1)
-                if name == "nixos":
+                if name == channel_name:
                     log.debug("nixos-channel-found", channel=url)
                     return url
     except OSError:
@@ -306,7 +306,7 @@ def format_unit_change_lines(unit_changes):
 
 def update_system_channel(channel_url, log=_log):
     """Update nixos channel URL if changed and fetch new contents."""
-    current_channel_url = current_nixos_channel_url(log)
+    current_channel_url = current_nixos_channel_url(log=log)
 
     if current_channel_url == channel_url:
         log.debug("system-channel-url-unchanged")
@@ -724,7 +724,7 @@ def switch_to_system(
     This is the interal implementation that actually switches to a built system.
 
     NOTE: Consumers outside of this module should use switch_to_configuration
-    or switch if they don't implement the release path logic themself.
+    or switch if they don't implement the release path and locking logic themself.
     """
     system_path = Path(system_path).resolve()
     if lazy and Path("/run/current-system").resolve() == system_path:
@@ -780,7 +780,7 @@ def switch_to_configuration(
     specialisation: str | Specialisation,
     lock_dir: Path,
     lazy: bool = True,
-    switch_reboot: bool = False,
+    intended_switch_type: str = "switch",
     reboot_delay: int = 10,
     log=_log,
 ) -> bool:
@@ -788,6 +788,9 @@ def switch_to_configuration(
     Runs switch-to-configuration for the given system path and specialisation.
     The system must already be built.
     The system generation doesn't get registered as system profile.
+
+    The 'intended_switch type' can be any action that the target's switch-to-configuration supports.
+    When it's set to 'test', the machine will reboot after switch-to-configuration ran.
     """
     switch_path = get_specialisation_path_for_system(
         Path(system_path), specialisation, log
@@ -796,7 +799,7 @@ def switch_to_configuration(
     current_release = os_release()["VERSION_ID"]
     next_release = os_release(Path(switch_path))["VERSION_ID"]
 
-    if current_release != next_release or switch_reboot:
+    if current_release != next_release or (intended_switch_type == "boot"):
         if current_release != next_release:
             log.warning(
                 "release-change-requires-reboot",
@@ -826,7 +829,7 @@ def switch_to_configuration(
         return True
     else:
         with locked(log, lock_dir, "switch_to_configuration.lock"):
-            return switch_to_system(switch_path, lazy, "switch", log)
+            return switch_to_system(switch_path, lazy, intended_switch_type, log)
 
 
 def switch(
@@ -835,7 +838,7 @@ def switch(
     channel: Optional["Channel"] = None,
     lazy: bool = True,
     show_trace: bool = False,
-    switch_reboot: bool = False,
+    intended_switch_type: str = "switch",
     log=_log,
 ) -> bool:
     """
@@ -846,8 +849,11 @@ def switch(
 
     When a channel is given, the system is build and switched with the new channel.
     Otherwise, the channel that is currently active on the machine gets used for the build.
+
+    The 'intended_switch type' can be any action that the target's switch-to-configuration supports.
+    When it's set to 'test', the machine will reboot after switch-to-configuration ran.
     """
-    log.debug("system-switch-start", channel=channel)
+    log.debug("system-switch-start", channel=str(channel))
 
     out_link = "/run/fc-agent-built-system"
     system_path = build(
@@ -865,7 +871,7 @@ def switch(
         specialisation=specialisation,
         lock_dir=lock_dir,
         lazy=lazy,
-        switch_reboot=switch_reboot,
+        intended_switch_type=intended_switch_type,
         log=log,
     )
 
