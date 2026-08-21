@@ -216,8 +216,10 @@ def test_update_system_channel(log, monkeypatch):
         "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"
     )
 
+    current_nixos_channel_url = mock.Mock()
+    current_nixos_channel_url.side_effect = current_channel
     monkeypatch.setattr(
-        "fc.util.nixos.current_nixos_channel_url", (lambda _: current_channel)
+        "fc.util.nixos.current_nixos_channel_url", current_nixos_channel_url
     )
     channel_update_fake = PollingFakePopen(
         "nix-channel --update nixos", stdout="", poll="stdout", returncode=0
