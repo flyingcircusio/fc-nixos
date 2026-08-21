@@ -829,7 +829,9 @@ def switch_to_configuration(
         return True
     else:
         with locked(log, lock_dir, "switch_to_configuration.lock"):
-            return switch_to_system(switch_path, lazy, intended_switch_type, log)
+            return switch_to_system(
+                switch_path, lazy, intended_switch_type, log
+            )
 
 
 def switch(
