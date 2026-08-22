@@ -160,9 +160,9 @@
     "version": "2.93"
   },
   "docker": {
-    "name": "docker-29.6.2",
+    "name": "docker-29.7.2",
     "pname": "docker",
-    "version": "29.6.2"
+    "version": "29.7.2"
   },
   "docker-compose": {
     "name": "docker-compose-5.4.0",
@@ -465,14 +465,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.103",
+    "name": "linux-6.12.104",
     "pname": "linux",
-    "version": "6.12.103"
+    "version": "6.12.104"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.18.44",
+    "name": "linux-6.18.45",
     "pname": "linux",
-    "version": "6.18.44"
+    "version": "6.18.45"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -590,9 +590,9 @@
     "version": "4.40"
   },
   "nss_latest": {
-    "name": "nss-3.126",
+    "name": "nss-3.127",
     "pname": "nss",
-    "version": "3.126"
+    "version": "3.127"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.16",
