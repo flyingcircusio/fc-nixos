@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-151.0.7922.137",
+    "name": "chromedriver-unwrapped-151.0.7922.173",
     "pname": "chromedriver-unwrapped",
-    "version": "151.0.7922.137"
+    "version": "151.0.7922.173"
   },
   "chromium": {
-    "name": "chromium-151.0.7922.137",
+    "name": "chromium-151.0.7922.173",
     "pname": "chromium",
-    "version": "151.0.7922.137"
+    "version": "151.0.7922.173"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.5",
@@ -150,9 +150,9 @@
     "version": "5.3.28"
   },
   "discourse": {
-    "name": "discourse-2026.1.4",
+    "name": "discourse-2026.7.1",
     "pname": "discourse",
-    "version": "2026.1.4"
+    "version": "2026.7.1"
   },
   "dnsmasq": {
     "name": "dnsmasq-2.93",
@@ -160,9 +160,9 @@
     "version": "2.93"
   },
   "docker": {
-    "name": "docker-29.6.2",
+    "name": "docker-29.7.2",
     "pname": "docker",
-    "version": "29.6.2"
+    "version": "29.7.2"
   },
   "docker-compose": {
     "name": "docker-compose-5.4.0",
@@ -175,9 +175,9 @@
     "version": "2.4.4"
   },
   "element-web": {
-    "name": "element-web-1.12.24",
+    "name": "element-web-1.12.26",
     "pname": "element-web",
-    "version": "1.12.24"
+    "version": "1.12.26"
   },
   "erlang": {
     "name": "erlang-28.5.0.5",
@@ -295,9 +295,9 @@
     "version": "1.26.6"
   },
   "grafana": {
-    "name": "grafana-13.0.6",
+    "name": "grafana-13.0.7",
     "pname": "grafana",
-    "version": "13.0.6"
+    "version": "13.0.7"
   },
   "grub2": {
     "name": "grub-2.12.1",
@@ -395,9 +395,9 @@
     "version": "1.36.2+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.7.1",
+    "name": "keycloak-26.7.2",
     "pname": "keycloak",
-    "version": "26.7.1"
+    "version": "26.7.2"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.20.2",
@@ -465,14 +465,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.103",
+    "name": "linux-6.12.104",
     "pname": "linux",
-    "version": "6.12.103"
+    "version": "6.12.104"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.18.44",
+    "name": "linux-6.18.45",
     "pname": "linux",
-    "version": "6.18.44"
+    "version": "6.18.45"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -510,9 +510,9 @@
     "version": "5.12.0"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-1.158.0",
+    "name": "matrix-synapse-1.159.0",
     "pname": "matrix-synapse",
-    "version": "1.158.0"
+    "version": "1.159.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.3",
@@ -555,9 +555,9 @@
     "version": "1.30.4"
   },
   "nginxMainline": {
-    "name": "nginx-1.31.3",
+    "name": "nginx-1.31.4",
     "pname": "nginx",
-    "version": "1.31.3"
+    "version": "1.31.4"
   },
   "nginxStable": {
     "name": "nginx-1.30.4",
@@ -590,9 +590,9 @@
     "version": "4.40"
   },
   "nss_latest": {
-    "name": "nss-3.126",
+    "name": "nss-3.127",
     "pname": "nss",
-    "version": "3.126"
+    "version": "3.127"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.16",
