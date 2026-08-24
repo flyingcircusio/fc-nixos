@@ -1,7 +1,7 @@
 From 82e37721b57cf96efe812a6aa831316f75632e38 Mon Sep 17 00:00:00 2001
 From: Molly Miller <mm@flyingcircus.io>
 Date: Tue, 1 Jul 2025 16:11:41 +0200
-Subject: [PATCH 3/3] netlink: don't manage kernel neighbour table entries for
+Subject: [PATCH 3/4] netlink: don't manage kernel neighbour table entries for
  L2-VNI
 
 From experience, zebra's tracking of MAC-IP mappings for SVI
