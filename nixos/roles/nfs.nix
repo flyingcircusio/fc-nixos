@@ -127,6 +127,18 @@ in
         };
       };
 
+      # Ensure that network filesystems are ordered after any units
+      # which perform address configuration, as these are not normally
+      # part of network.target. Otherwise, IP addresses may be removed
+      # before the NFS share is unmounted at shutdown
+      systemd.targets.remote-fs-pre.after =
+        let
+          addressUnits = map (n: "${n}.service") (
+            filter (lib.hasPrefix "network-addresses-") (attrNames config.systemd.services)
+          );
+        in
+        addressUnits;
+
       systemd.tmpfiles.rules = [
         "d ${mountpoint}"
       ];
