@@ -1,3 +1,11 @@
+# Release 2026_035
+
+## NixOS XX.XX platform
+
+- frr-wait-online.service: fix typo in timeout specification (PL-135151)
+
+
+
 # Release 2026_034
 
 ## NixOS XX.XX platform
