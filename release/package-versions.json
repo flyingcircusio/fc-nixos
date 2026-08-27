@@ -210,9 +210,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-154.0",
+    "name": "firefox-154.0.1",
     "pname": "firefox",
-    "version": "154.0"
+    "version": "154.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-15.2.0",
@@ -465,14 +465,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.104",
+    "name": "linux-6.12.105",
     "pname": "linux",
-    "version": "6.12.104"
+    "version": "6.12.105"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.18.45",
+    "name": "linux-6.18.46",
     "pname": "linux",
-    "version": "6.18.45"
+    "version": "6.18.46"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -525,9 +525,9 @@
     "version": "1.6.42"
   },
   "mongodb": {
-    "name": "mongodb-7.0.39",
+    "name": "mongodb-7.0.40",
     "pname": "mongodb",
-    "version": "7.0.39"
+    "version": "7.0.40"
   },
   "monitoring-plugins": {
     "name": "monitoring-plugins-2.4.0",
@@ -1025,9 +1025,9 @@
     "version": "8.11.4"
   },
   "strace": {
-    "name": "strace-7.1",
+    "name": "strace-7.2",
     "pname": "strace",
-    "version": "7.1"
+    "version": "7.2"
   },
   "strongswan": {
     "name": "strongswan-6.0.7",
