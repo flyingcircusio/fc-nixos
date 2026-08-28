@@ -6,4 +6,4 @@ html:
 	./zensical build
 
 clean:
-	rm -rf _build .cache
+	rm -rf _build

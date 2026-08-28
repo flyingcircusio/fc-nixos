@@ -16,7 +16,7 @@ and the infrastructure services around them.
   resources, maintenance windows and deletion lifecycle.
 - [Networking](networking/index.md): address allocation, connecting to
   VMs, firewall rules and the fallback router.
-- [Storage](storage.md): persistent virtual disks on Ceph RBD.
+- [Storage](block-storage.md): persistent virtual disks on Ceph RBD.
 - [Object storage](object-storage.md): S3-compatible object storage for
   large or shared data.
 - [Backup](backup.md): automatic backups of your VMs and how restoration

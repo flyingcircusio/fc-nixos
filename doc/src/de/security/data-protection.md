@@ -1,5 +1,7 @@
 ---
 global_sync_id: "v1"
+search:
+  exclude: true
 ---
 
 % last review: 2026-07-31
@@ -10,12 +12,14 @@ global_sync_id: "v1"
 
 # Datenschutzmaßnahmen { #data-protection }
 
+[English version](../../security/data-protection.md)
+
 Neben rein technischen Sicherheitsmaßnahmen implementieren wir
 zusätzliche Maßnahmen, um eine sichere Umgebung für deine Daten und die
 Daten deiner Kunden zu schaffen, basierend auf den folgenden Standards
 und Vorschriften:
 
-![](Zertlogo_Flying_Circus_bunt.png){ .off-glb }
+![](../../security/Zertlogo_Flying_Circus_bunt.png){ .off-glb }
 
 - [Zertifiziertes](https://flyingcircus.io/iso-27001-de.pdf) Informationssicherheitsmanagementsystem (ISMS) basierend auf ISO/IEC 27001,
 - Das [Bundesdatenschutzgesetz (BDSG)](http://de.wikipedia.org/wiki/Bundesdatenschutzgesetz), und
@@ -102,7 +106,7 @@ folgenden Maßnahmen:
 % ISMSControl: 7.3
 % ISMSControl: 7.4
 
-Wir unterhalten ein separates [List of data centers](../infrastructure/hardware/data-centers.md#data-centers).
+Wir unterhalten ein separates [List of data centers](../../infrastructure/hardware/data-centers.md#data-centers).
 
 Der physische Zugang zu Datenverarbeitungsanlagen darf nur von den Flying Circus Administratoren vorgenommen werden. Administratoren können den physischen Zugang an andere Personen (z.B.
 Mitarbeiter des Rechenzentrums) delegieren.
@@ -139,8 +143,8 @@ Datenvernichtungsdienstleister.
 **Zweck: Verhinderung der unbefugten Eingabe von personenbezogenen Daten sowie der unbefugten Kenntnisnahme, Veränderung und Löschung von
 gespeicherten personenbezogenen Daten**
 
-Alle Daten in unseren [Speicherclustern](../infrastructure/storage.md#infrastructure-storage) werden verschlüsselt gespeichert. Dazu gehören der *Virtual Disk Block Storage*,
-unser *S3-kompatibler Object Storage* und [alle automatisierten Backups](../infrastructure/backup.md#backup). Es gibt technische und organisatorische Maßnahmen zum Schutz der
+Alle Daten in unseren [Speicherclustern](../../infrastructure/block-storage.md#infrastructure-storage) werden verschlüsselt gespeichert. Dazu gehören der *Virtual Disk Block Storage*,
+unser *S3-kompatibler Object Storage* und [alle automatisierten Backups](../../infrastructure/backup.md#backup). Es gibt technische und organisatorische Maßnahmen zum Schutz der
 entsprechenden Schlüssel.
 
 Auf technischer Ebene verwenden wir den üblichen Linux [cryptsetup](https://gitlab.com/cryptsetup/cryptsetup) Software-Stack mit LUKS2-Metadaten und XTS-AES-512-Verschlüsselung. Wir
@@ -233,7 +237,7 @@ eingerichtet werden (z.B. mit `screen`).
 Technisch gesehen gibt es drei Zugangsvarianten, um privilegierte
 administrative Operationen durchzuführen:
 
-1. Verwendung eines Benutzerkontos, dem die 'login' und 'wheel' [Berechtigungen](../platform/users/index.md#permissions) für ein bestimmtes Projekt
+1. Verwendung eines Benutzerkontos, dem die 'login' und 'wheel' [Berechtigungen](../../platform/users/index.md#permissions) für ein bestimmtes Projekt
    erteilt wurden. Dies erfordert, dass der Benutzer sich mit seinem SSH-Schlüssel in einen
    regulären Account einloggt und zusätzlich sein Passwort angibt, um auf privilegierte
    Operationen zuzugreifen.
@@ -321,7 +325,7 @@ auf denen sensible Informationen übertragen werden können, gehören:
 - Persistente Daten werden auf Storage-Servern gespeichert. Der Datentransfer wird aus
   Performance-Gründen nicht verschlüsselt. Storage-Server sind mit Anwendungsservern über ein
   privates Netzwerk verbunden. Maschinen, auf denen Kunden administrative Privilegien gewährt
-  werden, dürfen sich nicht direkt mit dem Speichernetzwerk verbinden (siehe auch [Network security](network.md#network-security)).
+  werden, dürfen sich nicht direkt mit dem Speichernetzwerk verbinden (siehe auch [Network security](../../security/network.md#network-security)).
 - Backups werden entweder über einen verschlüsselten Kommunikationskanal oder über das private Speichernetzwerk
   auf Backup-Server am selben Standort übertragen. Backup-Daten können auch auf externe Backup-Server übertragen
   werden, um die Desaster-Recovery-Fähigkeiten zu verbessern. Die Datenübertragung muss verschlüsselt erfolgen.
@@ -335,7 +339,7 @@ auf denen sensible Informationen übertragen werden können, gehören:
 **Zweck: Gewährleistung, dass eingesetzte Systeme im Störungsfall wiederhergestellt
 werden können**
 
-Wiederherstellungsszenarien sind unter [Disaster recovery](disaster-recovery.md#disaster-recovery) dokumentiert.
+Wiederherstellungsszenarien sind unter [Disaster recovery](../../security/disaster-recovery.md#disaster-recovery) dokumentiert.
 
 ### (10) Zuverlässigkeit
 
@@ -358,9 +362,9 @@ gewährleistet:
 * Prüfsummen auf Blockebene bei Ceph bluestore
   OSDs
 * Redundante Speicherung von Daten
-* Datensicherungen mit Hash-basierten Integritätsprüfungen, siehe [Backup](../infrastructure/backup.md#backup).
+* Datensicherungen mit Hash-basierten Integritätsprüfungen, siehe [Backup](../../infrastructure/backup.md#backup).
 
-Einzelheiten und Wiederherstellungszeiten finden Sie unter [Disaster recovery](disaster-recovery.md#disaster-recovery).
+Einzelheiten und Wiederherstellungszeiten finden Sie unter [Disaster recovery](../../security/disaster-recovery.md#disaster-recovery).
 
 
 ### (12) Auftragskontrolle
@@ -396,8 +400,8 @@ Hardware wird vom Flying Circus von professionellem Anbietern bezogen. Der
 Flying Circus nutzt Standardverfahren zur Erhöhung der Verfügbarkeit einzelner
 Komponenten (z.B. RAID-Speicher, redundante Netzteile, Ersatzkomponenten).
 
-Die Kundendaten werden regelmäßig nach dem Flying Circus [Backup-Plan](../infrastructure/backup.md#backup) gesichert. Die Wiederherstellung vergangener Zustände
-kann von Administratoren auf Anfrage durchgeführt werden. Zusätzlich gibt es einen [Desaster Recovery Plan](disaster-recovery.md#disaster-recovery), der Ausfallszenarien, unsere
+Die Kundendaten werden regelmäßig nach dem Flying Circus [Backup-Plan](../../infrastructure/backup.md#backup) gesichert. Die Wiederherstellung vergangener Zustände
+kann von Administratoren auf Anfrage durchgeführt werden. Zusätzlich gibt es einen [Desaster Recovery Plan](../../security/disaster-recovery.md#disaster-recovery), der Ausfallszenarien, unsere
 Präventiv- und Wiederherstellungsmaßnahmen detailliert beschreibt.
 
 ### (14) Trennbarkeit
@@ -433,8 +437,8 @@ dedizierten Authentifizierungsdaten getrennt.
 
 ## Andere Maßnahmen
 
-- Unser Supportprozess und die Maßnahmen zur Reaktion auf Vorfälle sind unter [Support-Details](../support/overview.md#support-details) dokumentiert.
-- Wir haben einen Prozess für Notfall- und Krisenmanagement einschließlich Notfallplänen für kritische Geschäftsprozesse (Business Continuity). Siehe auch [Disaster recovery](disaster-recovery.md#disaster-recovery).
+- Unser Supportprozess und die Maßnahmen zur Reaktion auf Vorfälle sind unter [Support-Details](../../support/overview.md#support-details) dokumentiert.
+- Wir haben einen Prozess für Notfall- und Krisenmanagement einschließlich Notfallplänen für kritische Geschäftsprozesse (Business Continuity). Siehe auch [Disaster recovery](../../security/disaster-recovery.md#disaster-recovery).
 
 #### Fußnoten
 

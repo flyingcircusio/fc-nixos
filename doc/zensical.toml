@@ -13,7 +13,11 @@
 # pages): index.md (the manual index -- reached via the logo/site-title
 # links instead of a redundant nav entry), devopsguide-de.md (linked from
 # dead media, do not rename), platform/users/ssh-keygen.md (hidden
-# toctree entry in the Sphinx manual).
+# toctree entry in the Sphinx manual), and the German tree de/**
+# (translated pages for links in official German documents -- directories
+# mirror URLs: src/de/<path>.md serves at /de/<path>/; each page
+# cross-links its English twin; tests/test_de_pages.py pins ref
+# resolution, search exclusion, and nav exclusion).
 # All of them -- and every archived platform-releases/ page (adapted by
 # tools.fetch_platform_docs) -- carry `search: exclude: true` frontmatter so
 # they stay out of the search index (probed: search.json drops them).
