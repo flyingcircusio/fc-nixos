@@ -1,0 +1,43 @@
+name: Build and Deploy Documentation
+
+on:
+  push:
+    branches:
+      - master
+      - fc-*-production
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Need full history for version dates
+
+      - name: Checkout global docs from master (if on older branch)
+        if: github.ref != 'refs/heads/master'
+        run: |
+          git checkout origin/master -- doc/src/security doc/src/support
+          
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "doc/pyproject.toml"
+          
+      - name: Build Zensical Documentation
+        working-directory: ./doc
+        run: |
+          uv run zensical build -f zensical.toml
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-html-${{ github.ref_name }}
+          path: doc/_build/en/
+
+      # Add your deployment steps here (e.g., rsync to docs.flyingcircus.io or trigger a deploy webhook)

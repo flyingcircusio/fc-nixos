@@ -47,11 +47,15 @@ extra_css    = [
 ]
 # Load order matters: the data file provides window.PLATFORM_VERSIONS,
 # the URL module (window.VersionSwitcherUrls) must exist before
-# version-switcher.js consumes it. The vendored glightbox runtime +
-# shim come first: the runtime defines window.GLightbox (so the theme
-# bundle never lazy-loads it from unpkg.com), the shim rewrites the
-# bundle's unconditional unpkg stylesheet link to the local vendor copy
-# (same self-hosting policy as the vendored fonts).
+# version-switcher.js consumes it, and the language rule
+# (window.LanguageSwitcherUrls) before language-switcher.js rewrites the
+# header dropdown hrefs (version-prefix-preserving: page.url is baked
+# WITHOUT the version prefix this tree is served under). The vendored
+# glightbox runtime + shim come first: the runtime defines
+# window.GLightbox (so the theme bundle never lazy-loads it from
+# unpkg.com), the shim rewrites the bundle's unconditional unpkg
+# stylesheet link to the local vendor copy (same self-hosting policy as
+# the vendored fonts).
 extra_javascript = [
     "_static/vendor/glightbox.min.js",
     "_static/glightbox-local.js",
@@ -59,6 +63,8 @@ extra_javascript = [
     "_static/version-switcher-urls.js",
     "_static/version-switcher.js",
     "_static/version-switcher-fallback.js",
+    "_static/language-switcher-urls.js",
+    "_static/language-switcher.js",
 ]
 
 nav = [
