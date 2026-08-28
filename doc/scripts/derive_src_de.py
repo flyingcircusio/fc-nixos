@@ -26,8 +26,8 @@ from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 SRC = _REPO_ROOT / "src"
-SRC_DE = _REPO_ROOT / "src-de"
-OVERLAY = _REPO_ROOT / "translations" / "de"
+SRC_DE = _REPO_ROOT / ".cache/src-de"
+OVERLAY = _REPO_ROOT / "src/de"
 
 
 def derive(src: Path, src_de: Path, overlay: Path) -> tuple[int, int]:

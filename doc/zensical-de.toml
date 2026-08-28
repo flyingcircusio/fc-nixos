@@ -38,7 +38,7 @@
 site_name    = "Flying Circus Platform"
 site_url     = "https://flyingcircus.io/doc"
 copyright    = "Flying Circus Internet Operations GmbH"
-docs_dir     = "src-de"
+docs_dir     = ".cache/src-de"
 site_dir     = "_build/de"
 extra_css    = [
     "_static/flyingcircus.css",

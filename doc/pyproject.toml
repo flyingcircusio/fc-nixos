@@ -14,8 +14,6 @@ dependencies = [
     "certifi>=2024.2",
     "ruamel.yaml>=0.18",
     "structlog>=24",
-    "markdown-it-py>=4.2.0",
-    "myst-parser>=5.1.0",
 ]
 
 [project.entry-points."markdown.extensions"]
