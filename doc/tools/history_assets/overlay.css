@@ -1,0 +1,75 @@
+/* VCS history overlay bar -- one fixed bar at the bottom of the viewport,
+ * injected into every /v/<rev>/ page (see tools/history_assets/overlay.js).
+ * Served as /v/overlay.css by deploy/history.nix; self-contained on purpose
+ * (the historic builds carry era styling that must not leak into the bar). */
+
+.history-overlay {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  background: rgba(28, 32, 38, 0.94);
+  color: #f5f6f7;
+  font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  z-index: 2147483000;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.history-overlay__label {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.history-overlay__btn,
+.history-overlay__select,
+.history-overlay__date {
+  font: inherit;
+  color: inherit;
+  background: #2b3038;
+  border: 1px solid #454c56;
+  border-radius: 4px;
+  padding: 0.15rem 0.5rem;
+}
+
+.history-overlay__btn {
+  cursor: pointer;
+}
+
+.history-overlay__btn:hover:not([disabled]) {
+  background: #383f49;
+}
+
+.history-overlay__btn[disabled] {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.history-overlay__select {
+  max-width: 34em;
+}
+
+.history-overlay__select option {
+  color: inherit;
+  background: #2b3038;
+}
+
+.history-overlay__select option:disabled {
+  color: #d2998f;
+}
+
+.history-overlay__date {
+  color-scheme: dark;
+}
+
+.history-overlay__date-label {
+  opacity: 0.85;
+}
+
+.history-overlay__notice {
+  color: #e8a33d;
+}

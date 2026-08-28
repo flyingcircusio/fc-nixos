@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "flyingcircus-docs"
+version = "0.1.0"
+description = "Flying Circus platform documentation (Zensical build)"
+requires-python = ">=3.11"
+
+dependencies = [
+    "zensical>=0.0.54",
+    "linkify-it-py>=2.1.0",
+    "certifi>=2024.2",
+    "ruamel.yaml>=0.18",
+    "structlog>=24",
+    "markdown-it-py>=4.2.0",
+    "myst-parser>=5.1.0",
+]
+
+[project.entry-points."markdown.extensions"]
+md_comments = "tools.md_comments:makeExtension"
+
+[tool.hatch.build.targets.wheel]
+packages = ["tools"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-readable",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# importlib import mode: the tiered test tree (tests/, tests/conventions/,
+# tests/e2e/, tests/scaffolding/) carries no __init__.py packages, and
+# importlib keeps same-basename test files across tiers distinct without
+# prepending anything to sys.path.
+addopts = "--import-mode=importlib"

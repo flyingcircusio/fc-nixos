@@ -1,0 +1,80 @@
+# Local Configuration { #nixos-local }
+
+You can customize the system's configuration for managed components with
+config files that are located in `/etc/local/*`.
+
+Every component that supports customizing its configuration creates a directory
+writable by service users, such as `/etc/local/firewall`.
+The specific format and allowed filenames depend on the specifics of each
+component and are documented separately.
+
+Changes to the files in the local configuration directory are picked up
+automatically upon the next run of our configuration agent (generally every
+10 minutes) but you can also explicitly trigger it by running:
+
+```console
+$ sudo fc-manage switch
+```
+
+This will update the machine's system configuration, which includes copying the
+local configuration files into the Nix store. Your custom config is thus
+versioned along the general system config (in case we have to revert to an
+older configuration version) and is atomically loaded and activated.
+
+To inspect the result of this call, you can check the journal:
+
+```console
+$ journalctl --since -1h --unit fc-manage
+```
+
+## fc-manage
+
+`fc-manage` is our utility that updates a system's configuration and
+calls the underlying NixOS commands.
+
+The basic call to apply changed configuration is:
+
+```console
+$ sudo fc-manage switch
+```
+
+This will pick up locally changed configuration but will not perform general OS
+updates or fetch new data from our configuration management database (like
+adding new users or IPs).
+
+The call to perform extensive updates including potential OS updates (the
+"channel") and changes from the configuration management database (CMDB,
+directory, "ENC") is:
+
+```console
+$ sudo fc-manage switch --update-enc --channel
+# Short form:
+$ sudo fc-manage switch -ec
+```
+
+A mixed form (no OS updates but include changes from the CMDB) is:
+
+```console
+$ sudo fc-manage switch --update-enc
+# Short form:
+$ sudo fc-manage switch -e
+```
+
+## Custom NixOS-native configuration { #nixos-custom-modules }
+
+You can put custom NixOS configuration (called modules) in
+`/etc/local/nixos`. See `custom.nix.example` for the basic structure
+of a NixOS module. All options offered by NixOS and our platform code can be set
+there.
+
+!!! warning
+    Care must be taken to avoid breaking the system.
+    Overriding options already set by the platform can be dangerous.
+
+Run `sudo fc-manage switch` to activate the changes (**may restart services!**).
+
+For more information about writing NixOS modules, refer to the
+[NixOS manual](https://nixos.org/nixos/manual/index.html#sec-writing-modules)
+
+For looking up specific NixOS options of both the upstream NixOS and the Flying Circus platform, we provide <https://search.flyingcircus.io/search/options>. For upstream-only options there is also <https://search.nixos.org/options>, in case you prefer that layout.\
+In both cases, make sure to select the correct channel relevant for your platform version, in this case *25.05*.

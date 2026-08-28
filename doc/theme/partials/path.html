@@ -1,0 +1,24 @@
+{#-
+  This file was automatically generated - do not edit
+-#}
+{% import "partials/path-item.html" as item with context %}
+{% if page.meta and page.meta.hide %}
+  {% set hidden = "hidden" if "path" in page.meta.hide %}
+{% endif %}
+{% set depth = page.ancestors | length %}
+{#- Local override, the ONLY hunk vs upstream 0.0.55: drop the
+    nav.homepage pseudo-root crumb. index.md is deliberately out of nav,
+    so nav.homepage falls back to the first nav LEAF page ("Getting
+    started") -- upstream would prefix every breadcrumb with it and
+    compensates with a depth + 1; render only the real ancestor chain
+    instead (tests/test_breadcrumbs.py pins this hunk byte-exactly
+    and asserts the rendered contract). -#}
+{% if depth > 0 %}
+  <nav class="md-path" aria-label="{{ lang.t('nav') }}" {{ hidden }}>
+    <ol class="md-path__list">
+      {% for nav_item in page.ancestors | reverse %}
+        {{ item.render(nav_item) }}
+      {% endfor %}
+    </ol>
+  </nav>
+{% endif %}

@@ -1,0 +1,39 @@
+{#-
+  Local override of the built-in partial: the sidebar-title logo anchor
+  must link the manual index (site root) even though index.md is NOT part
+  of the nav -- upstream falls back to nav.homepage (the FIRST nav page)
+  there. base_url is the page-relative site root ("." on the index,
+  "../.." from platform/<branch>/, ...); everything else mirrors
+  upstream 0.0.55.
+
+  The site-name text node after the logo anchor is REMOVED (user decision
+  2026-08-20): the drawer header would duplicate the logo and the page
+  heading. The site name still lives in the <title>, the header topic and
+  the logo's title/aria-label/alt attributes.
+-#}
+{% import "partials/nav-item.html" as item with context %}
+{% set class = "md-nav md-nav--primary" %}
+{% if "navigation.tabs" in features %}
+  {% set class = class ~ " md-nav--lifted" %}
+{% endif %}
+{% if "toc.integrate" in features %}
+  {% set class = class ~ " md-nav--integrated" %}
+{% endif %}
+<nav class="{{ class }}" aria-label="{{ lang.t('nav') }}" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="{{ base_url }}" title="{{ config.site_name | e }}" class="md-nav__button md-logo" aria-label="{{ config.site_name }}" data-md-component="logo">
+      {% include "partials/logo.html" %}
+    </a>
+  </label>
+  {% if config.repo_url %}
+    <div class="md-nav__source">
+      {% include "partials/source.html" %}
+    </div>
+  {% endif %}
+  <ul class="md-nav__list" data-md-scrollfix>
+    {% for nav_item in nav.items %}
+      {% set path = "__nav_" ~ loop.index %}
+      {{ item.render(nav_item, path, 1) }}
+    {% endfor %}
+  </ul>
+</nav>

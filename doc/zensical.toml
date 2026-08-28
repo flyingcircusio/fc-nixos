@@ -1,0 +1,489 @@
+# Explicit navigation -- the Zensical equivalent of the hand-curated MyST
+# toctree groups that drove the Sphinx/furo sidebar (uncaptioned root group,
+# "Infrastructure (IaaS & Resources)", "Platform (Operations & Concepts)",
+# generated platform-version group). Group
+# titles use the sections' real page headings.
+#
+# NOTE: the nav key lives INSIDE the [project] table -- zensical's config
+# parser keeps ONLY the [project] table when it is present and silently
+# drops every top-level key (probed 2026-08-17).
+#
+# Pages present in docs_dir but NOT listed here are still built, just not
+# linked in the sidebar (probed: zensical emits no warning for unlisted
+# pages): index.md (the manual index -- reached via the logo/site-title
+# links instead of a redundant nav entry), devopsguide-de.md (linked from
+# dead media, do not rename), platform/users/ssh-keygen.md (hidden
+# toctree entry in the Sphinx manual).
+# All of them -- and every archived platform-releases/ page (adapted by
+# tools.fetch_platform_docs) -- carry `search: exclude: true` frontmatter so
+# they stay out of the search index (probed: search.json drops them).
+#
+# Two blocks between marker comments are GENERATED -- never edit by hand:
+#   # BEGIN/END changes-releases    tools.generate_release_notes rewrites
+#                                   this from src/changes/ (one group per
+#                                   year, index + r-pages, newest first)
+#   # BEGIN/END platform-versions   tools.fetch_platform_docs rewrites this
+#                                   from platform-versions.yaml (ONE wrapper
+#                                   group "Platform Releases (Versioned
+#                                   Docs)" holding every platform version,
+#                                   stable first, then archived in config
+#                                   order, labelled wip-style with the
+#                                   "Platform " prefix; the local theme/
+#                                   partials/nav-item.html override keeps
+#                                   the Changelog collapsible while
+#                                   navigation.sections makes the other
+#                                   top-level groups static -- the global
+#                                   navigation.expand feature is NOT used)
+[project]
+site_name    = "Flying Circus Platform"
+site_url     = "https://flyingcircus.io/doc"
+copyright    = "Flying Circus Internet Operations GmbH"
+docs_dir     = "src"
+site_dir     = "_build/en"
+extra_css    = [
+    "_static/flyingcircus.css",
+    "_static/version-switcher.css",
+    "_static/vendor/glightbox.min.css",
+]
+# Load order matters: the data file provides window.PLATFORM_VERSIONS,
+# the URL module (window.VersionSwitcherUrls) must exist before
+# version-switcher.js consumes it. The vendored glightbox runtime +
+# shim come first: the runtime defines window.GLightbox (so the theme
+# bundle never lazy-loads it from unpkg.com), the shim rewrites the
+# bundle's unconditional unpkg stylesheet link to the local vendor copy
+# (same self-hosting policy as the vendored fonts).
+extra_javascript = [
+    "_static/vendor/glightbox.min.js",
+    "_static/glightbox-local.js",
+    "_static/platform-versions.js",
+    "_static/version-switcher-urls.js",
+    "_static/version-switcher.js",
+    "_static/version-switcher-fallback.js",
+]
+
+nav = [
+      { "Changelog" = [
+    { "2026" = ["changes/2026/index.md",
+      "changes/2026/r001.md",
+      "changes/2026/r002.md",
+      "changes/2026/r003.md",
+      "changes/2026/r004.md",
+      "changes/2026/r005.md",
+      "changes/2026/r006.md",
+      "changes/2026/r007.md",
+      "changes/2026/r008.md",
+      "changes/2026/r009.md",
+      "changes/2026/r010.md",
+      "changes/2026/r011.md",
+      "changes/2026/r012.md",
+      "changes/2026/r013.md",
+      "changes/2026/r014.md",
+      "changes/2026/r015.md",
+      "changes/2026/r016.md",
+      "changes/2026/r017.md",
+      "changes/2026/r018.md",
+      "changes/2026/r019.md",
+      "changes/2026/r020.md",
+      "changes/2026/r021.md",
+      "changes/2026/r022.md",
+      "changes/2026/r023.md",
+      "changes/2026/r024.md",
+      "changes/2026/r025.md",
+      "changes/2026/r026.md",
+      "changes/2026/r027.md",
+      "changes/2026/r028.md",
+      "changes/2026/r029.md",
+      "changes/2026/r030.md",
+      "changes/2026/r031.md",
+      "changes/2026/r032.md",
+      "changes/2026/r033.md"
+  ] },
+    { "2025" = ["changes/2025/index.md",
+      "changes/2025/r001.md",
+      "changes/2025/r002.md",
+      "changes/2025/r003.md",
+      "changes/2025/r004.md",
+      "changes/2025/r005.md",
+      "changes/2025/r006.md",
+      "changes/2025/r007.md",
+      "changes/2025/r008.md",
+      "changes/2025/r009.md",
+      "changes/2025/r010.md",
+      "changes/2025/r011.md",
+      "changes/2025/r012.md",
+      "changes/2025/r013.md",
+      "changes/2025/r014.md",
+      "changes/2025/r015.md",
+      "changes/2025/r016.md",
+      "changes/2025/r017.md",
+      "changes/2025/r018.md",
+      "changes/2025/r019.md",
+      "changes/2025/r020.md",
+      "changes/2025/r021.md",
+      "changes/2025/r022.md",
+      "changes/2025/r023.md",
+      "changes/2025/r024.md",
+      "changes/2025/r025.md",
+      "changes/2025/r026.md",
+      "changes/2025/r027.md",
+      "changes/2025/r028.md",
+      "changes/2025/r029.md",
+      "changes/2025/r030.md",
+      "changes/2025/r031.md",
+      "changes/2025/r032.md",
+      "changes/2025/r033.md",
+      "changes/2025/r034.md",
+      "changes/2025/r035.md",
+      "changes/2025/r036.md",
+      "changes/2025/r037.md",
+      "changes/2025/r038.md",
+      "changes/2025/r039.md",
+      "changes/2025/r040.md",
+      "changes/2025/r041.md",
+      "changes/2025/r042.md",
+      "changes/2025/r043.md",
+      "changes/2025/r044.md",
+      "changes/2025/r045.md",
+      "changes/2025/r046.md",
+      "changes/2025/r047.md"
+  ] },
+    { "2024" = ["changes/2024/index.md",
+      "changes/2024/r001.md",
+      "changes/2024/r002.md",
+      "changes/2024/r003.md",
+      "changes/2024/r004.md",
+      "changes/2024/r005.md",
+      "changes/2024/r006.md",
+      "changes/2024/r007.md",
+      "changes/2024/r008.md",
+      "changes/2024/r009.md",
+      "changes/2024/r010.md",
+      "changes/2024/r011.md",
+      "changes/2024/r012.md",
+      "changes/2024/r013.md",
+      "changes/2024/r014.md",
+      "changes/2024/r015.md",
+      "changes/2024/r016.md",
+      "changes/2024/r017.md",
+      "changes/2024/r018.md",
+      "changes/2024/r019.md",
+      "changes/2024/r020.md",
+      "changes/2024/r021.md",
+      "changes/2024/r022.md",
+      "changes/2024/r023.md",
+      "changes/2024/r024.md",
+      "changes/2024/r025.md",
+      "changes/2024/r026.md",
+      "changes/2024/r027.md",
+      "changes/2024/r028.md",
+      "changes/2024/r029.md",
+      "changes/2024/r030.md",
+      "changes/2024/r031.md",
+      "changes/2024/r032.md",
+      "changes/2024/r033.md",
+      "changes/2024/r034.md",
+      "changes/2024/r035.md"
+  ] },
+    { "2023" = ["changes/2023/index.md",
+      "changes/2023/r001.md",
+      "changes/2023/r002.md",
+      "changes/2023/r003.md",
+      "changes/2023/r004.md",
+      "changes/2023/r005.md",
+      "changes/2023/r006.md",
+      "changes/2023/r007.md",
+      "changes/2023/r008.md",
+      "changes/2023/r009.md",
+      "changes/2023/r010.md",
+      "changes/2023/r011.md",
+      "changes/2023/r012.md",
+      "changes/2023/r013.md",
+      "changes/2023/r014.md",
+      "changes/2023/r015.md",
+      "changes/2023/r016.md",
+      "changes/2023/r017.md",
+      "changes/2023/r018.md",
+      "changes/2023/r019.md",
+      "changes/2023/r020.md",
+      "changes/2023/r021.md",
+      "changes/2023/r022.md",
+      "changes/2023/r023.md",
+      "changes/2023/r024.md",
+      "changes/2023/r025.md",
+      "changes/2023/r026.md",
+      "changes/2023/r027.md",
+      "changes/2023/r028.md",
+      "changes/2023/r029.md",
+      "changes/2023/r030.md",
+      "changes/2023/r031.md",
+      "changes/2023/r032.md",
+      "changes/2023/r033.md"
+  ] },
+    { "2022" = ["changes/2022/index.md",
+      "changes/2022/r001.md",
+      "changes/2022/r002.md",
+      "changes/2022/r003.md",
+      "changes/2022/r004.md",
+      "changes/2022/r005.md",
+      "changes/2022/r006.md",
+      "changes/2022/r007.md",
+      "changes/2022/r008.md",
+      "changes/2022/r009.md",
+      "changes/2022/r010.md",
+      "changes/2022/r011.md",
+      "changes/2022/r012.md",
+      "changes/2022/r013.md",
+      "changes/2022/r014.md",
+      "changes/2022/r015.md",
+      "changes/2022/r016.md",
+      "changes/2022/r017.md",
+      "changes/2022/r018.md",
+      "changes/2022/r019.md",
+      "changes/2022/r020.md",
+      "changes/2022/r021.md",
+      "changes/2022/r022.md",
+      "changes/2022/r023.md",
+      "changes/2022/r024.md",
+      "changes/2022/r025.md",
+      "changes/2022/r026.md",
+      "changes/2022/r027.md",
+      "changes/2022/r028.md",
+      "changes/2022/r029.md",
+      "changes/2022/r030.md",
+      "changes/2022/r031.md"
+  ] },
+    { "2021" = ["changes/2021/index.md",
+      "changes/2021/r001.md",
+      "changes/2021/r002.md",
+      "changes/2021/r003.md",
+      "changes/2021/r004.md",
+      "changes/2021/r005.md",
+      "changes/2021/r006.md",
+      "changes/2021/r007.md",
+      "changes/2021/r008.md",
+      "changes/2021/r009.md",
+      "changes/2021/r010.md",
+      "changes/2021/r011.md",
+      "changes/2021/r012.md",
+      "changes/2021/r013.md",
+      "changes/2021/r014.md",
+      "changes/2021/r015.md",
+      "changes/2021/r016.md",
+      "changes/2021/r017.md",
+      "changes/2021/r018.md",
+      "changes/2021/r019.md",
+      "changes/2021/r020.md",
+      "changes/2021/r021.md",
+      "changes/2021/r022.md",
+      "changes/2021/r023.md",
+      "changes/2021/r024.md",
+      "changes/2021/r025.md",
+      "changes/2021/r026.md",
+      "changes/2021/r027.md",
+      "changes/2021/r028.md",
+      "changes/2021/r029.md",
+      "changes/2021/r030.md",
+      "changes/2021/r031.md",
+      "changes/2021/r032.md",
+      "changes/2021/r033.md",
+      "changes/2021/r034.md",
+      "changes/2021/r035.md",
+      "changes/2021/r036.md",
+      "changes/2021/r037.md",
+      "changes/2021/r038.md",
+      "changes/2021/r039.md",
+      "changes/2021/r040.md"
+  ] }
+  ] },
+  { "Security" = [
+      "security/data-protection.md",
+      "security/disaster-recovery.md",
+      "security/network.md",
+      "security/policy.md",
+      "security/software-vulnerabilities.md"
+  ] },
+  { "Support" = [
+      "support/chat.md",
+      "support/overview.md",
+      "support/shared-screen-sessions.md"
+  ] },
+  { "Infrastructure" = [
+      { "Getting started" = "infrastructure/getting-started/index.md" },
+      { "VMs" = "infrastructure/vms/index.md" },
+      { "AI & ML" = "infrastructure/ai-ml.md" },
+      { "Networking" = [
+          "infrastructure/networking/connecting.md",
+          "infrastructure/networking/redundant-router.md",
+          "infrastructure/networking/firewall.md",
+          "infrastructure/networking/networking.md",
+          "infrastructure/networking/outbound.md"
+      ] },
+      { "Block Storage" = "infrastructure/block-storage.md" },
+      { "Object Storage" = "infrastructure/object-storage.md" },
+      { "Backup" = "infrastructure/backup.md" },
+      { "Hardware" = [
+          "infrastructure/hardware/data-centers.md",
+          "infrastructure/hardware/specs.md"
+      ] }
+  ] },
+  { "Platform" = [
+      "platform/upgrades-whats-new.md",
+      { "Philosophy" = "platform/philosophy.md" },
+      { "Deployments" = [
+          "platform/deployment/lamp.md",
+          "platform/deployment/mongodb.md"
+      ] },
+      { "User Accounts" = [
+          "platform/users/ssh-keygen.md"
+      ] },
+      { "API" = [
+          "platform/api/introduction.md",
+          "platform/api/examples.md",
+          "platform/api/methods.md",
+          "platform/api/types.md",
+          "platform/api/log.md"
+      ] },
+      { "Maintenance" = "platform/maintenance.md" },
+      { "Base Environment" = "platform/base.md" },
+      { "Systemd" = "platform/systemd.md" },
+      { "Cron" = "platform/cron.md" },
+      { "Local" = "platform/local.md" },
+      { "Logrotate" = "platform/logrotate.md" },
+      { "User Profile" = "platform/user-profile.md" },
+      { "logging" = "platform/logging.md" },
+      { "firewall" = "platform/firewall.md" },
+      { "monitoring" = "platform/monitoring.md" },
+      { "garbage collection" = "platform/garbage-collection.md" }
+  ] },
+  { "Components" = [
+      { "Development Host" = "components/devhost.md" },
+      { "Docker" = "components/docker.md" },
+      { "External network gateway" = "components/external_net.md" },
+      { "FerretDB" = "components/ferretdb.md" },
+      { "Gitlab" = "components/gitlab.md" },
+      { "Kubernetes Cluster (k3s)" = "components/kubernetes.md" },
+      { "LAMP (Apache/php-fpm)" = "components/lamp.md" },
+      { "Mail server" = "components/mailserver.md" },
+      { "Mail stub" = "components/mailstub.md" },
+      { "MariaDB" = "components/mariadb.md" },
+      { "Matomo" = "components/matomo.md" },
+      { "Memcached" = "components/memcached.md" },
+      { "MongoDB" = "components/mongodb.md" },
+      { "MySQL" = "components/mysql.md" },
+      { "NFS" = "components/nfs.md" },
+      { "OpenSearch" = "components/opensearch.md" },
+      { "Open WebUI" = "components/open-webui.md" },
+      { "PostgreSQL" = "components/postgresql.md" },
+      { "RabbitMQ" = "components/rabbitmq.md" },
+      { "Redis" = "components/redis.md" },
+      { "Slurm Workload Manager" = "components/slurm.md" },
+      { "Statshost (Grafana, Prometheus, Loki)" = "components/statshost.md" },
+      { "Webgateway (NGINX, HAProxy)" = "components/webgateway.md" },
+      { "Vinyl Cache / Varnish (Webproxy)" = "components/webproxy.md" }
+  ] }
+]
+
+[project.theme]
+language = "en"
+variant  = "classic"
+logo     = "_static/RZ_FC-Logo_RGB_100-1080.svg"
+# Local template overrides (theme/partials/...): the logo anchors link the
+# manual index even though index.md is not in the nav (upstream would link
+# the FIRST nav page there).
+custom_dir = "theme"
+features = [
+    "content.code.copy",
+    "navigation.footer",
+    "navigation.instant",
+    "navigation.instant.prefetch",
+    "navigation.path",
+    "navigation.top",
+    "navigation.tracking",
+    "search.highlight",
+]
+
+# Self-hosted fonts: font = false suppresses the Google Fonts <link> and the
+# theme's --md-text-font/--md-code-font <style> (base.html); the @font-face
+# declarations and :root variables in _static/flyingcircus.css restore the
+# same typefaces from the vendored woff2 files in _static/fonts/.
+# NOTE: this key must stay BEFORE the [[project.theme.palette]] arrays --
+# bare keys after an array-of-tables header belong to the last array element.
+font = false
+
+[[project.theme.palette]]
+scheme      = "default"
+primary     = "custom"
+accent      = "custom"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+scheme      = "slate"
+primary     = "custom"
+accent      = "custom"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"
+
+# Language switcher targets as served by deploy/docs.nix: the English manual
+# at / (URL stability -- the root keeps its EN content), the German manual
+# under /de/. These entries are the language ROOTS -- static config cannot
+# express per-page targets. The local theme/partials/alternate.html override
+# appends the page's root-relative URL at render time, so the header dropdown
+# links the SAME PAGE in the other language; the roots remain as fallback for
+# the homepage and page-less contexts (both builds render identical page URLs,
+# pinned by tests/test_alternate_links.py). KNOWN LIMITATION: the head
+# <link rel="alternate" hreflang> tags (base.html) still point at the two
+# roots -- SEO-relevant only, no functional impact.
+[project.extra]
+alternate = [
+    { name = "English", link = "/", lang = "en" },
+    { name = "Deutsch", link = "/de/", lang = "de" },
+]
+
+[project.markdown_extensions.abbr]
+[project.markdown_extensions.admonition]
+[project.markdown_extensions.attr_list]
+[project.markdown_extensions.def_list]
+[project.markdown_extensions.footnotes]
+[project.markdown_extensions.md_in_html]
+[project.markdown_extensions.toc]
+permalink = true
+[project.markdown_extensions.pymdownx.betterem]
+[project.markdown_extensions.pymdownx.caret]
+[project.markdown_extensions.pymdownx.details]
+[project.markdown_extensions.pymdownx.highlight]
+anchor_linenums     = true
+line_spans          = "__span"
+pygments_lang_class = true
+[project.markdown_extensions.pymdownx.inlinehilite]
+[project.markdown_extensions.pymdownx.keys]
+[project.markdown_extensions.pymdownx.magiclink]
+[project.markdown_extensions.pymdownx.mark]
+[project.markdown_extensions.pymdownx.smartsymbols]
+[project.markdown_extensions.pymdownx.superfences]
+[project.markdown_extensions.pymdownx.tilde]
+[project.markdown_extensions.zensical.extensions.macros]
+module_name = "docs_hooks"
+
+# Strip MyST % comment lines before the macros preprocessor runs (priority 40
+# vs 35), so Jinja2 syntax in comment lines is never rendered.
+[project.markdown_extensions.md_comments]
+
+# Image zoom via lightbox overlay (bundled zensical extension, no new
+# dependency): content images (screenshots, diagrams) become click-to-zoom.
+# The decorative {.logo} section thumbnails are excluded via skip_classes
+# (off-glb is a built-in skip); alt text doubles as the lightbox caption.
+# flyingcircus.css caps the inline previews at 24em, so the lightbox (which
+# never upscales) always opens larger AND sharp (user decision 2026-08-20).
+# The runtime itself is vendored under _static/vendor/ (see extra_css and
+# extra_javascript) -- the theme bundle's unpkg.com lazy-load stays dormant.
+[project.markdown_extensions.zensical.extensions.glightbox]
+auto_caption = true
+skip_classes = ["logo"]
+
+# Zensical validates links of earlier-alphabetical nav groups before
+# registering later ones (alphabetical ordering bug), producing false-positive
+# "page does not exist" warnings for cross-section links whose HTML output is
+# correct. Disable the check until upstream fixes the ordering issue.
+[project.validation]
+invalid_links = false

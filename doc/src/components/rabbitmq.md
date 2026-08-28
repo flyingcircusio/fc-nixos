@@ -1,0 +1,96 @@
+# RabbitMQ { #nixos-rabbitmq }
+
+A managed instance of the [RabbitMQ](http://rabbitmq.com) message broker in the latest version provided by NixOS which is 4.2 at the moment.
+
+## Configuration
+
+The server listens for AMQP connections on the first IP of the *srv* interface on port 5672.
+
+Additional configuration using the Erlang syntax can be placed in
+`/etc/local/rabbitmq/rabbitmq.config`.
+
+We remove the guest user for security reasons.
+
+## Interaction
+
+Service users can access the rabbitmq account with `sudo -iu rabbitmq`
+to perform administrative tasks with `rabbitmqctl`.
+
+Alternatively, [`rabbitmqadmin-ng`](https://www.rabbitmq.com/docs/management-cli) may be used
+to interact with the HTTP API. It is installed by default with the `rabbitmq` role.
+
+For this to work, a `~/.rabbitmqadmin.conf` is required with a configuration like this:
+
+```toml
+[default]
+hostname = "localhost"
+port = 15672
+username = "myusername"
+password = "mypassword"
+vhost = '/'
+```
+
+For this, you need a user `myusername` in RabbitMQ with the tags
+`administrator` & `management`. Such a user can be created like this:
+
+```
+rabbitmqctl add_user myusername mypassword
+rabbitmqctl set_user_tags myusername management administrator
+```
+
+## Monitoring
+
+The default monitoring setup checks that the RabbitMQ server is healthy and responding to AMQP connections.
+
+## Feature Flags and Upgrading
+
+RabbitMQ 3.8 introduced [Feature Flags](https://www.rabbitmq.com/feature-flags.html)
+to allow rolling upgrades of clusters. Newer versions can require certain
+feature flags to be enabled before upgrading or they will refuse to start.
+There is a Sensu check which fails when there are disabled feature flags.
+
+After upgrading a cluster, all stable feature flags need to be enabled.
+This is done automatically in resource groups where only one node has the `rabbitmq` role.
+
+For larger clusters, enable them manually by running:
+```shell
+sudo -u rabbitmq rabbitmqctl enable_feature_flag all
+```
+## Upgrading from NixOS 20.09 while keeping RabbitMQ 3.6.5
+
+To be able to upgrade NixOS 20.09 machines using the `rabbitmq36_5` role,
+we provide a way to keep the unchanged rabbitmq service running after the system
+upgrade. This conserves the specific rabbitmq config for the machine and
+cannot be used on new 25.05 machines.
+
+The upgrade process starts with generating Nix config on the running machine.
+Put the generated config in `/etc/local/nixos/rabbitmq365-frozen.nix`.
+
+```shell
+#!/usr/bin/env sh
+service=$(realpath /etc/systemd/system/rabbitmq.service)
+storePath=${service%%/rabbitmq.service}
+cat <<EOF
+# Generated config to freeze the existing rabbitmq unit file and all dependencies
+# to keep it running after an upgrade to 25.05.
+{ lib, ... }:
+{
+  # This no-op option declaration is needed for building the 20.09 system.
+  options.flyingcircus.services.rabbitmq365Frozen.service = lib.mkOption {};
+
+  # On 20.09, this setting changes nothing. It's only effective on 25.05.
+  config.flyingcircus.services.rabbitmq365Frozen.service =
+    builtins.storePath $storePath;
+}
+EOF
+```
+
+After that, change the VM environment to a 25.05 edition, keep the
+`rabbitmq36_5` role enabled and rebuild. The `rabbitmq.service` will stay
+active during the upgrade.
+
+Changes to RabbitMQ's configuration via NixOS options or
+`/etc/local/rabbitmq`. are not possible after the upgrade.
+
+
+% vim: set spell spelllang=en:

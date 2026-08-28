@@ -1,0 +1,8 @@
+{
+  "converter": "cc4a90b89735c34fdb9c1766795a1eb7bd48ae64f594588e97c44b92dca0e2be",
+  "targets": {
+    "fc-25.05-production": "3a1a8f2fe7de1367b0aeaf1b4f906ca2317b2d09",
+    "fc-25.11-production": "5da291b160aa84fa6ce566f18040f692dbbd4028",
+    "fc-26.05-production": "c542bf44f813a7339f5c0839dffb0822ed1118a6"
+  }
+}

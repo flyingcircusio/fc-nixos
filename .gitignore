@@ -36,3 +36,9 @@ pyenv
 **/batou/**/hostmap.json
 **/batou/ssh_config*
 **/batou/insecure-private.key
+
+doc/_build
+doc/src-de
+doc/.appenv
+doc/.cache
+

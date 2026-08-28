@@ -1,0 +1,114 @@
+/*
+ * Styles for the client-side platform version switcher
+ * (_static/version-switcher.js) and its missing-page fallback notice
+ * (_static/version-switcher-fallback.js).
+ *
+ * Colors and backgrounds come from the zensical theme's --md-* design
+ * tokens so the flyout follows the site palette (including the custom
+ * primary/accent and dark mode) without extra rules.
+ */
+
+/* --- flyout (top of the secondary sidebar, primary fallback) -------- */
+
+/* The summary box stays IN flow; the OPEN list is taken OUT of flow as
+ * an overlay below it (the pattern of the theme's own language
+ * dropdown, .md-select__inner): opening the flyout must NOT push the
+ * TOC or the navigation tree below down.
+ *
+ * Edge, accepted: the sidebars scroll inside .md-sidebar__scrollwrap
+ * (overflow-y:auto), which clips absolutely positioned descendants --
+ * that only bites if the reader scrolled the sidebar so far that the
+ * summary sits at the visible bottom edge; the flyout mounts at the
+ * sidebar TOP, so this needs a TOC taller than the viewport AND a
+ * scrolled-down reader. */
+.version-switcher {
+  box-sizing: border-box;
+  position: relative; /* containing block for the open list */
+  margin: 0.5rem 0.75rem;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 4px;
+  background: var(--md-default-bg-color);
+}
+
+.version-switcher summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  color: var(--md-default-fg-color);
+  font-weight: 500;
+  cursor: pointer;
+  list-style: none;
+}
+
+/* Replace the native disclosure triangle with a text chevron so it matches
+ * the theme's navigation arrows. */
+.version-switcher summary::-webkit-details-marker {
+  display: none;
+}
+
+.version-switcher summary::after {
+  content: "▾";
+  color: var(--md-default-fg-color--light);
+  font-size: 0.8em;
+}
+
+.version-switcher[open] summary::after {
+  content: "▴";
+}
+
+.version-switcher ul {
+  margin: 0;
+  padding: 0.25rem 0 0.35rem;
+  list-style-type: none; /* keep the manual's square markers out */
+}
+
+/* The overlay: absolute under the summary (top overlaps the flyout
+ * box's bottom border so list and summary read as one connected
+ * dropdown), opaque background so the TOC beneath does not shimmer
+ * through, theme shadow, capped + scrollable like .md-select__inner.
+ * z-index 5 tops the theme's z-index scale (sidebars, drawer). */
+.version-switcher[open] ul {
+  position: absolute;
+  top: calc(100% - 1px);
+  left: 0;
+  right: 0;
+  z-index: 5;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0 0 0.1rem 0.1rem;
+  background: var(--md-default-bg-color);
+  box-shadow: var(--md-shadow-z2);
+  max-height: min(75vh, 28rem);
+  overflow-y: auto;
+}
+
+.version-switcher li {
+  margin: 0;
+}
+
+.version-switcher a {
+  display: block;
+  padding: 0.3rem 0.75rem;
+  color: var(--md-default-fg-color);
+  text-decoration: none;
+}
+
+.version-switcher a:hover,
+.version-switcher a:focus-visible {
+  background: var(--md-accent-fg-color--transparent);
+}
+
+.version-switcher a[aria-current="true"] {
+  color: var(--md-typeset-a-color);
+  font-weight: 600;
+}
+
+/* --- missing-page fallback notice (version index pages) ------------ */
+
+/* The notice reuses the theme's admonition styles; only spacing is
+ * adjusted so it sits between the archived-version banner and the page
+ * title. */
+.version-switcher-notice {
+  margin-bottom: 1rem;
+}
