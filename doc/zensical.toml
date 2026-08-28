@@ -47,10 +47,7 @@ extra_css    = [
 ]
 # Load order matters: the data file provides window.PLATFORM_VERSIONS,
 # the URL module (window.VersionSwitcherUrls) must exist before
-# version-switcher.js consumes it, and the language rule
-# (window.LanguageSwitcherUrls) before language-switcher.js rewrites the
-# header dropdown hrefs (version-prefix-preserving: page.url is baked
-# WITHOUT the version prefix this tree is served under). The vendored
+# version-switcher.js consumes it. The vendored
 # glightbox runtime + shim come first: the runtime defines
 # window.GLightbox (so the theme bundle never lazy-loads it from
 # unpkg.com), the shim rewrites the bundle's unconditional unpkg
@@ -63,8 +60,6 @@ extra_javascript = [
     "_static/version-switcher-urls.js",
     "_static/version-switcher.js",
     "_static/version-switcher-fallback.js",
-    "_static/language-switcher-urls.js",
-    "_static/language-switcher.js",
 ]
 
 nav = [
@@ -430,22 +425,6 @@ accent      = "custom"
 toggle.icon = "lucide/moon"
 toggle.name = "Switch to light mode"
 
-# Language switcher targets as served by deploy/docs.nix: the English manual
-# at / (URL stability -- the root keeps its EN content), the German manual
-# under /de/. These entries are the language ROOTS -- static config cannot
-# express per-page targets. The local theme/partials/alternate.html override
-# appends the page's root-relative URL at render time, so the header dropdown
-# links the SAME PAGE in the other language; the roots remain as fallback for
-# the homepage and page-less contexts (both builds render identical page URLs,
-# pinned by tests/test_alternate_links.py). KNOWN LIMITATION: the head
-# <link rel="alternate" hreflang> tags (base.html) still point at the two
-# roots -- SEO-relevant only, no functional impact.
-[project.extra]
-alternate = [
-    { name = "English", link = "/", lang = "en" },
-    { name = "Deutsch", link = "/de/", lang = "de" },
-]
-
 [project.markdown_extensions.abbr]
 [project.markdown_extensions.admonition]
 [project.markdown_extensions.attr_list]
@@ -486,10 +465,3 @@ module_name = "docs_hooks"
 [project.markdown_extensions.zensical.extensions.glightbox]
 auto_caption = true
 skip_classes = ["logo"]
-
-# Zensical validates links of earlier-alphabetical nav groups before
-# registering later ones (alphabetical ordering bug), producing false-positive
-# "page does not exist" warnings for cross-section links whose HTML output is
-# correct. Disable the check until upstream fixes the ordering issue.
-[project.validation]
-invalid_links = false
