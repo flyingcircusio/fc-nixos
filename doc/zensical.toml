@@ -36,10 +36,10 @@
 #                                   navigation.expand feature is NOT used)
 [project]
 site_name    = "Flying Circus Platform"
-site_url     = "https://flyingcircus.io/doc"
+site_url     = "https://docs.flyingcircus.io"
 copyright    = "Flying Circus Internet Operations GmbH"
 docs_dir     = "src"
-site_dir     = "_build/en"
+site_dir     = "_build"
 extra_css    = [
     "_static/flyingcircus.css",
     "_static/version-switcher.css",

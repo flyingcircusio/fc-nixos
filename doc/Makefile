@@ -1,15 +1,9 @@
-.PHONY: all html html-en html-de clean
+.PHONY: all html clean
 
 all: html
 
-html: html-en html-de
-
-html-en:
+html:
 	./zensical build
 
-html-de:
-	./appenv python scripts/derive_src_de.py
-	./zensical build -f zensical-de.toml
-
 clean:
-	rm -rf _build src-de
+	rm -rf _build .cache
