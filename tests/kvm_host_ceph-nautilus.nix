@@ -1,19 +1,24 @@
 import ./make-test-python.nix (
   {
+    lib,
     testlib,
     useCheckout ? false,
+    useFlakefinder ? false,
     testOpts ? "",
-    #testOpts ? "--flake-finder --flake-runs=10 -x --no-cov",
     # examples to specify tests
     # "-k mytest"
     # "--flake-finder --flake-runs=500 -x --no-cov"
-    # "--show-setup"  # shows which fixtures have been set up / torn down
-    clientCephRelease ? "nautilus",
-    serverCephRelease ? "nautilus",
+    # "--setup-show"  # shows which fixtures have been set up / torn down
+    clientCephRelease ? "pacific",
+    serverCephRelease ? "pacific",
     ...
   }:
   with testlib;
   let
+    flakeTestOps = "--flake-finder --flake-runs=9 -x --no-cov -k test_crashed_vm_clean_restart";
+    # use some default test opes when running with flake finder
+    testOpsToUse = if useFlakefinder && testOps == "" then flakeTestOps else testOpts;
+    testTimeout = if useFlakefinder then 25 * 60 * 60 else 40 * 60;
     getIPForVLAN = vlan: id: "192.168.${toString vlan}.${toString (5 + id)}";
     getIP6ForVLAN = vlan: id: "fd00:1234:000${toString vlan}::${toString (5 + id)}";
 
@@ -64,9 +69,18 @@ import ./make-test-python.nix (
         flyingcircus.static.mtus.stb = 1500;
 
         # Override some fc-qemu.conf values to match the values expected by tests
-        flyingcircus.roles.kvm_host.settings = {
-          qemu.binary-generation = lib.mkForce 2;
-        };
+
+        flyingcircus.roles.kvm_host.settings =
+          let
+            deploymentOverride = "${testPackage.testdata}/deployment-settings-overrides.nix";
+          in
+          if builtins.pathExists deploymentOverride then
+            import deploymentOverride { inherit lib; }
+          else
+            # TODO: clean up when removing Ceph Nautilus support
+            {
+              qemu.binary-generation = lib.mkForce 2;
+            };
 
         systemd.timers.fc-ceph-load-vm-images.enable = lib.mkForce false;
         systemd.timers.fc-ceph-mon-update-client-keys.enable = lib.mkForce false;
@@ -374,6 +388,7 @@ import ./make-test-python.nix (
   in
   {
     name = "kvm";
+    globalTimeout = testTimeout;
     nodes = {
       host1 = makeHostConfig { id = 1; };
       host2 = makeHostConfig { id = 2; };
@@ -437,7 +452,7 @@ import ./make-test-python.nix (
         host1.wait_for_unit("nginx", timeout=10)
 
         with subtest("Run tests"):
-          host1.succeed("run-tests ${testOpts}", timeout=30*60)
+          host1.succeed("run-tests ${testOpsToUse}", timeout=${toString testTimeout})
 
         # XXX the following tests should be migrated to fc.qemu at some point
         show(host1, "rbd rm rbd/.fc-qemu.maintenance || true")
@@ -491,8 +506,10 @@ import ./make-test-python.nix (
           result = show(host1, "fc-qemu-scrub")
           assert "I simplevm              running-ensure                 generation=0" in result, result
 
-        host1.copy_from_vm('/tmp/coverage', './')
-        host1.copy_from_vm('/tmp/fc.qemu-report.xml', './')
+        ${lib.optionalString (!useFlakefinder) ''
+          host1.copy_from_vm('/tmp/coverage', './')
+          host1.copy_from_vm('/tmp/fc.qemu-report.xml', './')
+        ''}
 
       '';
   }
