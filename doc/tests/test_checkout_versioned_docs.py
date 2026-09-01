@@ -6,6 +6,10 @@ repository with bookmarks at two changesets). Pinned behavior:
 
 - ``[current]`` is never resolved and never placed -- the local tree
   IS the current version, even if its bookmark does not exist;
+- prerelease revisions are exported from the WHOLE ``doc/src/**``;
+  sunsetting revisions ONLY from their branch's ``doc/src/<ver>/**``
+  (the one-time sunset move commit) -- a missing namespaced tree fails
+  loudly with the remediation and NEVER falls back to the whole tree;
 - missing bookmarks fail loudly (exit 1, ``pull`` hint on stderr) and
   place nothing;
 - sunsetting pages gain ``search: exclude`` frontmatter plus a warning
@@ -19,6 +23,7 @@ repository with bookmarks at two changesets). Pinned behavior:
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -63,8 +68,11 @@ def project(tmp_path: Path) -> tuple[Path, Path, Path]:
     """(repo, doc-src-dir, versions-file).
 
     repo history:
-      r1 -- fc-25.11-production (sunsetting source): postgresql v1, only-old
-      r2 -- fc-26.11-dev (prerelease source): postgresql v2, users added
+      r1 -- pre-move legacy state: doc/src/** (postgresql v1, only-old)
+      r2 -- fc-25.11-production (sunsetting source): sunset move
+            commit, tree lives at doc/src/25.11/** only
+      r3 -- fc-26.11-dev (prerelease source): fresh doc/src/** with
+            postgresql v2 and platform/users
 
     doc/ lives OUTSIDE the repo: its src/ is the local (=current 26.05)
     tree with postgresql + redis + index. fc-26.05-production does not
@@ -81,17 +89,31 @@ def project(tmp_path: Path) -> tuple[Path, Path, Path]:
     put(src, "components/postgresql.md", "# postgresql v1\n")
     put(src, "only-old.md")
     hg(repo, "addremove")
-    hg(repo, "commit", "-m", "r1")
+    hg(repo, "commit", "-m", "r1: legacy tree at doc/src/**")
 
+    # Sunset move commit: filesystem moves + addremove (rename
+    # detection). Explicit -r for the bookmarks: `hg commit` advances
+    # the ACTIVE bookmark, so both are pinned after the fact.
+    legacy = src / "25.11"
+    legacy.mkdir()
+    (legacy / "components").mkdir()
+    (src / "index.md").rename(legacy / "index.md")
+    (src / "only-old.md").rename(legacy / "only-old.md")
+    (src / "components" / "postgresql.md").rename(
+        legacy / "components" / "postgresql.md"
+    )
+    hg(repo, "addremove")
+    hg(repo, "commit", "-m", "r2: sunset move doc/src -> doc/src/25.11")
+
+    # Dev branch replaces the namespaced tree with its own doc/src/**.
+    shutil.rmtree(legacy)
+    put(src, "index.md")
     put(src, "components/postgresql.md", "# postgresql v2\n")
     put(src, "platform/users.md")
     hg(repo, "addremove")
-    hg(repo, "commit", "-m", "r2")
-    # Explicit -r: `hg commit` advances the ACTIVE bookmark, so creating
-    # fc-25.11-production right after r1 would drag it onto r2 with the
-    # next commit. Pinning both after the fact is deterministic.
-    hg(repo, "bookmark", "-r", "0", "fc-25.11-production")
-    hg(repo, "bookmark", "-r", "1", "fc-26.11-dev")
+    hg(repo, "commit", "-m", "r3: dev tree")
+    hg(repo, "bookmark", "-r", "1", "fc-25.11-production")
+    hg(repo, "bookmark", "-r", "2", "fc-26.11-dev")
 
     doc = tmp_path / "doc"
     doc_src = doc / "src"
@@ -269,3 +291,25 @@ def test_module_invocation_via_python_m(
     )
     assert result.returncode == 0, result.stderr
     assert (doc_src / "26.11").is_dir()
+
+
+def test_sunsetting_without_versioned_dir_fails_loudly(
+    project: tuple[Path, Path, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """No doc/src/25.11/ in the rev: exit 1, remediation, NO fallback.
+
+    The pre-move changeset (r1) carries only doc/src/** -- pointing the
+    sunsetting entry at it must fail loudly instead of silently placing
+    the whole tree.
+    """
+    repo, doc_src, versions = project
+    hg(repo, "bookmark", "-r", "0", "fc-25.11-pre-move")
+    versions.write_text(
+        TOML.replace("fc-25.11-production", "fc-25.11-pre-move")
+    )
+
+    assert run(project) == 1
+    err = capsys.readouterr().err
+    assert "doc/src/25.11" in err
+    assert "sunset" in err.lower()
+    assert not (doc_src / "25.11").exists()

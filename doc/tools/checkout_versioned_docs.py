@@ -4,12 +4,18 @@ The counterpart of ``tools.gen_platform_versions.py``: for every
 ``[[prerelease]]`` and ``[[sunsetting]]`` entry in
 ``platform-versions.toml`` this tool resolves ``rev`` -- an hg bookmark
 -- STRICTLY locally (``hg log -r <rev>``, no network, no pull) and
-exports that revision's ``doc/src`` subtree via ``hg archive -I`` into
-``src/<ver>/``. ``[current]`` is never checked out: the local tree IS
-the current version.
+exports that revision's docs into ``src/<ver>/``. ``[current]`` is
+never checked out: the local tree IS the current version.
 
-Snapshots are dumb, content-agnostic trees: whatever the revision's
-``doc/src`` contains gets placed as-is. The only processing is for
+What gets exported depends on the status: prerelease revisions export
+the WHOLE ``doc/src/**``; sunsetting revisions ONLY their branch's
+namespaced ``doc/src/<ver>/**`` (the one-time sunset move commit). A
+sunsetting revision without that namespaced tree fails loudly with the
+remediation -- it NEVER falls back to the whole tree, which would
+duplicate the current manual under a versioned URL.
+
+Snapshots are dumb, content-agnostic trees: whatever the exported
+subtree contains gets placed as-is. The only processing is for
 ``sunsetting`` versions, whose pages receive ``search: exclude``
 frontmatter (keeping them out of the search index) and a warning
 banner linking the current counterpart when it exists.
@@ -46,8 +52,15 @@ log = structlog.get_logger()
 # The hg repository that carries the version bookmarks: doc/'s parent.
 REPO_ROOT = DOC_ROOT.parent
 
-# Only doc/src of a revision becomes a snapshot.
+# Only doc/src of a revision becomes a snapshot: the whole tree for a
+# prerelease, just the namespaced subtree for a sunsetting version.
 ARCHIVE_INCLUDE = "doc/src/**"
+
+
+def namespaced_include(ver: str) -> str:
+    """Archive include pattern for a sunsetting version's subtree."""
+    return f"doc/src/{ver}/**"
+
 
 # Manifest lives (hidden) at the src/ root, beside the snapshot dirs.
 MANIFEST_NAME = ".checkout-manifest.json"
@@ -100,13 +113,54 @@ def write_manifest(path: Path, manifest: dict) -> None:
     path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
 
 
+def ensure_sunsetting_tree(repo: Path, entry: VersionEntry, node: str) -> None:
+    """Fail loudly when the revision lacks ``doc/src/<ver>/``.
+
+    A sunsetting ``rev`` must point at the sunset move commit that
+    namespaced ``doc/src`` into ``doc/src/<ver>/``. A revision without
+    that tree (e.g. a pre-move changeset carrying the whole ``doc/src``)
+    must NEVER fall back to it -- the snapshot would duplicate the
+    current manual under a versioned URL. ``hg files`` with an explicit
+    ``path:`` kind asks hg directly whether the tree exists at *node*;
+    empty output means it does not.
+    """
+    proc = subprocess.run(
+        ["hg", "files", "-r", node, f"path:doc/src/{entry.ver}"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if proc.returncode != 0 or not proc.stdout.strip():
+        msg = (
+            f"sunsetting revision {node[:12]} for ver {entry.ver} has no "
+            f"doc/src/{entry.ver}/ tree -- point rev at the sunset move "
+            f"commit that namespaced doc/src into doc/src/{entry.ver}/; "
+            f"pre-move revisions carry the whole doc/src tree and are "
+            f"never a fallback"
+        )
+        raise CheckoutError(msg)
+
+
 def checkout_version(
     repo: Path, src_root: Path, entry: VersionEntry, node: str
 ) -> Path:
-    """Export ``node``'s doc/src as ``src_root/<ver>/`` (replacing any old tree)."""
+    """Export ``node``'s docs as ``src_root/<ver>/`` (replacing any old tree).
+
+    Prerelease revisions export the WHOLE ``doc/src/**``; sunsetting
+    revisions only their branch's namespaced ``doc/src/<ver>/**`` (see
+    :func:`ensure_sunsetting_tree`).
+    """
+    if entry.status == "sunsetting":
+        ensure_sunsetting_tree(repo, entry, node)
+        include = namespaced_include(entry.ver)
+        exported_subtree = Path("doc") / "src" / entry.ver
+    else:
+        include = ARCHIVE_INCLUDE
+        exported_subtree = Path("doc") / "src"
     with tempfile.TemporaryDirectory() as tmp:
         proc = subprocess.run(
-            ["hg", "archive", "-r", node, "-I", ARCHIVE_INCLUDE, tmp],
+            ["hg", "archive", "-r", node, "-I", include, tmp],
             cwd=repo,
             capture_output=True,
             text=True,
@@ -115,7 +169,7 @@ def checkout_version(
         if proc.returncode != 0:
             msg = f"hg archive failed for {entry.ver} ({node[:12]}): {proc.stderr.strip()}"
             raise CheckoutError(msg)
-        exported = Path(tmp) / "doc" / "src"
+        exported = Path(tmp) / exported_subtree
         if not exported.is_dir():
             msg = f"revision {node[:12]} ({entry.ver}) has no doc/src -- nothing to place"
             raise CheckoutError(msg)
