@@ -34,6 +34,7 @@ site_url     = "https://docs.flyingcircus.io"
 copyright    = "Flying Circus Internet Operations GmbH"
 docs_dir     = "src"
 site_dir     = "_build"
+use_directory_urls = false
 extra_css    = [
     "_static/flyingcircus.css",
     "_static/version-switcher.css",

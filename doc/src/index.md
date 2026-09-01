@@ -2,7 +2,7 @@
 global_sync_id: "v2"
 ---
 
-# Flying Circus Opera’s Manual
+# Flying Circus Operator’s Manual
 
 **Welcome to the Flying Circus documentation.** This manual covers platform architecture, application deployment guides, and reference documentation for all managed roles and infrastructure services.
 
