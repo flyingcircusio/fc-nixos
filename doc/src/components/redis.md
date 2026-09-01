@@ -37,7 +37,7 @@ The following NixOS module adds some modules to be loaded by Redis:
 }
 ```
 
-See [nixos-custom-modules](../platform/fc-26.05-production/local.md#nixos-custom-modules) for general information about writing custom NixOS
+See [nixos-custom-modules](../platform/local.md#nixos-custom-modules) for general information about writing custom NixOS
 modules in `/etc/local/nixos`.
 
 There are also some options under `flyingcircus.services.redis`, namely
@@ -77,7 +77,7 @@ system.
 ```
 
 For further information on how to activate changes on our NixOS-environment,
-please consult [nixos-local](../platform/fc-26.05-production/local.md#nixos-local).
+please consult [nixos-local](../platform/local.md#nixos-local).
 
 ## Password
 

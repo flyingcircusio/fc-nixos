@@ -541,7 +541,7 @@ backy_schedule
 
 : *default:* `default`
 
-  The backy schedule defines how often the VM is backed up and how long the backups are retained. See <project:../../infrastructure/backup.md> for possible values.
+  The backy schedule defines how often the VM is backed up and how long the backups are retained. See [the backup documentation](../../infrastructure/backup.md) for possible values.
 
 machine
 

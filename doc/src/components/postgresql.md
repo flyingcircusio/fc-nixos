@@ -64,7 +64,7 @@ Booleans in Nix (true/false) are converted to on/off in the PostgreSQL config.
 
 Run `sudo fc-manage switch` to activate the changes (**restarts PostgreSQL!**).
 
-See [nixos-custom-modules](../platform/fc-26.05-production/local.md#nixos-custom-modules) for general information about writing NixOS
+See [nixos-custom-modules](../platform/local.md#nixos-custom-modules) for general information about writing NixOS
 modules.
 
 ## Interaction

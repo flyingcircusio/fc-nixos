@@ -32,7 +32,7 @@ Before activating the `matomo` role, add at least the following custom config:
   };
 }
 ```
-See [nixos-custom-modules](../platform/fc-26.05-production/local.md#nixos-custom-modules) for general information about writing custom NixOS
+See [nixos-custom-modules](../platform/local.md#nixos-custom-modules) for general information about writing custom NixOS
 modules in `/etc/local/nixos`.
 
 ### Create the database

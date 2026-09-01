@@ -45,7 +45,7 @@ and how you are used to configure, start, stop and maintain these packages.
   like `sudo systemctl restart nginx` to control services.
   However, remember that invoking `sudo fc-manage switch` is
   necessary to put configuration changes into effect. A simple restart is not
-  sufficient. For further information, see [nixos-local](../platform/fc-26.05-production/local.md#nixos-local).
+  sufficient. For further information, see [nixos-local](../platform/local.md#nixos-local).
 
 ## HAProxy
 
@@ -127,7 +127,7 @@ Support for structured JSON config was removed in platform version 24.11.
 
 Define Nginx virtual hosts with the NixOS option `services.nginx.virtualHosts`.
 
-See [nixos-custom-modules](../platform/fc-26.05-production/local.md#nixos-custom-modules) for general information about writing custom NixOS
+See [nixos-custom-modules](../platform/local.md#nixos-custom-modules) for general information about writing custom NixOS
 modules in `/etc/local/nixos`.
 
 The following NixOS module defines two virtual hosts listening on all frontend

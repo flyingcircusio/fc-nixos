@@ -80,19 +80,19 @@ For additional information we recommend you check out the official Alloy docs: [
 
 A very simple way to start exploring your VM's logs is going to your Grafana instance's Web UI, logging in and selecting `Explore` in the sidebar
 
-![The Explore tab in the Grafana Web UI](../platform/fc-26.05-production/images/statshost/loki-explore.png)
+![The Explore tab in the Grafana Web UI](../images/statshost/loki-explore.png)
 
 From there you can then select the Loki data source:
 
-![Selecting the Loki data source](../platform/fc-26.05-production/images/statshost/loki-datasource.png)
+![Selecting the Loki data source](../images/statshost/loki-datasource.png)
 
 and run some queries against it:
 
-![running a simple query](../platform/fc-26.05-production/images/statshost/loki-simple-query.png)
+![running a simple query](../images/statshost/loki-simple-query.png)
 
 The results will be displayed below
 
-![results of the simple query](../platform/fc-26.05-production/images/statshost/loki-simple-query-results.png)
+![results of the simple query](../images/statshost/loki-simple-query-results.png)
 
 As you can see, the FC Agent runs regularly every 10 Minutes without any issues.
 
@@ -101,9 +101,9 @@ As you can see, the FC Agent runs regularly every 10 Minutes without any issues.
 
 You can find a few demo dashboard in the `Feature Lab` dashboard folder
 
-![demo dashboards in the Feature Lab folder](../platform/fc-26.05-production/images/statshost/loki-demo-dashboards.png)
+![demo dashboards in the Feature Lab folder](../images/statshost/loki-demo-dashboards.png)
 
 For example, the `Basic Loki Logging` dashboard, which visualizes log lines by selected services on selected hosts visualising output from the `fc-agent`
 service on the VM `test01`:
 
-![the basic logging demo dashboard](../platform/fc-26.05-production/images/statshost/loki-basic-logging-dashboard.png)
+![the basic logging demo dashboard](../images/statshost/loki-basic-logging-dashboard.png)

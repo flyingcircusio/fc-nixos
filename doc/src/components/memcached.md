@@ -14,7 +14,7 @@ changed options into a JSON file and save it
 to `/etc/local/memcached/memcached.json`.
 
 For further information on how to activate changes on our NixOS-environment,
-please consult section [nixos-local](../platform/fc-26.05-production/local.md#nixos-local).
+please consult section [nixos-local](../platform/local.md#nixos-local).
 
 Supported options are:
 

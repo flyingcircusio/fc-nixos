@@ -2,7 +2,7 @@
 global_sync_id: "v1"
 ---
 
-![](../images/vorteile250.png){ .logo }
+![](../../images/vorteile250.png){ .logo }
 
 # Getting started { #firststeps }
 
@@ -51,7 +51,7 @@ provided us when establishing your account.
 
 !!! note
     We do not allow password-based SSH logins. For details, check our
-    [data protection plan](../security/data-protection.md#entry-control).
+    [data protection plan](../../security/data-protection.md#entry-control).
 
 Every virtual machine will have a DNS name that follows the pattern
 `<virtualmachine>.gocept.net`. For example, if your resource
@@ -71,7 +71,7 @@ $ scp my-file myuser@myapp00.gocept.net:
 
 !!! warning
     If you have problems connecting to the VM, check our section on
-    [connecting](../infrastructure/networking/connecting.md#connecting).
+    [connecting](../networking/connecting.md#connecting).
 
 ## Application Deployment { #application-deployment-intro }
 
@@ -94,10 +94,10 @@ s-myapp@myapp00 ~ $ # ... execute commands to install your application ...
 The advantage of running applications in a service user is that applications are
 not bound to any individuals, but run in a rather neutral context. Some
 features like work only for service users. Further information about our user
-account concept can be found in the [useraccounts](../platform/users/index.md#useraccounts) section.
+account concept can be found in the [useraccounts](../../platform/users/index.md#useraccounts) section.
 
 For a detailed application deployment walk-through, please ref to the
-[application-deployment](../platform/deployment/index.md#application-deployment) section.
+[application-deployment](../../platform/deployment/index.md#application-deployment) section.
 
 ## Anatomy of a Virtual Machine
 
@@ -138,7 +138,7 @@ public IPv4 addresses on ethsrv.
     of the server network only.
 
 Further information about our networking concept can be found in the
-[networking](../infrastructure/networking/index.md#networking) section.
+[networking](../networking/index.md#networking) section.
 
 ### Disks
 
@@ -192,7 +192,7 @@ The benefit of managed components are:
 - regular upgrades and configuration optimization
 
 For details on available software, have a look at
-the `current NixOS platform documentation <nixos-platform-index>`.
+the current NixOS platform documentation.
 
 You can see and change the managed components/roles for your VMs by visiting the
 [My Flying Circus](https://my.flyingcircus.io) and selecting

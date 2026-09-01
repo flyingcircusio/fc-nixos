@@ -288,7 +288,7 @@ Mail domain
 ### Role options
 
 All options can be set in `/etc/local/mail/config.json`
-or in [Nix config](../platform/fc-26.05-production/local.md#nixos-custom-modules) with the prefix *flyingcircus.roles.mailserver*.
+or in [Nix config](../platform/local.md#nixos-custom-modules) with the prefix *flyingcircus.roles.mailserver*.
 
 Frequently used options:
 

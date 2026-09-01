@@ -320,7 +320,7 @@ When upgrading nodes between different *major versions* of Slurm, this need to h
 Machines only running the `slurm-external-dependency` role can be updated independently.
 
 *Major versions* of slurm are denoted by the first two numbers of a version string, making 23.04.2 and 23.11.1 different major releases. \
-When running the default Slurm versions provided by our platform, such major upgrades only happen between major platform releases and are listed in the [upgrade notes](../platform/fc-26.05-production/upgrade.md#nixos-upgrade).
+When running the default Slurm versions provided by our platform, such major upgrades only happen between major platform releases and are listed in the [upgrade notes](../platform/upgrades-whats-new.md#nixos-upgrade).
 
 ## Configuration reference { #nixos-slurm-config-reference }
 

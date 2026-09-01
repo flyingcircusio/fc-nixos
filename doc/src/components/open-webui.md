@@ -14,7 +14,7 @@ Enabling the `open-webui` role automatically sets up Open WebUI available under 
 
 ## User Management
 
-User access is centrally managed via [Flying Circus users](../reference/users/index.md). By default, all members of the resource group are able to log in to the service.  \
+User access is centrally managed via [Flying Circus users](../platform/users/index.md). By default, all members of the resource group are able to log in to the service.  \
 To require the approval of an Open WebUI administrator, set `flyingcircus.roles.open-webui.usersNeedApproval = true;` via NixOS config. New users may then be approved by clicking their *pending* role badge in the administrator interface.
 
 User roles and groups have to be manually managed in the Open WebUI administrator settings. The first user successfully logging in after the initial setup of the role receives administrator privileges. Additional administrators can be authorised by that user in the Open WebUI administrator interface.

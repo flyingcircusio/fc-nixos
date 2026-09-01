@@ -35,7 +35,7 @@ Example:
 ```
 
 To activate the checks, run `sudo fc-manage switch`.
-For further information about local configuration, also see [nixos-local](../../platform-releases/fc-26.05-production/local.md#nixos-local).
+For further information about local configuration, also see [nixos-local](local.md#nixos-local).
 
 The following packages are available in the sensu check PATH:
 

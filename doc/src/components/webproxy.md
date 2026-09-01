@@ -20,7 +20,7 @@ and how you are used to configure, start, stop and maintain these packages.
   like `sudo systemctl restart vinyld` to control services.
   However, remember that invoking `sudo fc-manage switch` is
   necessary to put configuration changes into effect. A simple restart is not
-  sufficient. For further information, also see [nixos-local](../platform/fc-26.05-production/local.md#nixos-local).
+  sufficient. For further information, also see [nixos-local](../platform/local.md#nixos-local).
 
 ### Role configuration
 

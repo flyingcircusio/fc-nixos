@@ -8,7 +8,7 @@ The Flying Circus platform provides components which can be used to set up an en
 
 What you should know before starting:
 
-- The general ideas of the Flying Circus platform: [firststeps](../../getting-started/index.md#firststeps).
+- The general ideas of the Flying Circus platform: [firststeps](../../infrastructure/getting-started/index.md#firststeps).
 - The difference between human users and service users: [useraccounts](../users/index.md#useraccounts)
 - How to connect to VMs via SSH (or SFTP): [connecting](../../infrastructure/networking/connecting.md#connecting)
 

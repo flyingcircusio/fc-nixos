@@ -221,7 +221,7 @@ On the platform side, we have:
 
 Here's a diagram of the setup focusing on your application's traffic flow:
 
-![](../platform/fc-26.05-production/images/http_platform.png)
+![](../images/http_platform.png)
 
 The headless `myapp` service could be defined as
 
@@ -305,7 +305,7 @@ On the platform side, we have:
 
 Here's a diagram of the setup focusing on your application's traffic flow:
 
-![](../platform/fc-26.05-production/images/tcp_ingress.png)
+![](../images/tcp_ingress.png)
 
 To connect the ingress controller service with our webgateway, both for HTTP
 and HTTPS:
