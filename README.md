@@ -145,6 +145,30 @@ Run the whole test suite (may take a very long time):
     nix-build release -A tested
 
 
+Documentation
+-------------
+
+The platform documentation lives in `doc/src/` and is built with Zensical.
+No Nix environment is needed to work on it: the `doc/appenv` wrapper manages
+the Python environment via `uv`.
+
+Start the live-reloading preview at http://localhost:8000:
+
+    cd doc
+    ./appenv python -m zensical serve -f zensical.toml
+
+Or build the static HTML into `doc/_build/en/`:
+
+    ./appenv python -m zensical build -f zensical.toml
+
+The documentation is versioned: `doc/src/` always matches the OS code of the
+current branch; snapshots of other versions are placed under `doc/src/<ver>/`
+from local hg revisions, driven by `doc/platform-versions.toml`
+(see `doc/README.md`).
+
+See `doc/README.md` for details.
+
+
 Update Pinned Dependencies
 --------------------------
 
