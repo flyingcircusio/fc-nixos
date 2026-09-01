@@ -171,7 +171,10 @@ def checkout_version(
             raise CheckoutError(msg)
         exported = Path(tmp) / exported_subtree
         if not exported.is_dir():
-            msg = f"revision {node[:12]} ({entry.ver}) has no doc/src -- nothing to place"
+            msg = (
+                f"revision {node[:12]} ({entry.ver}) has no "
+                f"{exported_subtree.as_posix()} tree -- nothing to place"
+            )
             raise CheckoutError(msg)
         target = src_root / entry.ver
         if target.exists():

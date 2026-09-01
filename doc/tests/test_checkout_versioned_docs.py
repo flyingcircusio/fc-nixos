@@ -313,3 +313,26 @@ def test_sunsetting_without_versioned_dir_fails_loudly(
     assert "doc/src/25.11" in err
     assert "sunset" in err.lower()
     assert not (doc_src / "25.11").exists()
+
+
+def test_partial_move_excludes_stray_files(
+    project: tuple[Path, Path, Path],
+) -> None:
+    """Stray files outside doc/src/25.11/ at the sunset rev are ignored.
+
+    A partial (or sloppily managed) sunset move may leave tracked files
+    directly in doc/src/** -- the namespaced export must not pick them
+    up, and the placement must not degrade into a whole-tree export.
+    """
+    repo, doc_src, versions = project
+    hg(repo, "up", "-r", "1")  # back on the sunset move changeset
+    put(repo / "doc" / "src", "stray.md", "# stray, outside the namespace\n")
+    hg(repo, "addremove")
+    hg(repo, "commit", "-m", "partial move: stray file in doc/src/")
+    hg(repo, "bookmark", "-r", "3", "fc-25.11-partial")
+    versions.write_text(TOML.replace("fc-25.11-production", "fc-25.11-partial"))
+
+    assert run(project) == 0
+    assert (doc_src / "25.11" / "components" / "postgresql.md").is_file()
+    assert not (doc_src / "25.11" / "stray.md").exists()
+    assert not (doc_src / "25.11" / "25.11").exists()
