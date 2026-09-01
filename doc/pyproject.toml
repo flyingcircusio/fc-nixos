@@ -30,6 +30,9 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# make the tools/ package importable from tests (importlib import mode
+# prepends nothing to sys.path; tools/ is a doc/-root package)
+pythonpath = ["."]
 # importlib import mode: the tiered test tree (tests/, tests/conventions/,
 # tests/e2e/, tests/scaffolding/) carries no __init__.py packages, and
 # importlib keeps same-basename test files across tiers distinct without

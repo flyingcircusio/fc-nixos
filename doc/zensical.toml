@@ -18,26 +18,16 @@
 # mirror URLs: src/de/<path>.md serves at /de/<path>/; each page
 # cross-links its English twin; tests/test_de_pages.py pins ref
 # resolution, search exclusion, and nav exclusion).
-# All of them -- and every archived platform-releases/ page (adapted by
-# tools.fetch_platform_docs) -- carry `search: exclude: true` frontmatter so
-# they stay out of the search index (probed: search.json drops them).
+# All of them -- and every sunsetting snapshot page under src/<NN.NN>/
+# (placed and adapted by tools.checkout_versioned_docs) -- carry
+# `search: exclude: true` frontmatter so they stay out of the search
+# index (probed: search.json drops them).
 #
-# Two blocks between marker comments are GENERATED -- never edit by hand:
-#   # BEGIN/END changes-releases    tools.generate_release_notes rewrites
-#                                   this from src/changes/ (one group per
-#                                   year, index + r-pages, newest first)
-#   # BEGIN/END platform-versions   tools.fetch_platform_docs rewrites this
-#                                   from platform-versions.yaml (ONE wrapper
-#                                   group "Platform Releases (Versioned
-#                                   Docs)" holding every platform version,
-#                                   stable first, then archived in config
-#                                   order, labelled wip-style with the
-#                                   "Platform " prefix; the local theme/
-#                                   partials/nav-item.html override keeps
-#                                   the Changelog collapsible while
-#                                   navigation.sections makes the other
-#                                   top-level groups static -- the global
-#                                   navigation.expand feature is NOT used)
+# The nav is fully hand-maintained: the former generated nav blocks
+# (changes-releases from tools.generate_release_notes, platform-versions
+# from tools.fetch_platform_docs) died with those fetch-era tools.
+# Versioned docs are reachable via the client-side version switcher
+# (see _static/version-switcher*.js), not via nav groups.
 [project]
 site_name    = "Flying Circus Platform"
 site_url     = "https://docs.flyingcircus.io"

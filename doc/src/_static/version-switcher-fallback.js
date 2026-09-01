@@ -13,9 +13,9 @@
  * like everywhere in the switcher asset family.
  *
  * Inserted at the top of the page content (.md-content__inner), right
- * AFTER any archived-version banner so the banner stays the first content
- * element above the page title (the banner is prepended by the fetch
- * tool's _adapt_archived_page).
+ * AFTER any sunsetting banner so the banner stays the first content
+ * element above the page title (the banner is prepended by
+ * tools.checkout_versioned_docs' sunsetting processing).
  *
  * document$ (exposed by the theme bundle) re-runs init() on every instant
  * navigation; insertion is idempotent (an existing notice is left alone).
@@ -130,7 +130,7 @@
     if (!data || !Array.isArray(data.versions)) {
       console.warn(
         "version-switcher-fallback: window.PLATFORM_VERSIONS is missing -- " +
-          "run `make fetch` to regenerate _static/platform-versions.js"
+          "run `make gen-platform-versions` to regenerate _static/platform-versions.js"
       );
       return;
     }

@@ -62,7 +62,7 @@
     ) {
       console.warn(
         "version-switcher: window.PLATFORM_VERSIONS is missing or empty -- " +
-          "run `make fetch` to regenerate _static/platform-versions.js"
+          "run `make gen-platform-versions` to regenerate _static/platform-versions.js"
       );
       return null;
     }

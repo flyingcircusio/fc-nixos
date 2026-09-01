@@ -1,0 +1,12 @@
+[current]
+ver = "26.05"
+rev = "fc-26.05-production"
+
+[[prerelease]]
+ver = "26.11"
+rev = "fc-26.11-dev"
+
+[[sunsetting]]
+ver = "25.11"
+rev = "fc-25.11-production"
+
