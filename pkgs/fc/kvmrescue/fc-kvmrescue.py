@@ -15,42 +15,11 @@ import sys
 from socket import gethostname
 from typing import Any, reveal_type
 
-import rich
+from rich import print
+from rich.prompt import Confirm, Prompt
 
 # XXX: can we extract them somewhere from the platform?
 RBD_POOLS = ["rbd.hdd", "rbd.ssd"]
-
-
-def prompt_y_n_x(
-    msg: str, default: bool, extra_choices: list[tuple[str, str]] | None = None
-) -> bool | str:
-    extra_keys = {abbrev for abbrev, _ in extra_choices or []}
-    choice: bool | str = default
-    prompt = "[y]/n:" if default else "y/[n]:"
-    if extra_choices:
-        prompt += (
-            " (" + ", ".join(f"{k}={desc}" for k, desc in extra_choices) + ")"
-        )
-    print(msg, prompt, end=" ")
-    while True:
-        resp = input()
-        match resp:
-            case "n":
-                choice = False
-                break
-            case "y":
-                choice = True
-                break
-            case "":
-                choice = default
-                break
-            case key if key in extra_keys:
-                choice = key
-                break
-            case _:
-                print(f"Invalid input '{resp}', retry.")
-                continue
-    return choice
 
 
 class Ipmitool:
@@ -163,17 +132,20 @@ def collect_image_locks(kvmhostname: str, rbd: Rbd) -> list[str]:
     return host_locked_images
 
 
+def set_out_of_service(kvmhostname: str) -> None:
+    # Setting a node permanently out of service is not possible via directory API for now
+    print(
+        f" > Set the host out of service in the directory: https://directory.fcio.net/machine/list?search=name-{kvmhostname}"
+    )
+    print()
+    while not Confirm.ask(f"[purple]Is host {kvmhostname} set out-of-service?"):
+        pass
+
+
 def main(kvmhostname: str):
     # XXX: support multiple KVM servers?
     # - zu Beginn: hostname des toten hosts angeben
-    # - host via directory API out of service setzen
-    # FIXME: difference in behaviour: "Evacuate VMs" button in adminui also sets node out of service, but
-    # ring0 API `evacuate_vms` doesn't (probably because the kvm host usually calls this when already in maintenance)
-    # Setting a node permanently out of service is not possible via directory API for now
-    subprocess.run(["fc-directory", f"d.mark_node_service_status('{kvmhostname}', False, 60*60)"], check=True)  # fmt: skip
-    # alternative: provide a clickable link in terminal and ask the user to set host out of service in browser.
-    subprocess.run(["fc-directory", f"d.evacuate_vms('{kvmhostname}')"], check=True)  # fmt: skip
-    # TODO: we might want to evacuate only after successful unlocking, to have the consul trigger closer to the actual unlocking
+    set_out_of_service(kvmhostname)
 
     rbd = Rbd()
     host_locked_images = collect_image_locks(kvmhostname, rbd)
@@ -198,10 +170,10 @@ def main(kvmhostname: str):
         # we can force-unlock all the collected images
         safe_to_unlock = True
     else:
-        rich.print(
+        print(
             f"{kvmhostname} status is'{power_status}', please ensure it is not running any VMs before continuing."
         )
-        rich.print("Opening a SOL console for your interactive investigations:")
+        print("Opening a SOL console for your interactive investigations:")
         # XXX: provide option for `ipmitool shell`, e.g. if wanting to force-unlock
         with open("/dev/tty", "r+b", buffering=0) as tty:
             _ = subprocess.run(
@@ -228,20 +200,39 @@ def main(kvmhostname: str):
         _ = input(
             f"About to force-unlock all VMs of {kvmhostname}, ensure host is down! [Enter to confirm]"
         )
-
+    # Track EntityAddrs of lockers. We do not yet make use of them, but they might be useful when migrating to exclusive-lock PL-134255
+    locker_addresses = set[str]()
     for img in host_locked_images:
         # XXX: error handling: locks can be gone, images might have changed
         lockinfo = rbd.rbd_("lock", "ls", img)[0]
+        locker_address = lockinfo["address"]
+        locker_addresses.add(locker_address)
+
+        # By default, breaking a lock causes the address of the broken client
+        # to be osd-blocklisted. We do want that, but with a larger blocklist
+        # entry TTL, so adding that entry explicitly ahead of time.
+        # 24h should be plenty enough to handle a broken host, but short enough
+        # to not having to clear up the entry manually.
+        _ = subprocess.run(
+            ["ceph", "osd", "blocklist", "add", locker_address, f"{24*60*60}"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )  # fmt: skip
         _ = rbd.rbd_(
             "lock",
             "remove",
+            "--rbd_blocklist_on_break_lock=false",
             img,
             lockinfo["id"],
             lockinfo["locker"],
             use_json=False,
         )
+        # XXX: more than 1 lock: collect as a "something is weird" and alert operator afterwards
+        # XXX: id != kvmhostname: skip, collect as a "something is weird" and alert operator afterwards
 
-    # XXX: Is there a way we can speed up/ trigger the ensures at the individual hosts?
+    # - finally evacuate all VMs away
+    subprocess.run(["fc-directory", f"d.evacuate_vms('{kvmhostname}')"], check=True)  # fmt: skip
 
 
 if __name__ == "__main__":
