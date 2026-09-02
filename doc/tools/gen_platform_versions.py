@@ -2,11 +2,12 @@
 
 Two inputs, both on disk and strictly local:
 
-* ``platform-versions.toml`` -- the declared version set. ``[current]`` is
-  the LOCAL tree by definition: it builds at ``/`` and is never checked
-  out. ``[[prerelease]]`` and ``[[sunsetting]]`` name versions that
-  ``tools/checkout_versioned_docs.py`` places as full snapshots under
-  ``src/<ver>/`` (each builds at ``/<ver>/``).
+* ``platform-versions.toml`` -- the declared version set. The entry
+  whose ``rev`` is the repo's ACTIVE bookmark (:func:`match_active`)
+  is the LOCAL manual: it builds at ``/`` and is never checked out,
+  whatever its category. Every other entry -- including a non-matched
+  ``[current]`` -- is placed as a snapshot under ``src/<ver>/`` by
+  ``tools/checkout_versioned_docs.py`` (each builds at ``/<ver>/``).
 
 * the file trees -- the local ``src/`` tree plus every ``src/<ver>/``
   snapshot. A page is identified by its URL-shaped page-id
@@ -33,6 +34,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
 import tomllib
 from collections.abc import Sequence
@@ -46,6 +48,9 @@ log = structlog.get_logger()
 # doc/ root -- defaults resolve relative to the module, not the cwd, so
 # the tool works from any directory (the Makefile runs it from doc/).
 DOC_ROOT = Path(__file__).resolve().parents[1]
+
+# The hg repository that carries the version bookmarks: doc/'s parent.
+REPO_ROOT = DOC_ROOT.parent
 
 # Version format everywhere: two digits, dot, two digits (``26.05``).
 VERSION_RE = re.compile(r"\d{2}\.\d{2}")
@@ -67,11 +72,6 @@ class VersionEntry:
     ver: str
     rev: str
     status: str  # "current" | "prerelease" | "sunsetting"
-
-    @property
-    def index(self) -> str:
-        """URL prefix of the version -- also the per-page href prefix."""
-        return "/" if self.status == "current" else f"/{self.ver}/"
 
     @property
     def label(self) -> str:
@@ -141,6 +141,61 @@ def load_versions(path: Path) -> VersionSet:
     )
 
 
+class ActiveBookmarkError(RuntimeError):
+    """The repo's active bookmark cannot identify the local manual."""
+
+
+def active_bookmark(repo: Path) -> str:
+    """The repo's ACTIVE bookmark name (``''`` when none is active).
+
+    ``hg log -r . -T {activebookmark}`` reads exactly what ``hg su``
+    (summary) reports as active: the bookmark the working dir sits on
+    AND advances on commit. Updating to a bare rev deactivates it.
+    """
+    proc = subprocess.run(
+        ["hg", "log", "-r", ".", "-T", "{activebookmark}"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        msg = (
+            f"cannot read the active bookmark of {repo} ({proc.stderr.strip()})"
+            " -- is it an hg working directory?"
+        )
+        raise ActiveBookmarkError(msg)
+    return proc.stdout.strip()
+
+
+def match_active(versions: VersionSet, repo: Path) -> VersionEntry:
+    """The declared entry whose ``rev`` is the repo's ACTIVE bookmark.
+
+    That entry IS the local manual: it builds at ``/`` and is never
+    checked out, whatever its TOML category. No active bookmark, or one
+    unknown to the TOML, is an error -- there is NO fallback to any
+    category: guessing would silently build the wrong manual at ``/``.
+    """
+    bookmark = active_bookmark(repo)
+    if not bookmark:
+        msg = (
+            f"no active bookmark in {repo} -- the ACTIVE bookmark selects "
+            "the local manual: hg up <bookmark> to activate one (verify "
+            "with hg su); there is no fallback"
+        )
+        raise ActiveBookmarkError(msg)
+    for entry in versions.entries():
+        if entry.rev == bookmark:
+            return entry
+    known = ", ".join(entry.rev for entry in versions.entries())
+    msg = (
+        f"active bookmark {bookmark!r} matches no rev in "
+        f"platform-versions.toml (known revs: {known}) -- hg up one of "
+        "them or declare the rev"
+    )
+    raise ActiveBookmarkError(msg)
+
+
 def page_id(rel: Path) -> str:
     """URL-shaped page-id for a tree-relative ``*.md`` path.
 
@@ -172,20 +227,26 @@ def scan_page_ids(tree: Path, *, exclude_snapshots: bool = False) -> set[str]:
     return ids
 
 
-def build_payload(versions: VersionSet, src_root: Path) -> dict:
-    """Build the switcher payload from the TOML set and the file trees.
+def build_payload(
+    versions: VersionSet, matched: VersionEntry, src_root: Path
+) -> dict:
+    """Build the switcher payload with ``matched`` as the local manual.
 
-    Pure-local: reads ``src/`` and ``src/<ver>/`` only. Missing
-    snapshots of declared versions and orphan snapshot dirs of
-    undeclared versions are warned about, never fatal -- the payload is
-    still complete enough to build with (empty ``pages``), and
-    ``make checkout-versioned-docs`` is the fix for both.
+    ``matched`` (the entry whose rev is the ACTIVE bookmark, see
+    :func:`match_active`) builds at ``/``: the local ``src/`` tree IS
+    its inventory. Every OTHER declared entry -- including a
+    non-matched ``[current]`` -- is a snapshot at ``/<ver>/`` whose
+    inventory is scanned from ``src/<ver>/``. Missing snapshots of
+    declared versions and orphan snapshot dirs of undeclared versions
+    are warned about, never fatal -- the payload is still complete
+    enough to build with (empty ``pages``), and ``make
+    checkout-versioned-docs`` is the fix for both.
     """
     entries = versions.entries()
 
     inventories: dict[str, set[str] | None] = {}
     for entry in entries:
-        if entry.status == "current":
+        if entry.ver == matched.ver:
             inventories[entry.ver] = scan_page_ids(
                 src_root, exclude_snapshots=True
             )
@@ -227,19 +288,19 @@ def build_payload(versions: VersionSet, src_root: Path) -> dict:
     payload_versions = []
     for entry in entries:
         inventory = inventories[entry.ver] or set()
+        index = "/" if entry.ver == matched.ver else f"/{entry.ver}/"
         payload_versions.append(
             {
                 "ver": entry.ver,
                 "label": entry.label,
                 "status": entry.status,
-                "index": entry.index,
+                "index": index,
                 "pages": {
-                    page_id: entry.index
-                    for page_id in sorted(inventory & versioned)
+                    page_id: index for page_id in sorted(inventory & versioned)
                 },
             }
         )
-    return {"current": versions.current.ver, "versions": payload_versions}
+    return {"current": matched.ver, "versions": payload_versions}
 
 
 GENERATED_HEADER = (
@@ -282,7 +343,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     """CLI entry: ``python -m tools.gen_platform_versions``.
 
     Exit codes: ``0`` (payload written, or already up to date), ``1``
-    (unreadable src/), ``2`` (invalid platform-versions.toml).
+    (unreadable src/, or no/unknown active bookmark), ``2`` (invalid
+    platform-versions.toml).
     """
     _configure_logging()
     parser = argparse.ArgumentParser(
@@ -293,6 +355,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--versions", type=Path, default=DOC_ROOT / "platform-versions.toml"
     )
     parser.add_argument("--src", type=Path, default=DOC_ROOT / "src")
+    parser.add_argument("--repo", type=Path, default=REPO_ROOT)
     parser.add_argument(
         "--out",
         type=Path,
@@ -310,7 +373,23 @@ def main(argv: Sequence[str] | None = None) -> int:
         log.error("src-missing", src=str(args.src))
         return 1
 
-    payload = build_payload(versions, args.src)
+    try:
+        matched = match_active(versions, args.repo)
+    except ActiveBookmarkError as exc:
+        log.error(
+            "active-bookmark-unmatched",
+            repo=str(args.repo),
+            error=str(exc),
+        )
+        return 1
+    log.info(
+        "active-bookmark-matched",
+        ver=matched.ver,
+        rev=matched.rev,
+        status=matched.status,
+    )
+
+    payload = build_payload(versions, matched, args.src)
     rendered = render_js(payload)
     if args.out.exists() and args.out.read_text() == rendered:
         versioned = len({p for v in payload["versions"] for p in v["pages"]})

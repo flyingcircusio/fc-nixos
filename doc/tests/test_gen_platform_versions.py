@@ -11,6 +11,9 @@ trees into the committed switcher payload
   ``de/`` pages version exactly like any other page);
 - snapshot dirs never leak into the local inventory (``src/26.11/x.md``
   is never a ``26.11/x`` page of the current version);
+- the ACTIVE bookmark decides which entry is the local manual: it
+  builds at ``/`` (payload ``current``), every other entry -- including
+  a non-matched ``[current]`` -- becomes a snapshot at ``/<ver>/``;
 - missing snapshots of declared versions and orphan snapshot dirs of
   undeclared versions warn but never fail the run;
 - the rendered JS is deterministic and JSON-roundtrips into the exact
@@ -88,9 +91,12 @@ def doc_tree(tmp_path: Path) -> tuple[Path, Path]:
     return versions, src
 
 
-def payload_for(doc_tree: tuple[Path, Path]) -> dict:
+def payload_for(
+    doc_tree: tuple[Path, Path], matched: gpv.VersionEntry | None = None
+) -> dict:
     versions, src = doc_tree
-    return gpv.build_payload(gpv.load_versions(versions), src)
+    vset = gpv.load_versions(versions)
+    return gpv.build_payload(vset, matched or vset.current, src)
 
 
 def by_ver(payload: dict) -> dict[str, dict]:
@@ -173,7 +179,7 @@ def test_missing_snapshot_warns_and_lists_empty(
     shutil.rmtree(src / "25.11")
 
     with capture_logs() as logs:
-        payload = gpv.build_payload(gpv.load_versions(versions), src)
+        payload = payload_for(doc_tree)
 
     assert by_ver(payload)["25.11"]["pages"] == {}
     assert any(
@@ -184,10 +190,8 @@ def test_missing_snapshot_warns_and_lists_empty(
 
 def test_orphan_snapshot_dir_warns(doc_tree: tuple[Path, Path]) -> None:
     """An undeclared src/<NN.NN>/ dir warns but does not fail."""
-    versions, src = doc_tree
-
     with capture_logs() as logs:
-        gpv.build_payload(gpv.load_versions(versions), src)
+        payload_for(doc_tree)
 
     assert any(
         event["event"] == "orphan-snapshot-dir" and event["ver"] == "24.05"
@@ -208,13 +212,23 @@ def test_render_js_roundtrips_payload(doc_tree: tuple[Path, Path]) -> None:
 
 def test_main_writes_deterministic_output(
     doc_tree: tuple[Path, Path],
+    hg_repo: Path,
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """CLI writes the file, and a second run is a no-op (unchanged)."""
     versions, src = doc_tree
     out = tmp_path / "static" / "platform-versions.js"
-    argv = ["--versions", str(versions), "--src", str(src), "--out", str(out)]
+    argv = [
+        "--versions",
+        str(versions),
+        "--src",
+        str(src),
+        "--out",
+        str(out),
+        "--repo",
+        str(hg_repo),
+    ]
 
     assert gpv.main(argv) == 0
     first = out.read_text()
@@ -229,7 +243,7 @@ def test_main_writes_deterministic_output(
 
 
 def test_module_invocation_via_python_m(
-    doc_tree: tuple[Path, Path], tmp_path: Path
+    doc_tree: tuple[Path, Path], hg_repo: Path, tmp_path: Path
 ) -> None:
     """The Makefile path works: ``python -m tools.gen_platform_versions``."""
     versions, src = doc_tree
@@ -245,6 +259,8 @@ def test_module_invocation_via_python_m(
             str(src),
             "--out",
             str(out),
+            "--repo",
+            str(hg_repo),
         ],
         cwd=DOC,
         capture_output=True,
@@ -286,3 +302,109 @@ def test_load_versions_rejects_invalid_toml(
 
     with pytest.raises(ValueError, match=message):
         gpv.load_versions(versions)
+
+
+def hg(repo: Path, *args: str) -> str:
+    proc = subprocess.run(
+        ["hg", *args], cwd=repo, capture_output=True, text=True, check=False
+    )
+    assert proc.returncode == 0, f"hg {args} failed: {proc.stderr}"
+    return proc.stdout
+
+
+@pytest.fixture
+def hg_repo(tmp_path: Path) -> Path:
+    """Throwaway repo; bookmarks matching the TOML, current is ACTIVE."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "file.txt").write_text("x\n")
+    hg(repo, "init")
+    (repo / ".hg" / "hgrc").write_text(
+        "[ui]\nusername = Test <test@example.com>\n"
+    )
+    hg(repo, "addremove")
+    hg(repo, "commit", "-m", "r1")
+    for name in ("fc-26.05-production", "fc-26.11-dev", "fc-25.11-production"):
+        hg(repo, "bookmark", "-r", "0", name)
+    hg(repo, "up", "fc-26.05-production")
+    return repo
+
+
+def test_dev_build_labels_matched_version(
+    doc_tree: tuple[Path, Path],
+) -> None:
+    """Active prerelease builds at '/': current becomes the snapshot."""
+    versions, _ = doc_tree
+    matched = gpv.load_versions(versions).prereleases[0]
+    payload = payload_for(doc_tree, matched)
+
+    assert payload["current"] == "26.11"
+    entries = by_ver(payload)
+    assert entries["26.11"]["index"] == "/"
+    assert entries["26.11"]["pages"]["components/postgresql"] == "/"
+    assert entries["26.05"]["index"] == "/26.05/"
+    assert entries["26.05"]["status"] == "current"
+    assert entries["25.11"]["index"] == "/25.11/"
+
+
+def test_main_fails_without_active_bookmark(
+    doc_tree: tuple[Path, Path],
+    hg_repo: Path,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """No active bookmark: exit 1 with the hg su remediation."""
+    versions, src = doc_tree
+    out = tmp_path / "platform-versions.js"
+    hg(hg_repo, "up", "null")  # away from any bookmark: deactivates
+
+    code = gpv.main(
+        [
+            "--versions",
+            str(versions),
+            "--src",
+            str(src),
+            "--out",
+            str(out),
+            "--repo",
+            str(hg_repo),
+        ]
+    )
+
+    assert code == 1
+    err = capsys.readouterr().err
+    assert "no active bookmark" in err
+    assert "hg su" in err
+    assert not out.exists()
+
+
+def test_main_requires_matching_active_bookmark(
+    doc_tree: tuple[Path, Path],
+    hg_repo: Path,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Unknown active bookmark: exit 1 naming it and the known revs."""
+    versions, src = doc_tree
+    out = tmp_path / "platform-versions.js"
+    hg(hg_repo, "bookmark", "-r", "0", "feature-x")
+    hg(hg_repo, "up", "feature-x")
+
+    code = gpv.main(
+        [
+            "--versions",
+            str(versions),
+            "--src",
+            str(src),
+            "--out",
+            str(out),
+            "--repo",
+            str(hg_repo),
+        ]
+    )
+
+    assert code == 1
+    err = capsys.readouterr().err
+    assert "feature-x" in err
+    assert "fc-26.11-dev" in err
+    assert not out.exists()

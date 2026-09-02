@@ -1,6 +1,6 @@
 .PHONY: all html clean
 
-all: gen-platform-versions checkout-versioned-docs html
+all: checkout-versioned-docs gen-platform-versions html
 
 gen-platform-versions: 
 	./appenv python -m tools.gen_platform_versions

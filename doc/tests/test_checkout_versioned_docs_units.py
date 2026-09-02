@@ -62,7 +62,7 @@ def test_search_exclude_left_alone_when_present() -> None:
 
 
 def test_namespaced_include_pattern() -> None:
-    """Sunsetting archives only the version's own subtree."""
+    """Non-prerelease snapshots archive only the version's own subtree."""
     assert namespaced_include("25.11") == "doc/src/25.11/**"
 
 

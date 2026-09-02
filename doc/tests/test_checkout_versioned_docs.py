@@ -4,8 +4,14 @@ The tool places ``[[prerelease]]``/``[[sunsetting]]`` snapshots under
 ``src/<ver>/`` from LOCAL hg revisions (fixture: a real throwaway hg
 repository with bookmarks at two changesets). Pinned behavior:
 
-- ``[current]`` is never resolved and never placed -- the local tree
-  IS the current version, even if its bookmark does not exist;
+- the ACTIVE bookmark (``hg su``) is matched against the TOML revs:
+  the matched entry IS the local manual and is never checked out; ALL
+  other entries become snapshots. ONLY ``[[prerelease]]`` exports the
+  whole ``doc/src/**`` tree (the living dev line); every other
+  non-matched version -- sunsetting AND ``[current]`` alike -- must
+  carry its branch's namespaced ``doc/src/<ver>/**`` tree or fails
+  loudly. No active bookmark, or one unknown to the TOML, fails loudly
+  -- no fallback of any kind;
 - prerelease revisions are exported from the WHOLE ``doc/src/**``;
   sunsetting revisions ONLY from their branch's ``doc/src/<ver>/**``
   (the one-time sunset move commit) -- a missing namespaced tree fails
@@ -68,15 +74,16 @@ def project(tmp_path: Path) -> tuple[Path, Path, Path]:
     """(repo, doc-src-dir, versions-file).
 
     repo history:
-      r1 -- pre-move legacy state: doc/src/** (postgresql v1, only-old)
-      r2 -- fc-25.11-production (sunsetting source): sunset move
-            commit, tree lives at doc/src/25.11/** only
+      r1 -- fc-26.05-production (current, ACTIVE): tree namespaced
+            at doc/src/26.05/** (postgresql v1, only-old)
+      r2 -- fc-25.11-production (sunsetting source): tree namespaced
+            at doc/src/25.11/** only
       r3 -- fc-26.11-dev (prerelease source): fresh doc/src/** with
             postgresql v2 and platform/users
 
-    doc/ lives OUTSIDE the repo: its src/ is the local (=current 26.05)
-    tree with postgresql + redis + index. fc-26.05-production does not
-    exist as a bookmark -- and must never be needed.
+    doc/ lives OUTSIDE the repo: its src/ is the local manual of the
+    ACTIVE bookmark (fc-26.05-production -> matched [current] 26.05)
+    with postgresql + redis + index.
     """
     repo = tmp_path / "repo"
     src = repo / "doc" / "src"
@@ -85,35 +92,34 @@ def project(tmp_path: Path) -> tuple[Path, Path, Path]:
     (repo / ".hg" / "hgrc").write_text(
         "[ui]\nusername = Test <test@example.com>\n"
     )
-    put(src, "index.md")
-    put(src, "components/postgresql.md", "# postgresql v1\n")
-    put(src, "only-old.md")
+    legacy = src / "26.05"
+    put(legacy, "index.md")
+    put(legacy, "components/postgresql.md", "# postgresql v1\n")
+    put(legacy, "only-old.md")
     hg(repo, "addremove")
-    hg(repo, "commit", "-m", "r1: legacy tree at doc/src/**")
+    hg(repo, "commit", "-m", "r1: 26.05 tree namespaced at doc/src/26.05/**")
 
-    # Sunset move commit: filesystem moves + addremove (rename
-    # detection). Explicit -r for the bookmarks: `hg commit` advances
-    # the ACTIVE bookmark, so both are pinned after the fact.
-    legacy = src / "25.11"
-    legacy.mkdir()
-    (legacy / "components").mkdir()
-    (src / "index.md").rename(legacy / "index.md")
-    (src / "only-old.md").rename(legacy / "only-old.md")
-    (src / "components" / "postgresql.md").rename(
-        legacy / "components" / "postgresql.md"
-    )
+    # The 25.11 branch carries its own namespaced tree: a plain dir
+    # rename + addremove (rename detection). Explicit -r for the
+    # bookmarks: `hg commit` advances the ACTIVE bookmark, so all are
+    # pinned after the fact.
+    (src / "26.05").rename(src / "25.11")
     hg(repo, "addremove")
-    hg(repo, "commit", "-m", "r2: sunset move doc/src -> doc/src/25.11")
+    hg(repo, "commit", "-m", "r2: 25.11 tree namespaced at doc/src/25.11/**")
 
     # Dev branch replaces the namespaced tree with its own doc/src/**.
-    shutil.rmtree(legacy)
+    shutil.rmtree(src / "25.11")
     put(src, "index.md")
     put(src, "components/postgresql.md", "# postgresql v2\n")
     put(src, "platform/users.md")
     hg(repo, "addremove")
     hg(repo, "commit", "-m", "r3: dev tree")
+    hg(repo, "bookmark", "-r", "0", "fc-26.05-production")
     hg(repo, "bookmark", "-r", "1", "fc-25.11-production")
     hg(repo, "bookmark", "-r", "2", "fc-26.11-dev")
+    # Activate the current bookmark LAST: the ACTIVE bookmark (not any
+    # TOML category) defines which entry is the local manual.
+    hg(repo, "up", "fc-26.05-production")
 
     doc = tmp_path / "doc"
     doc_src = doc / "src"
@@ -330,9 +336,90 @@ def test_partial_move_excludes_stray_files(
     hg(repo, "addremove")
     hg(repo, "commit", "-m", "partial move: stray file in doc/src/")
     hg(repo, "bookmark", "-r", "3", "fc-25.11-partial")
+    hg(repo, "up", "fc-26.05-production")  # re-activate: the hg up -r 1
+    # surgery above deactivated the bookmark the tool now requires
     versions.write_text(TOML.replace("fc-25.11-production", "fc-25.11-partial"))
 
     assert run(project) == 0
     assert (doc_src / "25.11" / "components" / "postgresql.md").is_file()
     assert not (doc_src / "25.11" / "stray.md").exists()
     assert not (doc_src / "25.11" / "25.11").exists()
+
+
+def test_active_prerelease_builds_its_manual(
+    project: tuple[Path, Path, Path],
+) -> None:
+    """Active bookmark = prerelease: no self-copy, all others pulled.
+
+    The local tree IS the 26.11 manual; 26.05 arrives as a whole-tree
+    snapshot from r1, 25.11 namespaced from r2, and the sunsetting
+    banner points at the MATCHED version (26.11).
+    """
+    repo, doc_src, _ = project
+    hg(repo, "up", "fc-26.11-dev")
+    assert run(project) == 0
+
+    assert not (doc_src / "26.11").exists()
+    assert "26.11" not in manifest_of(project)["versions"]
+    assert (
+        "# postgresql v1"
+        in (doc_src / "26.05" / "components" / "postgresql.md").read_text()
+    )
+    assert (doc_src / "26.05" / "only-old.md").is_file()
+    assert not (doc_src / "26.05" / "25.11").exists()
+    assert not (doc_src / "26.05" / "26.05").exists()
+    assert (
+        "# postgresql v1"
+        in (doc_src / "25.11" / "components" / "postgresql.md").read_text()
+    )
+    assert set(manifest_of(project)["versions"]) == {"26.05", "25.11"}
+    text = (doc_src / "25.11" / "components" / "postgresql.md").read_text()
+    assert "[26.11 version]" in text
+
+
+def test_no_active_bookmark_fails_loudly(
+    project: tuple[Path, Path, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Anonymous working copy: exit 1, remediation, nothing placed."""
+    repo, doc_src, _ = project
+    hg(repo, "up", "-r", "2")  # bare rev: deactivates the bookmark
+
+    assert run(project) == 1
+    err = capsys.readouterr().err
+    assert "no active bookmark" in err
+    assert "hg su" in err
+    assert not (doc_src / "26.11").exists()
+    assert not (doc_src / "26.05").exists()
+
+
+def test_unknown_active_bookmark_fails_loudly(
+    project: tuple[Path, Path, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A bookmark the TOML does not know: exit 1 naming it and the revs."""
+    repo, doc_src, _ = project
+    hg(repo, "bookmark", "-r", "2", "feature-x")
+    hg(repo, "up", "feature-x")
+
+    assert run(project) == 1
+    err = capsys.readouterr().err
+    assert "feature-x" in err
+    assert "fc-26.05-production" in err
+    assert "fc-26.11-dev" in err
+    assert "fc-25.11-production" in err
+    assert not (doc_src / "26.11").exists()
+
+
+def test_non_matched_current_requires_namespaced_tree(
+    project: tuple[Path, Path, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A non-matched [current] without doc/src/<ver>/: exit 1, no whole
+    tree. Pointing current at the dev bookmark (whole doc/src/** only)
+    must fail loudly instead of nesting or duplicating the tree."""
+    repo, doc_src, versions = project
+    versions.write_text(TOML.replace("fc-26.05-production", "fc-26.11-dev"))
+    hg(repo, "up", "fc-25.11-production")  # matched = sunsetting 25.11
+
+    assert run(project) == 1
+    err = capsys.readouterr().err
+    assert "doc/src/26.05" in err
+    assert not (doc_src / "26.05").exists()

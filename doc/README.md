@@ -33,21 +33,29 @@ environment. You do not need a full Nix environment to build the docs!
 
 ## Documentation Versioning
 
-Versions are driven by `platform-versions.toml`: a `[current]` entry (the
-local `doc/src/` tree -- never checked out), `[[prerelease]]` and
-`[[sunsetting]]` entries, each naming a version and an **hg bookmark**.
+Versions are driven by `platform-versions.toml`: a `[current]` entry,
+`[[prerelease]]` and `[[sunsetting]]` entries, each naming a version and
+an **hg bookmark**. The categories describe the PUBLIC lifecycle
+(current release, upcoming release, phase-out) -- not who is built.
+
+**The ACTIVE bookmark decides what you are building:** the entry whose
+`rev` matches the repo's active bookmark (`hg su`) IS the local manual
+at `/` and is never checked out. Every other entry -- including a
+non-matched `[current]` -- becomes a snapshot under `src/<ver>/` pulled
+from its own branch. No active bookmark, or one the TOML does not know,
+fails the build loudly; there is no fallback.
 
 - `tools/checkout_versioned_docs.py` resolves bookmarks **strictly locally**
   (no pull, no network) and exports snapshots under `src/<ver>/`.
-- `[[prerelease]]` revisions are exported from their whole `doc/src/**` tree
-  (the dev-branch shape).
+- Non-sunsetting snapshot revisions (prerelease, or a non-matched
+  `[current]`) are exported from their whole `doc/src/**` tree.
 - `[[sunsetting]]` revisions must carry their docs namespaced at
   `doc/src/<ver>/**` -- created by the branch's one-time **sunset move
   commit** (`hg mv doc/src doc/src/<ver>`). A sunsetting revision without
   that directory fails the build loudly with the remediation hint; there is
   deliberately **no fallback** to the whole-tree shape for old versions.
 - Sunsetting pages receive `search: exclude` frontmatter and a warning banner
-  linking to the current counterpart when it exists in the local tree.
+  linking to the counterpart in the built manual when it exists locally.
 
 ## Version Switcher
 

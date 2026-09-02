@@ -1,24 +1,26 @@
 """Place version snapshots under ``src/<ver>/`` from LOCAL hg revisions.
 
-The counterpart of ``tools.gen_platform_versions.py``: for every
-``[[prerelease]]`` and ``[[sunsetting]]`` entry in
-``platform-versions.toml`` this tool resolves ``rev`` -- an hg bookmark
--- STRICTLY locally (``hg log -r <rev>``, no network, no pull) and
-exports that revision's docs into ``src/<ver>/``. ``[current]`` is
-never checked out: the local tree IS the current version.
+The counterpart of ``tools.gen_platform_versions.py``: the entry whose
+``rev`` is the repo's ACTIVE bookmark is the local manual -- never
+checked out. Every OTHER entry in ``platform-versions.toml`` is
+resolved STRICTLY locally (``hg log -r <rev>``, no network, no pull)
+and exported into ``src/<ver>/``. No active bookmark, or one the TOML
+does not know, fails loudly -- no fallback of any kind.
 
-What gets exported depends on the status: prerelease revisions export
-the WHOLE ``doc/src/**``; sunsetting revisions ONLY their branch's
-namespaced ``doc/src/<ver>/**`` (the one-time sunset move commit). A
-sunsetting revision without that namespaced tree fails loudly with the
-remediation -- it NEVER falls back to the whole tree, which would
-duplicate the current manual under a versioned URL.
+What gets exported depends on the status: ONLY prerelease revisions
+(the living dev line) export the WHOLE ``doc/src/**``; every other
+non-matched version -- sunsetting AND a non-matched ``[current]``
+alike -- exports ONLY its branch's namespaced ``doc/src/<ver>/**``
+(the one-time sunset move commit). A non-prerelease revision without
+that namespaced tree fails loudly with the remediation -- it NEVER
+falls back to the whole tree, which would duplicate the current
+manual under a versioned URL.
 
 Snapshots are dumb, content-agnostic trees: whatever the exported
 subtree contains gets placed as-is. The only processing is for
 ``sunsetting`` versions, whose pages receive ``search: exclude``
 frontmatter (keeping them out of the search index) and a warning
-banner linking the current counterpart when it exists.
+banner linking the counterpart in the built manual when it exists.
 
 A manifest (``src/.checkout-manifest.json``) records the exported node
 per version plus this tool's sha256. A version is skipped when BOTH
@@ -45,20 +47,24 @@ from pathlib import Path
 
 import structlog
 
-from tools.gen_platform_versions import DOC_ROOT, VersionEntry, load_versions
+from tools.gen_platform_versions import (
+    DOC_ROOT,
+    REPO_ROOT,
+    ActiveBookmarkError,
+    VersionEntry,
+    load_versions,
+    match_active,
+)
 
 log = structlog.get_logger()
 
-# The hg repository that carries the version bookmarks: doc/'s parent.
-REPO_ROOT = DOC_ROOT.parent
-
 # Only doc/src of a revision becomes a snapshot: the whole tree for a
-# prerelease, just the namespaced subtree for a sunsetting version.
+# prerelease, just the namespaced subtree for every other status.
 ARCHIVE_INCLUDE = "doc/src/**"
 
 
 def namespaced_include(ver: str) -> str:
-    """Archive include pattern for a sunsetting version's subtree."""
+    """Archive include pattern for a non-prerelease version's subtree."""
     return f"doc/src/{ver}/**"
 
 
@@ -113,14 +119,15 @@ def write_manifest(path: Path, manifest: dict) -> None:
     path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
 
 
-def ensure_sunsetting_tree(repo: Path, entry: VersionEntry, node: str) -> None:
+def ensure_namespaced_tree(repo: Path, entry: VersionEntry, node: str) -> None:
     """Fail loudly when the revision lacks ``doc/src/<ver>/``.
 
-    A sunsetting ``rev`` must point at the sunset move commit that
-    namespaced ``doc/src`` into ``doc/src/<ver>/``. A revision without
-    that tree (e.g. a pre-move changeset carrying the whole ``doc/src``)
-    must NEVER fall back to it -- the snapshot would duplicate the
-    current manual under a versioned URL. ``hg files`` with an explicit
+    Every NON-prerelease ``rev`` (sunsetting, or a non-matched
+    ``[current]``) must point at the sunset move commit that namespaced
+    ``doc/src`` into ``doc/src/<ver>/``. A revision without that tree
+    (e.g. a pre-move changeset carrying the whole ``doc/src``) must
+    NEVER fall back to it -- the snapshot would duplicate the current
+    manual under a versioned URL. ``hg files`` with an explicit
     ``path:`` kind asks hg directly whether the tree exists at *node*;
     empty output means it does not.
     """
@@ -133,10 +140,12 @@ def ensure_sunsetting_tree(repo: Path, entry: VersionEntry, node: str) -> None:
     )
     if proc.returncode != 0 or not proc.stdout.strip():
         msg = (
-            f"sunsetting revision {node[:12]} for ver {entry.ver} has no "
-            f"doc/src/{entry.ver}/ tree -- point rev at the sunset move "
-            f"commit that namespaced doc/src into doc/src/{entry.ver}/; "
-            f"pre-move revisions carry the whole doc/src tree and are "
+            f"{entry.status} revision {node[:12]} for ver {entry.ver} has "
+            f"no doc/src/{entry.ver}/ tree -- every non-prerelease "
+            f"snapshot must carry its branch's namespaced "
+            f"doc/src/{entry.ver}/ subtree: point rev at the changeset "
+            f"that moved doc/src into doc/src/{entry.ver}/ (the sunset "
+            f"move); revisions carrying only the whole doc/src tree are "
             f"never a fallback"
         )
         raise CheckoutError(msg)
@@ -147,17 +156,18 @@ def checkout_version(
 ) -> Path:
     """Export ``node``'s docs as ``src_root/<ver>/`` (replacing any old tree).
 
-    Prerelease revisions export the WHOLE ``doc/src/**``; sunsetting
-    revisions only their branch's namespaced ``doc/src/<ver>/**`` (see
-    :func:`ensure_sunsetting_tree`).
+    Prerelease revisions export the WHOLE ``doc/src/**`` (the living
+    dev line); every other status -- sunsetting and a non-matched
+    ``[current]`` alike -- only its branch's namespaced
+    ``doc/src/<ver>/**`` (see :func:`ensure_namespaced_tree`).
     """
-    if entry.status == "sunsetting":
-        ensure_sunsetting_tree(repo, entry, node)
-        include = namespaced_include(entry.ver)
-        exported_subtree = Path("doc") / "src" / entry.ver
-    else:
+    if entry.status == "prerelease":
         include = ARCHIVE_INCLUDE
         exported_subtree = Path("doc") / "src"
+    else:
+        ensure_namespaced_tree(repo, entry, node)
+        include = namespaced_include(entry.ver)
+        exported_subtree = Path("doc") / "src" / entry.ver
     with tempfile.TemporaryDirectory() as tmp:
         proc = subprocess.run(
             ["hg", "archive", "-r", node, "-I", include, tmp],
@@ -280,10 +290,20 @@ def run_checkout(
     """Checkout driver: (checked-out, skipped, pruned) counts.
 
     Shared by ``main`` and tests -- everything except argparse and log
-    configuration lives here.
+    configuration lives here. The entry matched by the repo's ACTIVE
+    bookmark IS the local manual and is never checked out; ALL other
+    entries become snapshots, a non-matched ``[current]`` included
+    (from its namespaced tree, like a sunsetting version).
     """
     versions = load_versions(versions_path)
-    entries = [e for e in versions.entries() if e.status != "current"]
+    matched = match_active(versions, repo)
+    log.info(
+        "active-bookmark-matched",
+        ver=matched.ver,
+        rev=matched.rev,
+        status=matched.status,
+    )
+    entries = [e for e in versions.entries() if e.ver != matched.ver]
 
     manifest_path = src_root / MANIFEST_NAME
     manifest = load_manifest(manifest_path)
@@ -306,9 +326,7 @@ def run_checkout(
             "checkout-placed", ver=entry.ver, node=node[:12], path=str(tree)
         )
         if entry.status == "sunsetting":
-            pages = process_sunsetting(
-                tree, entry.ver, versions.current.ver, src_root
-            )
+            pages = process_sunsetting(tree, entry.ver, matched.ver, src_root)
             log.info("sunsetting-processed", ver=entry.ver, pages=pages)
         result["versions"][entry.ver] = {"node": node}
         checked += 1
@@ -340,7 +358,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     """CLI entry: ``python -m tools.checkout_versioned_docs``.
 
     Exit codes: ``0`` (placed/skipped/pruned), ``1`` (rev resolution or
-    archive failure), ``2`` (invalid platform-versions.toml).
+    archive failure, or no/unknown active bookmark), ``2`` (invalid
+    platform-versions.toml).
     """
     _configure_logging()
     parser = argparse.ArgumentParser(
@@ -361,7 +380,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     except ValueError as exc:
         log.error("versions-invalid", path=str(args.versions), error=str(exc))
         return 2
-    except CheckoutError as exc:
+    except (CheckoutError, ActiveBookmarkError) as exc:
         log.error("checkout-failed", error=str(exc))
         return 1
 
