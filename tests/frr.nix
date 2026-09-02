@@ -356,6 +356,9 @@ import ./make-test-python.nix (
               host1.succeed("ip route show 192.168.42.3 | grep -F fe80::5054:ff:fe12:203")
               host1.succeed("ip route show 192.168.42.3 | grep -F fe80::5054:ff:fe12:104")
 
+          with subtest("check that config reload works correctly"):
+              # https://github.com/FRRouting/frr/issues/20430
+              host1.succeed("systemctl reload frr")
         '';
       };
       evpn = {
