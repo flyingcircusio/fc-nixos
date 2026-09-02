@@ -96,6 +96,18 @@ def project(tmp_path: Path) -> tuple[Path, Path, Path]:
     put(legacy, "index.md")
     put(legacy, "components/postgresql.md", "# postgresql v1\n")
     put(legacy, "only-old.md")
+    broken = (
+        "# broken\n"
+        "\n"
+        "!!! warning\n"
+        "    This is a sunsetting version of the platform documentation."
+        " Go to [the current version](../../platform-releases/"
+        "fc-26.05-production/broken.md) for optimized support.\n"
+        "\n"
+        "See [local](../platform/fc-26.05-production/local.md#nixos-local)"
+        " for details.\n"
+    )
+    put(legacy, "components/broken.md", broken)
     hg(repo, "addremove")
     hg(repo, "commit", "-m", "r1: 26.05 tree namespaced at doc/src/26.05/**")
 
@@ -423,3 +435,34 @@ def test_non_matched_current_requires_namespaced_tree(
     err = capsys.readouterr().err
     assert "doc/src/26.05" in err
     assert not (doc_src / "26.05").exists()
+
+
+def test_placement_applies_content_fixes(
+    project: tuple[Path, Path, Path],
+) -> None:
+    """Placed snapshots are link-clean: dead split-era targets fixed,
+    old fetch-era banners stripped -- on every placement."""
+    _, doc_src, _ = project
+    assert run(project) == 0
+
+    text = (doc_src / "25.11" / "components" / "broken.md").read_text()
+    assert "platform-releases/" not in text
+    assert "This is a sunsetting version" not in text
+    assert "](../platform/local.md#nixos-local)" in text
+
+
+def test_old_current_snapshot_gets_banner_and_exclude(
+    project: tuple[Path, Path, Path],
+) -> None:
+    """26.05 (older than matched 26.11): search-exclude + banner like a
+    sunsetting snapshot -- but WITHOUT 'sunsetting' wording, its public
+    status is current."""
+    repo, doc_src, _ = project
+    hg(repo, "up", "fc-26.11-dev")
+    assert run(project) == 0
+
+    text = (doc_src / "26.05" / "components" / "broken.md").read_text()
+    assert text.startswith("---\n")
+    assert "exclude: true" in text.split("!!! warning", 1)[0]
+    assert "[26.11 manual]" in text
+    assert "is in sunsetting" not in text

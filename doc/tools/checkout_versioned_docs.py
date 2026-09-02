@@ -16,11 +16,16 @@ that namespaced tree fails loudly with the remediation -- it NEVER
 falls back to the whole tree, which would duplicate the current
 manual under a versioned URL.
 
-Snapshots are dumb, content-agnostic trees: whatever the exported
-subtree contains gets placed as-is. The only processing is for
-``sunsetting`` versions, whose pages receive ``search: exclude``
-frontmatter (keeping them out of the search index) and a warning
-banner linking the counterpart in the built manual when it exists.
+Every placed snapshot is made link-clean first:
+:mod:`tools.snapshot_content_fixes` re-applies the fix table already
+landed on the integration line (dead split-era targets, old
+fetch-era sunsetting banners) to the branch content. On top, every
+NON-prerelease snapshot -- sunsetting and a non-matched ``[current]``
+alike -- gets ``search: exclude`` frontmatter (keeping it out of the
+search index) and a warning banner linking the counterpart in the
+built manual when it exists; only the banner wording differs (an old
+current's public status is current, never sunsetting). Otherwise
+prerelease snapshots stay verbatim: they ARE the integration line.
 
 A manifest (``src/.checkout-manifest.json``) records the exported node
 per version plus this tool's sha256. A version is skipped when BOTH
@@ -55,6 +60,7 @@ from tools.gen_platform_versions import (
     load_versions,
     match_active,
 )
+from tools.snapshot_content_fixes import fix_tree
 
 log = structlog.get_logger()
 
@@ -75,6 +81,15 @@ MANIFEST_NAME = ".checkout-manifest.json"
 SEARCH_KEY_RE = re.compile(r"(?m)^search:")
 
 SEARCH_EXCLUDE_BLOCK = "search:\n  exclude: true\n"
+
+# Warning-banner sentence body per non-prerelease snapshot status. A
+# non-matched [current] gets the sunsetting treatment (search
+# exclusion + banner) but its public status is current: the wording
+# must never say "sunsetting".
+STATUS_CLAUSE = {
+    "current": "is an older version",
+    "sunsetting": "is in sunsetting",
+}
 
 
 class CheckoutError(RuntimeError):
@@ -222,17 +237,19 @@ def frontmatter_with_search_exclude(frontmatter: str) -> str:
     return frontmatter.replace("---\n", f"---\n{SEARCH_EXCLUDE_BLOCK}", 1)
 
 
-def process_sunsetting(
-    tree: Path, ver: str, current_ver: str, src_root: Path
+def process_snapshot(
+    tree: Path, ver: str, status: str, current_ver: str, src_root: Path
 ) -> int:
-    """Frontmatter + banner on every page of a sunsetting snapshot.
+    """Frontmatter + banner on every page of a non-prerelease snapshot.
 
     Order matters: frontmatter must stay the FIRST thing in the file
     (zensical only parses it there), the banner follows, then the
     untouched body. The banner links the current counterpart only when
     the page exists in the local tree -- a dead ref would break the
-    build's link validation. Returns the number of processed pages.
+    build's link validation. ``status`` picks the banner wording
+    (:data:`STATUS_CLAUSE`). Returns the number of processed pages.
     """
+    clause = STATUS_CLAUSE[status]
     count = 0
     for page in sorted(tree.rglob("*.md")):
         page_id = page.relative_to(tree).with_suffix("").as_posix()
@@ -245,15 +262,18 @@ def process_sunsetting(
         page.write_text(
             frontmatter
             + "\n"
-            + banner(page_id, ver, current_ver, counterpart)
+            + banner(page_id, ver, current_ver, counterpart, clause)
             + body.lstrip("\n")
         )
         count += 1
+    log.info("snapshot-annotated", ver=ver, status=status, pages=count)
     return count
 
 
-def banner(page_id: str, ver: str, current_ver: str, counterpart: bool) -> str:
-    """Sunsetting warning banner; links the current counterpart if it exists."""
+def banner(
+    page_id: str, ver: str, current_ver: str, counterpart: bool, clause: str
+) -> str:
+    """Warning banner; links the current counterpart if it exists."""
     up = "../" * (page_id.count("/") + 1)
     if counterpart:
         target = f"{up}{page_id}"
@@ -262,7 +282,8 @@ def banner(page_id: str, ver: str, current_ver: str, counterpart: bool) -> str:
         where = f"the [{current_ver} manual]({up}index)"
     return (
         f'!!! warning "Documentation for platform version {ver}"\n'
-        f"    Platform version {ver} is in sunsetting -- this page is kept for reference.\n"
+        f"    Platform version {ver} {clause} -- this page is kept for"
+        " reference.\n"
         f"    The current documentation for this topic is {where}.\n\n"
     )
 
@@ -293,7 +314,10 @@ def run_checkout(
     configuration lives here. The entry matched by the repo's ACTIVE
     bookmark IS the local manual and is never checked out; ALL other
     entries become snapshots, a non-matched ``[current]`` included
-    (from its namespaced tree, like a sunsetting version).
+    (from its namespaced tree, like a sunsetting version). Every
+    placement is made link-clean (content fixes) and every
+    non-prerelease snapshot annotated (search-exclude frontmatter +
+    warning banner).
     """
     versions = load_versions(versions_path)
     matched = match_active(versions, repo)
@@ -325,9 +349,12 @@ def run_checkout(
         log.info(
             "checkout-placed", ver=entry.ver, node=node[:12], path=str(tree)
         )
-        if entry.status == "sunsetting":
-            pages = process_sunsetting(tree, entry.ver, matched.ver, src_root)
-            log.info("sunsetting-processed", ver=entry.ver, pages=pages)
+        fixed = fix_tree(tree)
+        log.info("content-fixes-applied", ver=entry.ver, pages=fixed)
+        if entry.status != "prerelease":
+            process_snapshot(
+                tree, entry.ver, entry.status, matched.ver, src_root
+            )
         result["versions"][entry.ver] = {"node": node}
         checked += 1
 
