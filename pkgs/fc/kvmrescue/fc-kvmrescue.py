@@ -12,6 +12,8 @@ import json
 import os
 import subprocess
 import sys
+from contextlib import nullcontext
+from email import message
 from socket import gethostname
 from typing import Any, reveal_type
 
@@ -71,17 +73,23 @@ class Ipmitool:
     def __call__(
         self,
         *args: str,
-        capture_output=False,
+        capture_output: bool = False,
+        tty: bool = False,
     ) -> subprocess.CompletedProcess[str]:
         cmd = ["fc-ipmitool", "-U", self.ipmiuser, self.hostname, *args]
-        return subprocess.run(
-            cmd,
-            capture_output=capture_output,
-            text=True,
-            errors="replace",
-            encoding="utf-8",
-            env=self.env,
-        )
+        ctx = open("/dev/tty", "r+b", buffering=0) if tty else nullcontext()
+        with ctx as f:
+            return subprocess.run(
+                cmd,
+                stdin=f,
+                stdout=f,
+                stderr=f,
+                capture_output=capture_output,
+                text=True,
+                errors="replace",
+                encoding="utf-8",
+                env=self.env,
+            )
 
 
 # XXX: replace with more robust subprocess call chain that cares about errors, as in fc.qemu or fc-ceph
@@ -132,6 +140,7 @@ def collect_image_locks(kvmhostname: str, rbd: Rbd) -> list[str]:
     return host_locked_images
 
 
+# XXX: this can become a HostEvacuationTask class with a hostname property
 def set_out_of_service(kvmhostname: str) -> None:
     # Setting a node permanently out of service is not possible via directory API for now
     print(
@@ -140,6 +149,57 @@ def set_out_of_service(kvmhostname: str) -> None:
     print()
     while not Confirm.ask(f"[purple]Is host {kvmhostname} set out-of-service?"):
         pass
+
+
+def ensure_host_offline(
+    kvmhostname: str,
+) -> None:  # XXX: persist that the host has been set offline
+    # - zuerst oneshot fc-ipmitool `power status`: wenn host klar down ist, dann können alle rbd locks aufgeräumt werden
+    # XXX: retries?
+    fc_ipmi = Ipmitool(kvmhostname)
+    try:
+        power_status = fc_ipmi(
+            "power", "status", capture_output=True
+        ).stdout.strip()
+
+        if power_status == "Chassis Power is off":
+            # we can force-unlock all the collected images
+            return True
+    except subprocess.CalledProcessError as e:
+        print(f"Error calling ipmitool: {e}")
+    else:
+        print(
+            f"{kvmhostname} status is'{power_status}', please ensure it is not running any VMs before continuing."
+        )
+    # - falls nicht:
+    while True:
+        try:
+            match Prompt.ask(
+                "Do you want to connect to the [green]SOL[/green] console, open an ipmitool [green]shell[/green], or [green]continue[/green] anyway?",
+                choices=["SOL", "shell", "continue"],
+            ):
+                # In practice, BMC connections can turn out to be rather flaky.
+                # But retrying or deactivating-activating the SOL is left as a
+                # task to the operator.
+                case "SOL":
+                    print(
+                        "Opening a SOL console for your interactive investigations:"
+                    )
+                    _ = fc_ipmi("sol", "activate", tty=True)
+                case "shell":
+                    print("Opening an [i]ipmitool shell[/i]")
+                    _ = fc_ipmi("shell", tty=True)
+                case "continue":
+                    print(
+                        f"[yellow]If {kvmhostname} is not reliably down this may corrupt VM images. If there is any doubt, consider disconnecting the host from the Ceph cluster at network level."
+                    )
+                case _:
+                    print("[orange]Invalid choice.")
+                    continue
+        except subprocess.CalledProcessError as e:
+            print(e)
+        if Confirm.ask(f"Did you ensure that {kvmhostname} is reliably down?"):
+            break
 
 
 def main(kvmhostname: str):
@@ -158,43 +218,7 @@ def main(kvmhostname: str):
 
     print(host_locked_images)
 
-    # - zuerst oneshot fc-ipmitool `power status`: wenn host klar down ist, dann können alle rbd locks aufgeräumt werden
-    # XXX: retries?
-    fc_ipmi = Ipmitool(kvmhostname)
-    power_status = fc_ipmi(
-        "power", "status", capture_output=True
-    ).stdout.strip()
-
-    safe_to_unlock = False
-    if power_status == "Chassis Power is off":
-        # we can force-unlock all the collected images
-        safe_to_unlock = True
-    else:
-        print(
-            f"{kvmhostname} status is'{power_status}', please ensure it is not running any VMs before continuing."
-        )
-        print("Opening a SOL console for your interactive investigations:")
-        # XXX: provide option for `ipmitool shell`, e.g. if wanting to force-unlock
-        with open("/dev/tty", "r+b", buffering=0) as tty:
-            _ = subprocess.run(
-                [
-                    "fc-ipmitool",
-                    "-U",
-                    fc_ipmi.ipmiuser,
-                    kvmhostname,
-                    "sol",
-                    "activate",
-                ],
-                stdin=tty,
-                stdout=tty,
-                stderr=tty,
-                env=fc_ipmi.env,
-            )
-
-    # - falls nicht:
-    # XXX: - BMC nicht erreichbar: TBD
-    # in practice, BMC connections can turn out to be rather flaky.
-    # - interaktives Anzeigen der SOL
+    safe_to_unlock = ensure_host_offline(kvmhostname)
 
     if not safe_to_unlock:
         _ = input(
