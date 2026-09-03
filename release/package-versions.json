@@ -65,9 +65,9 @@
     "version": "3.126"
   },
   "calibre": {
-    "name": "calibre-9.13.0",
+    "name": "calibre-9.14.0",
     "pname": "calibre",
-    "version": "9.13.0"
+    "version": "9.14.0"
   },
   "ceph": {
     "name": "ceph-14.2.22",
@@ -210,9 +210,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-154.0.1",
+    "name": "firefox-155.0",
     "pname": "firefox",
-    "version": "154.0.1"
+    "version": "155.0"
   },
   "gcc": {
     "name": "gcc-wrapper-15.2.0",
@@ -235,9 +235,9 @@
     "version": "2.54.0"
   },
   "gitaly": {
-    "name": "gitaly-19.2.4",
+    "name": "gitaly-19.3.1",
     "pname": "gitaly",
-    "version": "19.2.4"
+    "version": "19.3.1"
   },
   "github-runner": {
     "name": "github-runner-2.336.0",
@@ -245,24 +245,24 @@
     "version": "2.336.0"
   },
   "gitlab": {
-    "name": "gitlab-19.2.4",
+    "name": "gitlab-19.3.1",
     "pname": "gitlab",
-    "version": "19.2.4"
+    "version": "19.3.1"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-4.40.2",
+    "name": "gitlab-container-registry-4.41.0",
     "pname": "gitlab-container-registry",
-    "version": "4.40.2"
+    "version": "4.41.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-19.2.4",
+    "name": "gitlab-ee-19.3.1",
     "pname": "gitlab-ee",
-    "version": "19.2.4"
+    "version": "19.3.1"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-19.2.4",
+    "name": "gitlab-pages-19.3.1",
     "pname": "gitlab-pages",
-    "version": "19.2.4"
+    "version": "19.3.1"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-19.0.0",
@@ -270,9 +270,9 @@
     "version": "19.0.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-19.2.4",
+    "name": "gitlab-workhorse-19.3.1",
     "pname": "gitlab-workhorse",
-    "version": "19.2.4"
+    "version": "19.3.1"
   },
   "glibc": {
     "name": "glibc-2.42-67",
@@ -395,9 +395,9 @@
     "version": "1.36.2+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.7.2",
+    "name": "keycloak-26.7.3",
     "pname": "keycloak",
-    "version": "26.7.2"
+    "version": "26.7.3"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.20.2",
@@ -590,9 +590,9 @@
     "version": "4.40"
   },
   "nss_latest": {
-    "name": "nss-3.127",
+    "name": "nss-3.128",
     "pname": "nss",
-    "version": "3.127"
+    "version": "3.128"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.16",
@@ -715,14 +715,14 @@
     "version": "8.3.33"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.24",
+    "name": "php-with-extensions-8.4.25",
     "pname": "php-with-extensions",
-    "version": "8.4.24"
+    "version": "8.4.25"
   },
   "php85": {
-    "name": "php-with-extensions-8.5.9",
+    "name": "php-with-extensions-8.5.10",
     "pname": "php-with-extensions",
-    "version": "8.5.9"
+    "version": "8.5.10"
   },
   "phpPackages.composer": {
     "name": "composer-2.10.2",
@@ -965,9 +965,9 @@
     "version": "4.5.1"
   },
   "redis": {
-    "name": "redis-8.8.1",
+    "name": "redis-8.8.2",
     "pname": "redis",
-    "version": "8.8.1"
+    "version": "8.8.2"
   },
   "rich-cli": {
     "name": "rich-cli-1.8.1",
