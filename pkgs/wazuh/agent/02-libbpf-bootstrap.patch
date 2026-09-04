@@ -1,0 +1,76 @@
+--- a/src/external/libbpf-bootstrap/CMakeLists.txt
++++ b/src/external/libbpf-bootstrap/CMakeLists.txt
+@@ -13,8 +13,6 @@
+ include(ExternalProject)
+ ExternalProject_Add(libbpf
+   PREFIX libbpf
+-  GIT_REPOSITORY https://github.com/libbpf/libbpf.git
+-  GIT_TAG v1.7.0  # v1.4.0: f11758a7807893330cc87481a7a16cf956326ab3
+   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libbpf
+   CONFIGURE_COMMAND ""
+   BUILD_COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/libbpf/src && make CFLAGS="-fPIC${CFLAGS}" LDFLAGS="-lelf${LDFLAGS}"
+@@ -26,32 +24,31 @@
+     install install_uapi_headers
+   BUILD_IN_SOURCE TRUE
+   INSTALL_COMMAND ""
++  DOWNLOAD_COMMAND ""
+   STEP_TARGETS build
+ )
+ 
+ # Clone bpftool repository
+ ExternalProject_Add(bpftool
+   PREFIX bpftool
+-  GIT_REPOSITORY https://github.com/libbpf/bpftool.git
+-  GIT_TAG v7.7.0
+   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bpftool
+   CONFIGURE_COMMAND ""
+   BUILD_COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/bpftool/src && make bootstrap
+     OUTPUT=${CMAKE_CURRENT_BINARY_DIR}/bpftool/
+   BUILD_IN_SOURCE TRUE
+   INSTALL_COMMAND ""
++  DOWNLOAD_COMMAND ""
+   STEP_TARGETS build
+ )
+ 
+ # Clone vmlinux.h repository
+ ExternalProject_Add(vmlinux.h
+   PREFIX vmlinux.h
+-  GIT_REPOSITORY https://github.com/libbpf/vmlinux.h.git
+-  GIT_TAG main
+   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vmlinux.h
+   CONFIGURE_COMMAND ""
+   BUILD_COMMAND ""
+   INSTALL_COMMAND ""
++  DOWNLOAD_COMMAND ""
+ )
+ 
+ # Set the path to clang (update if necessary)
+@@ -79,10 +76,10 @@
+ set(WAZUH_BRANCH "v4.12.0" CACHE STRING "Wazuh branch for modern.bpf.c")
+ 
+ # Download modern.bpf.c with error checking that verifies file existence and non-zero size
+-set(FILE_URL "https://raw.githubusercontent.com/wazuh/wazuh/${WAZUH_BRANCH}/src/syscheckd/src/ebpf/src/modern.bpf.c")
++#set(FILE_URL "https://raw.githubusercontent.com/wazuh/wazuh/${WAZUH_BRANCH}/src/syscheckd/src/ebpf/src/modern.bpf.c")
+ set(DEST_PATH "${CMAKE_CURRENT_SOURCE_DIR}/src/modern.bpf.c")
+-file(DOWNLOAD ${FILE_URL} ${DEST_PATH})
+-file(SIZE ${DEST_PATH} FILE_SIZE)
++#file(DOWNLOAD ${FILE_URL} ${DEST_PATH})
++#file(SIZE ${DEST_PATH} FILE_SIZE)
+ if(NOT EXISTS ${DEST_PATH} OR FILE_SIZE EQUAL 0)
+     message(FATAL_ERROR "Failed to download modern.bpf.c from ${FILE_URL}. Please check WAZUH_BRANCH.")
+ endif()
+@@ -91,12 +88,14 @@
+ set(BPFOBJECT_VMLINUX_H ${CMAKE_CURRENT_SOURCE_DIR}/vmlinux.h/include/${ARCH}/vmlinux.h)
+ set(LIBBPF_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/libbpf)
+ set(LIBBPF_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libbpf/libbpf.a)
++set(LIBBPF_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/libbpf/src)
+ find_package(BpfObject REQUIRED)
+ 
+ include_directories(
+   ${CMAKE_CURRENT_SOURCE_DIR}/vmlinux.h/include/${ARCH}
+ )
+ 
++set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu17 -Wno-error=implicit-function-declaration -Wno-error=int-conversion")
+ bpf_object(modern src/modern.bpf.c)
+ add_dependencies(modern_skel libbpf-build bpftool-build vmlinux.h)
+ 

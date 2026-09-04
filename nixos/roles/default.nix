@@ -55,6 +55,7 @@ in
     ./webdata_blackbee.nix
     ./webgateway.nix
     ./webproxy.nix
+    ./wazuh-agent.nix
 
     # Removed
     (mkRemovedOptionModule [
