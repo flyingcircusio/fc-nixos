@@ -36,10 +36,9 @@ in
   alloy = callTest ./alloy.nix { };
   antivirus = callTest ./antivirus.nix { };
   audit = callTest ./audit.nix { };
-  backyserver_ceph-nautilus = callTest ./backyserver.nix { clientCephRelease = "nautilus"; };
+  backyserver_ceph-pacific = callTest ./backyserver.nix { clientCephRelease = "pacific"; };
   backyserver_volumes = callTest ./backy_volumes.nix { };
   channel = callTest ./channel.nix { };
-  ceph-nautilus = callTest ./ceph-nautilus.nix { };
   ceph-pacific = callTest ./ceph-pacific.nix { };
   coturn = callTest ./coturn.nix { };
   cron = callTest ./cron.nix { };
@@ -67,15 +66,7 @@ in
     verification = callTest ./kernelconfig-verification.nix { };
   };
   kernelversions = callTest ./kernelversions.nix { };
-  kvm_host_ceph-nautilus-nautilus = callTest ./kvm_host_ceph-nautilus.nix {
-    clientCephRelease = "nautilus";
-    serverCephRelease = "nautilus";
-  };
-  kvm_host_ceph-nautilus-pacific = callTest ./kvm_host_ceph-nautilus.nix {
-    clientCephRelease = "nautilus";
-    serverCephRelease = "pacific";
-  };
-  kvm_host_ceph-pacific-pacific = callTest ./kvm_host_ceph-nautilus.nix {
+  kvm_host_ceph-pacific-pacific = callTest ./kvm_host_ceph-pacific.nix {
     clientCephRelease = "pacific";
     serverCephRelease = "pacific";
   };
