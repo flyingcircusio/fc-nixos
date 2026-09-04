@@ -1,0 +1,16 @@
+# Copy to .envrc and run `direnv allow`.
+#
+# Keeps .venv in sync with the inline PEP 723 dependency block in
+# fc-kvmrescue.py, so editors and type checkers can resolve imports.
+# Running the script needs none of this -- its shebang handles that itself.
+
+# Re-sync whenever the dependency block changes.
+watch_file fc-kvmrescue.py
+
+if has uv; then
+  export VIRTUAL_ENV="$PWD/.venv"
+  uv sync --script fc-kvmrescue.py --active
+  PATH_add "$PWD/.venv/bin"
+else
+  log_status "uv not found on PATH; skipping .venv sync"
+fi
