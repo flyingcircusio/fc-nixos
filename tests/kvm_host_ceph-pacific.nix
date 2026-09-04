@@ -71,16 +71,8 @@ import ./make-test-python.nix (
         # Override some fc-qemu.conf values to match the values expected by tests
 
         flyingcircus.roles.kvm_host.settings =
-          let
-            deploymentOverride = "${testPackage.testdata}/deployment-settings-overrides.nix";
-          in
-          if builtins.pathExists deploymentOverride then
-            import deploymentOverride { inherit lib; }
-          else
-            # TODO: clean up when removing Ceph Nautilus support
-            {
-              qemu.binary-generation = lib.mkForce 2;
-            };
+          import "${testPackage.testdata}/deployment-settings-overrides.nix"
+            { inherit lib; };
 
         systemd.timers.fc-ceph-load-vm-images.enable = lib.mkForce false;
         systemd.timers.fc-ceph-mon-update-client-keys.enable = lib.mkForce false;
@@ -507,8 +499,8 @@ import ./make-test-python.nix (
           assert "I simplevm              running-ensure                 generation=0" in result, result
 
         ${lib.optionalString (!useFlakefinder) ''
-          host1.copy_from_vm('/tmp/coverage', './')
-          host1.copy_from_vm('/tmp/fc.qemu-report.xml', './')
+          host1.copy_from_machine('/tmp/coverage', './')
+          host1.copy_from_machine('/tmp/fc.qemu-report.xml', './')
         ''}
 
       '';

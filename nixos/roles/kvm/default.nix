@@ -40,11 +40,6 @@ let
     mode = "0744";
   };
 
-  # qemu+nautilus is pinned to an old fc.qemu version which expects
-  # guest tap interface setup to be performed by fc-nixos
-  noopScriptWithNautilusFallback =
-    content: if cfg.cephRelease == "nautilus" then content else noopScript;
-
   # XXX tap reattachment is currently not implemented in fc.qemu, need
   # to use the old script implementations for handling reattachment.
   nautilusIfupScript = pkgs.writeShellScriptBin "nautilus-kvm-ifup" ''
@@ -291,39 +286,10 @@ in
 
     # BBB PL-135610 - Need to be kept to allow bi-directional migrations
     # with older fc-nixos incarnations.
-    environment.etc."kvm/kvm-ifup" = noopScriptWithNautilusFallback {
-      source = lib.getExe' nautilusIfupScript "nautilus-kvm-ifup";
-      mode = "0744";
-    };
-    environment.etc."kvm/kvm-ifdown" = noopScriptWithNautilusFallback {
-      text = ''
-        #!${pkgs.stdenv.shell}
-        INTERFACE="$1"
-        VLAN=$(echo $INTERFACE | ${pkgs.gnused}/bin/sed 's/t\([a-zA-Z]\+\)[0-9]\+/\1/')
-        BRIDGE="br''${VLAN}"
-
-        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" nomaster
-        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" down
-        ${pkgs.iproute2}/bin/ip link delete "$INTERFACE"
-      '';
-      mode = "0744";
-    };
-    environment.etc."kvm/kvm-ifup-vrf" = noopScriptWithNautilusFallback {
-      source = lib.getExe' nautilusIfupVrfScript "nautilus-kvm-ifup-vrf";
-      mode = "0744";
-    };
-    environment.etc."kvm/kvm-ifdown-vrf" = noopScriptWithNautilusFallback {
-      text = ''
-        #!${pkgs.stdenv.shell}
-        INTERFACE="$1"
-
-        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" down
-        ${pkgs.iproute2}/bin/ip address flush dev "$INTERFACE"
-        ${pkgs.iproute2}/bin/ip link set "$INTERFACE" nomaster
-        ${pkgs.iproute2}/bin/ip link delete "$INTERFACE"
-      '';
-      mode = "0744";
-    };
+    environment.etc."kvm/kvm-ifup" = noopScript;
+    environment.etc."kvm/kvm-ifdown" = noopScript;
+    environment.etc."kvm/kvm-ifup-vrf" = noopScript;
+    environment.etc."kvm/kvm-ifdown-vrf" = noopScript;
     environment.etc."kvm/kvm-ifup-dynamic" = noopScript;
     environment.etc."kvm/kvm-ifdown-dynamic" = noopScript;
 

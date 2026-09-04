@@ -55,26 +55,6 @@ rec {
   };
   ping-on-tap = callPackage ./ping-on-tap { };
 
-  qemu-nautilus =
-    (callPackage ./qemu rec {
-      version = "1.7dev";
-      src = pkgs.fetchFromGitHub {
-        owner = "flyingcircusio";
-        repo = "fc.qemu";
-        # The release tooling didn't upgrade properly so we had to pick a specific
-        # commit instead.
-        rev = "256964f932353a4c5375d709445afecc8f48aaaf";
-        hash = "sha256-ydEJlzio8ixFRqZEaDEwDkJFZYQ9RJ6DQhRJwTG+zik";
-      };
-      fc-ceph = ceph;
-      qemu_ceph = pkgs.qemu-ceph-nautilus;
-      ceph_client = pkgs.ceph-nautilus.ceph-client;
-      python3Packages = pkgs.python311Packages;
-    }).overridePythonAttrs
-      (old: {
-        propagatedBuildInputs = old.propagatedBuildInputs ++ [ pkgs.procps ];
-      });
-
   qemu-pacific = callPackage ./qemu rec {
     version = "1.8dev";
     src = pkgs.fetchFromGitHub {
