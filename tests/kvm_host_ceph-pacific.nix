@@ -499,8 +499,8 @@ import ./make-test-python.nix (
           assert "I simplevm              running-ensure                 generation=0" in result, result
 
         ${lib.optionalString (!useFlakefinder) ''
-          host1.copy_from_vm('/tmp/coverage', './')
-          host1.copy_from_vm('/tmp/fc.qemu-report.xml', './')
+          host1.copy_from_machine('/tmp/coverage', './')
+          host1.copy_from_machine('/tmp/fc.qemu-report.xml', './')
         ''}
 
       '';
