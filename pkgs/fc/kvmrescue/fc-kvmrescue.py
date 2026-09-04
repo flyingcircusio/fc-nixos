@@ -3,25 +3,115 @@
 #
 # /// script
 # requires-python = ">=3.12"
-# dependencies = ["rich"]
+# dependencies = ["rich", "pydantic"]
 # ///
 
 import ctypes
 import getpass
 import json
 import os
+import re
 import subprocess
 import sys
 from contextlib import nullcontext
+from dataclasses import dataclass
 from email import message
+from ipaddress import IPv6Address
 from socket import gethostname
-from typing import Any, reveal_type
+from typing import Any, ClassVar, TypeVar, override, reveal_type
 
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    IPvAnyAddress,
+    TypeAdapter,
+    model_validator,
+)
 from rich import print
+from rich.markup import escape
 from rich.prompt import Confirm, Prompt
 
 # XXX: can we extract them somewhere from the platform?
 RBD_POOLS = ["rbd.hdd", "rbd.ssd"]
+
+V = TypeVar("V")
+
+
+def plain(value: Any) -> Any:
+    """Keep rich from swallowing `[...]` in data as console markup.
+
+    Bracketed data is common here: IPv6 EntityAddrs (`[dead::1]:0/0`) and the
+    repr'd argv in subprocess error messages. Only strings are affected, other
+    objects go through rich's pretty printer untouched.
+    """
+    return escape(value) if isinstance(value, str) else value
+
+
+# frozen to stay hashable, so imagespecs can be collected in sets
+@dataclass(frozen=True)
+class RbdImageSpec:
+    pool: str
+    imagename: str
+    # in principle, snapshots are also part of an imagespec, but not relevant here
+
+    @override
+    def __str__(self) -> str:
+        return f"{self.pool}/{self.imagename}"
+
+
+class EntityAddr(BaseModel):
+    # immutable by nature, and hashability allows collecting them in a set
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    # Ceph EntityAddrs look like `172.20.4.101:0/3733721661` or `[dead::1]:0/0`,
+    # optionally prefixed with the messenger protocol version (`v1:`/`v2:`).
+    ADDR_RE: ClassVar[re.Pattern[str]] = re.compile(
+        r"""^
+        (?:(?P<msgr_version>v[12]):)?
+        (?:\[(?P<ip6>[0-9a-fA-F:.]+)\]|(?P<ip4>[0-9.]+))
+        :(?P<port>\d+)
+        /(?P<nonce>\d+)
+        $""",
+        re.VERBOSE,
+    )
+
+    # The original string is kept so it can be handed back to Ceph verbatim,
+    # instead of risking a mismatch when re-formatting (IPv6 compression,
+    # brackets, msgr version prefix).
+    raw: str
+    msgr_version: str | None = None
+    ip: IPvAnyAddress
+    port: int
+    nonce: int
+
+    @model_validator(mode="before")
+    @classmethod
+    def parse(cls, value: Any) -> Any:
+        # Accept both the string form found in `rbd` output and an already
+        # structured mapping.
+        if not isinstance(value, str):
+            return value
+        match = cls.ADDR_RE.match(value)
+        if not match:
+            raise ValueError(f"not a Ceph EntityAddr: {value!r}")
+        groups = match.groupdict()
+        return {
+            "raw": value,
+            "msgr_version": groups["msgr_version"],
+            "ip": groups["ip6"] or groups["ip4"],
+            "port": groups["port"],
+            "nonce": groups["nonce"],
+        }
+
+    @override
+    def __str__(self) -> str:
+        return self.raw
+
+
+class RbdLock(BaseModel):
+    id: str
+    locker: str
+    address: EntityAddr
 
 
 class Ipmitool:
@@ -92,7 +182,7 @@ class Ipmitool:
             )
 
 
-# XXX: replace with more robust subprocess call chain that cares about errors, as in fc.qemu or fc-ceph
+# XXX: replace with more robust subprocess call chain that cares about errors
 class Rbd:
     ceph_client_name: str
     # for now assuming default ceph conf location, while fc.qemu handles this explicitly
@@ -100,7 +190,26 @@ class Rbd:
     def __init__(self) -> None:
         self.ceph_client_name = f"client.{gethostname()}"
 
-    def rbd_(self, *args: str, use_json: bool = True, verbose=True) -> Any:
+    def validate_json_cmd(self, tp: type[V], *args: Any, **kw: Any) -> V:
+        # `tp` may be any type pydantic can validate: a BaseModel subclass just
+        # as well as a plain container like `list[str]`.
+        output = self.rbd_(*args, parse_json=False, **kw)
+        return TypeAdapter(tp).validate_json(output)
+
+    def pool_ls(self, pool: str) -> set[RbdImageSpec]:
+        imgnames = self.validate_json_cmd(list[str], "ls", pool)
+        return {RbdImageSpec(pool, imgname) for imgname in imgnames}
+
+    def lock_ls(self, imgspec: RbdImageSpec) -> list[RbdLock]:
+        return self.validate_json_cmd(list[RbdLock], "lock", "ls", str(imgspec))
+
+    def rbd_(
+        self,
+        *args: str,
+        use_json: bool = True,
+        parse_json: bool = True,
+        verbose=True,
+    ) -> Any:
         format_arg = ["--format", "json"] if use_json else []
         cmd = ["rbd", "--name", self.ceph_client_name, *format_arg, *args]
         if verbose:
@@ -108,34 +217,30 @@ class Rbd:
         result = subprocess.run(
             cmd, check=True, capture_output=True, text=True
         ).stdout
-        if use_json:
+        if use_json and parse_json:
             result = json.loads(result)
         if verbose:
-            print(result)
+            print(plain(result))
         return result
 
 
-def collect_image_locks(kvmhostname: str, rbd: Rbd) -> list[str]:
+def collect_image_locks(
+    kvmhostname: str, rbd: Rbd
+) -> dict[RbdImageSpec, list[RbdLock]]:
     # - tote VMs anhand von Ceph Lock identifizieren:
-    # XXX: alternative: we could try querying the active keepalives via the pysensu API directly from Sensu. But this
-    # - introduces another dependency on Sensu
-    # - requires pulling in pysensu
-    # - VM keepalive timeout is currently slightly higher for hosts than VMs
-    # - advantage though: might be more performant than iterating over _all_ the rbd images of the cluster
-    host_locked_images: list[str] = []
+    host_locked_images: dict[RbdImageSpec, list[RbdLock]] = {}
     for pool in RBD_POOLS:
-        # XXX: consider speeding up by parallelising calls, bounded by an asyncio Semaphor
         # XXX: allow pool to not exist
-        all_images = rbd.rbd_("ls", pool)
-        for image in all_images:
+        for imgspec in rbd.pool_ls(pool):
             # XXX non-atomic: handle image gone
-            imgspec = f"{pool}/{image}"
-            lockers = rbd.rbd_("lock", "ls", imgspec)
+            lockers = rbd.lock_ls(imgspec)
+            # XXX: instead of assertion, collect as suspicious image to be investigated by operator later
             assert len(lockers) <= 1, (
                 f"expected exclusive locking but got more than 1 lock {lockers}"
             )
-            if any((True for lock in lockers if lock["id"] == kvmhostname)):
-                host_locked_images.append(imgspec)
+            our_locks = [lock for lock in lockers if lock.id == kvmhostname]
+            if our_locks:
+                host_locked_images[imgspec] = our_locks
 
     return host_locked_images
 
@@ -164,12 +269,12 @@ def ensure_host_offline(
 
         if power_status == "Chassis Power is off":
             # we can force-unlock all the collected images
-            return True
+            return
     except subprocess.CalledProcessError as e:
-        print(f"Error calling ipmitool: {e}")
+        print(f"Error calling ipmitool: {escape(str(e))}")
     else:
         print(
-            f"{kvmhostname} status is'{power_status}', please ensure it is not running any VMs before continuing."
+            f"{kvmhostname} status is'{escape(power_status)}', please ensure it is not running any VMs before continuing."
         )
     # - falls nicht:
     while True:
@@ -197,9 +302,16 @@ def ensure_host_offline(
                     print("[orange]Invalid choice.")
                     continue
         except subprocess.CalledProcessError as e:
-            print(e)
+            print(escape(str(e)))
         if Confirm.ask(f"Did you ensure that {kvmhostname} is reliably down?"):
             break
+
+
+def fmt_IPAddress(address: IPvAnyAddress) -> str:
+    if isinstance(address, IPv6Address):
+        return f"[{address}]"
+    else:
+        return str(address)
 
 
 def main(kvmhostname: str):
@@ -207,8 +319,12 @@ def main(kvmhostname: str):
     # - zu Beginn: hostname des toten hosts angeben
     set_out_of_service(kvmhostname)
 
+    ensure_host_offline(kvmhostname)
+
     rbd = Rbd()
-    host_locked_images = collect_image_locks(kvmhostname, rbd)
+    host_locked_images: dict[RbdImageSpec, list[RbdLock]] = collect_image_locks(
+        kvmhostname, rbd
+    )
     if not host_locked_images:
         print(
             f"Did not find any VM images locked by {kvmhostname}, nothing to rescue"
@@ -218,42 +334,60 @@ def main(kvmhostname: str):
 
     print(host_locked_images)
 
-    safe_to_unlock = ensure_host_offline(kvmhostname)
+    locker_addresses: set[IPvAnyAddress] = {
+        lockinfo.address.ip
+        for lockers in host_locked_images.values()
+        for lockinfo in lockers
+        if lockinfo.id == kvmhostname
+    }
 
-    if not safe_to_unlock:
-        _ = input(
-            f"About to force-unlock all VMs of {kvmhostname}, ensure host is down! [Enter to confirm]"
-        )
-    # Track EntityAddrs of lockers. We do not yet make use of them, but they might be useful when migrating to exclusive-lock PL-134255
-    locker_addresses = set[str]()
-    for img in host_locked_images:
-        # XXX: error handling: locks can be gone, images might have changed
-        lockinfo = rbd.rbd_("lock", "ls", img)[0]
-        locker_address = lockinfo["address"]
-        locker_addresses.add(locker_address)
-
-        # By default, breaking a lock causes the address of the broken client
-        # to be osd-blocklisted. We do want that, but with a larger blocklist
-        # entry TTL, so adding that entry explicitly ahead of time.
-        # 24h should be plenty enough to handle a broken host, but short enough
-        # to not having to clear up the entry manually.
+    # By default, breaking a lock causes the address of the broken client
+    # to be osd-blocklisted. We do want that, but with a larger blocklist
+    # entry TTL, and for the full host. So adding that entry explicitly ahead of time.
+    # 24h should be plenty enough to handle a broken host, but short enough
+    # to recover in case we miss cleaning up the blocks.
+    ceph_auth_id = gethostname()
+    for locker_address in locker_addresses:
         _ = subprocess.run(
-            ["ceph", "osd", "blocklist", "add", locker_address, f"{24*60*60}"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )  # fmt: skip
-        _ = rbd.rbd_(
-            "lock",
-            "remove",
-            "--rbd_blocklist_on_break_lock=false",
-            img,
-            lockinfo["id"],
-            lockinfo["locker"],
-            use_json=False,
-        )
+           [
+            "ceph", "--id", ceph_auth_id,
+            "osd", "blocklist", "add",
+            # `<IPAddr>:0/0` is a special EntityAddr that covers all ports and nonces as well
+            f"{fmt_IPAddress(locker_address)}:0/0", f"{24*60*60}"
+           ],
+           check=True,
+           capture_output=True,
+           text=True,
+       )  # fmt: skip
+        # XXX: print script on how to remove the blocklist entries later
+    for img, lockers in host_locked_images.items():
+        # XXX: error handling: locks can be gone, images might have changed
         # XXX: more than 1 lock: collect as a "something is weird" and alert operator afterwards
+        if len(lockers) > 1:
+            print(
+                f"[orange]f{img} has multiple lockers. Will unlock all locks owned by {kvmhostname}, but please check afterwards."
+            )
+            # XXX: add to
+        my_locks = [
+            lockinfo for lockinfo in lockers if lockinfo.id == kvmhostname
+        ]
         # XXX: id != kvmhostname: skip, collect as a "something is weird" and alert operator afterwards
+        for lockinfo in lockers:
+            if lockinfo.id != kvmhostname:
+                print(
+                    f"[orange]{img} is also locked by {lockinfo.id}. Skipping the unlock, please check afterwards."
+                )
+                continue
+
+            _ = rbd.rbd_(
+                "lock",
+                "remove",
+                "--rbd_blocklist_on_break_lock=false",
+                str(img),
+                lockinfo.id,
+                lockinfo.locker,
+                use_json=False,
+            )
 
     # - finally evacuate all VMs away
     subprocess.run(["fc-directory", f"d.evacuate_vms('{kvmhostname}')"], check=True)  # fmt: skip
