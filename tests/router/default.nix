@@ -30,8 +30,8 @@ import ../make-test-python.nix (
         virtualisation.memorySize = 2048;
 
         imports = [
-          <fc/nixos>
-          <fc/nixos/roles>
+          ../../nixos
+          ../../nixos/roles
         ];
 
         flyingcircus.roles.router = {
@@ -417,8 +417,8 @@ import ../make-test-python.nix (
           tr
         ];
         imports = [
-          <fc/nixos>
-          <fc/nixos/roles>
+          ../../nixos
+          ../../nixos/roles
         ];
 
         flyingcircus.enc.name = "upstream${toString id}";
