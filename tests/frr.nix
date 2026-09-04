@@ -39,12 +39,16 @@ import ./make-test-python.nix (
       {
         networking.interfaces."${name}".ipv4.addresses = lib.mkForce [ ];
         networking.firewall.trustedInterfaces = [ name ];
-        systemd.services."${name}-netdev" = {
+        systemd.services."${name}-netdev" = rec {
           wantedBy = [
-            "network-setup.service"
-            "multi-user.target"
+            "network.target"
           ];
-          requires = [ "network-setup.service" ];
+          before = wantedBy;
+          after = [ "network-pre.target" ];
+          partOf = [
+            "network.target"
+            "networking-scripted.target"
+          ];
           script = ":";
           serviceConfig.Type = "oneshot";
           serviceConfig.RemainAfterExit = true;
@@ -64,12 +68,14 @@ import ./make-test-python.nix (
         systemd.services.underlay-netdev = rec {
           description = "Set up underlay loopback device";
           wantedBy = [
-            "network-setup.service"
-            "multi-user.target"
+            "network.target"
           ];
           before = wantedBy;
-          after = [ "network-pre.service" ];
-          requires = [ "network-setup.service" ];
+          after = [ "network-pre.target" ];
+          partOf = [
+            "network.target"
+            "networking-scripted.target"
+          ];
           path = [ pkgs.iproute2 ];
           script = "ip link add underlay type dummy";
           preStop = "ip link delete underlay";
@@ -112,12 +118,14 @@ import ./make-test-python.nix (
         systemd.services.vxlan0-netdev = rec {
           description = "Set up overlay VXLAN device";
           wantedBy = [
-            "network-setup.service"
-            "multi-user.target"
+            "network.target"
           ];
           before = wantedBy;
-          after = [ "network-pre.service" ];
-          requires = [ "network-setup.service" ];
+          after = [ "network-pre.target" ];
+          partOf = [
+            "network.target"
+            "networking-scripted.target"
+          ];
           path = [ pkgs.iproute2 ];
           script = ''
             ip link add vxlan0 type vxlan \

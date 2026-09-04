@@ -46,23 +46,34 @@ rec {
   megacli = callPackage ./megacli { };
   multiping = callPackage ./multiping.nix { };
   neighbour-cache-monitor = callPackage ./neighbour-cache-monitor { };
+  netdev = pkgs.writers.writePython3BinFromFile ./netdev.py {
+    libraries = with pkgs.python3Packages; [ netaddr ];
+    dependencies = with pkgs; [
+      iproute2
+      ethtool
+    ];
+  };
   ping-on-tap = callPackage ./ping-on-tap { };
 
-  qemu-nautilus = callPackage ./qemu rec {
-    version = "1.7dev";
-    src = pkgs.fetchFromGitHub {
-      owner = "flyingcircusio";
-      repo = "fc.qemu";
-      # The release tooling didn't upgrade properly so we had to pick a specific
-      # commit instead.
-      rev = "256964f932353a4c5375d709445afecc8f48aaaf";
-      hash = "sha256-ydEJlzio8ixFRqZEaDEwDkJFZYQ9RJ6DQhRJwTG+zik";
-    };
-    fc-ceph = ceph;
-    qemu_ceph = pkgs.qemu-ceph-nautilus;
-    ceph_client = pkgs.ceph-nautilus.ceph-client;
-    python3Packages = pkgs.python311Packages;
-  };
+  qemu-nautilus =
+    (callPackage ./qemu rec {
+      version = "1.7dev";
+      src = pkgs.fetchFromGitHub {
+        owner = "flyingcircusio";
+        repo = "fc.qemu";
+        # The release tooling didn't upgrade properly so we had to pick a specific
+        # commit instead.
+        rev = "256964f932353a4c5375d709445afecc8f48aaaf";
+        hash = "sha256-ydEJlzio8ixFRqZEaDEwDkJFZYQ9RJ6DQhRJwTG+zik";
+      };
+      fc-ceph = ceph;
+      qemu_ceph = pkgs.qemu-ceph-nautilus;
+      ceph_client = pkgs.ceph-nautilus.ceph-client;
+      python3Packages = pkgs.python311Packages;
+    }).overridePythonAttrs
+      (old: {
+        propagatedBuildInputs = old.propagatedBuildInputs ++ [ pkgs.procps ];
+      });
 
   qemu-pacific = callPackage ./qemu rec {
     version = "1.8dev";
@@ -71,8 +82,8 @@ rec {
       repo = "fc.qemu";
       # The release tooling didn't upgrade properly so we had to pick a specific
       # commit instead.
-      rev = "6f61942e685b9b24400908a722370b04b582e0b0";
-      hash = "sha256-/viOM98kS0rUGWl314lmhgmSM/VcxbLu3B55ppgFWeg=";
+      rev = "7b38ffbd3ec218c2717a1121aa4e6a5e32ba6fb4";
+      hash = "sha256-bZey7m/4HCQpb/FC19ck6grgYIKMPg6FRnwnDeOE3Qg=";
     };
     fc-ceph = ceph;
     qemu_ceph = pkgs.qemu-ceph-pacific;
@@ -86,7 +97,7 @@ rec {
   #
   # qemu-dev-pacific = qemu-pacific.overrideAttrs (old: {
   #   # for tests and development checkouts on kvm hosts:
-  #   src = ../../../../../fc.qemu/.;
+  #   src = ../../../fc.qemu/.;
   #   # for nix-shell . -A fc.qemu-dev-pacific
   #   # src = ../../../fc.qemu/.;
   # });

@@ -28,37 +28,66 @@ let
       underlayCount = length (attrNames underlayInterfaces);
       vxlanInterfaces = lib.filterAttrs (name: value: value.policy or null == "vxlan") encInterfaces;
       vxlanCount = length (attrNames vxlanInterfaces);
-    in
-    if !config.flyingcircus.networking.physicalHostNetworking then
-      foldConds encInterfaces [
+      invalidLinktypes = lib.filterAttrs (
+        _: value:
+        value ? linktype
+        && !(elem value.linktype [
+          "bridged"
+          "routed"
+          "dynamic"
+        ])
+      ) encInterfaces;
+      invalidLinktypesCount = length (attrNames invalidLinktypes);
+      dynamicInterfaces = lib.filterAttrs (_: value: value.linktype == "dynamic") encInterfaces;
+      dynamicCount = length (attrNames dynamicInterfaces);
+
+      commonConditions = [
         {
-          cond = underlayCount > 0;
-          fail = "Only physical hosts may have interfaces with policy 'underlay'";
-        }
-        {
-          cond = hasAttr "ul" encInterfaces;
-          fail = "Only physical hosts may be connected to the 'ul' network";
-        }
-        {
-          cond = vxlanCount > 0;
-          fail = "Only physical hosts may have interfaces with policy 'vxlan'";
-        }
-      ]
-    else
-      foldConds encInterfaces [
-        {
-          cond = underlayCount > 0;
-          fail = "Only the 'ul' network may have policy 'underlay'";
-        }
-        {
-          cond = hasAttr "ul" encInterfaces && encInterfaces.ul.policy == "vxlan";
-          fail = "The 'ul' network may not have policy 'vxlan'";
-        }
-        {
-          cond = vxlanCount > 0 && (!hasAttr "ul" encInterfaces || encInterfaces.ul.policy != "underlay");
-          fail = "VXLAN devices cannot be configured without an underlay interface";
+          cond = invalidLinktypesCount > 0;
+          fail = "Invalid 'linktype' field in ENC interface data, expected 'bridged', 'routed', or 'dynamic'";
         }
       ];
+    in
+    if !config.flyingcircus.networking.physicalHostNetworking then
+      foldConds encInterfaces (
+        commonConditions
+        ++ [
+          {
+            cond = underlayCount > 0;
+            fail = "Only physical hosts may have interfaces with policy 'underlay'";
+          }
+          {
+            cond = hasAttr "ul" encInterfaces;
+            fail = "Only physical hosts may be connected to the 'ul' network";
+          }
+          {
+            cond = vxlanCount > 0;
+            fail = "Only physical hosts may have interfaces with policy 'vxlan'";
+          }
+        ]
+      )
+    else
+      foldConds encInterfaces (
+        commonConditions
+        ++ [
+          {
+            cond = underlayCount > 0;
+            fail = "Only the 'ul' network may have policy 'underlay'";
+          }
+          {
+            cond = hasAttr "ul" encInterfaces && encInterfaces.ul.policy == "vxlan";
+            fail = "The 'ul' network may not have policy 'vxlan'";
+          }
+          {
+            cond = vxlanCount > 0 && (!hasAttr "ul" encInterfaces || encInterfaces.ul.policy != "underlay");
+            fail = "VXLAN devices cannot be configured without an underlay interface";
+          }
+          {
+            cond = dynamicCount > 0;
+            fail = "Direct configuration of dynamic interfaces on physical hosts not supported";
+          }
+        ]
+      );
 
   underlayLoopbackLinkName = "ul-loopback";
 
@@ -102,6 +131,8 @@ let
 in
 rec {
   stripNetmask = cidr: head (lib.splitString "/" cidr);
+
+  defaultMartianNetworks = import ./martian_networks.nix;
 
   prefixLength = cidr: lib.toInt (elemAt (lib.splitString "/" cidr) 1);
   # The same as prefixLength, but returns a string not an int
@@ -420,7 +451,10 @@ rec {
 
           policy = interface'.policy or "puppet";
 
-          routed = interface'.routed or false;
+          linktype =
+            interface'.linktype or
+            # fallback to deprecated "routed" flag.
+            (if interface'.routed or false then "routed" else "bridged");
 
           dualstack = rec {
             # Without netmask
@@ -490,6 +524,7 @@ rec {
         lo = {
           vlan = "lo";
           policy = "unmanaged";
+          linktype = "bridged";
           dualstack = {
             addresses = [
               "127.0.0.1"

@@ -38,7 +38,6 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
     kernelParams = [
       "console=ttyS0"
       "nosetmode"
-      "log_buf_len=8388608" # 8MiB kernel ring buffer for bootup messages
     ];
 
     kernel.sysctl = {

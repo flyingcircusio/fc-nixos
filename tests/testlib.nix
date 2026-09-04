@@ -211,6 +211,7 @@ rec {
             interfaces = mapAttrs (name: vid: {
               mac = "52:54:00:12:0${toString vid}:0${toString test_node_id}";
               bridged = false;
+              linktype = "bridged";
               networks = {
                 "192.168.${toString vid}.0/24" = [ "192.168.${toString vid}.${toString id}" ];
                 "2001:db8:${toString vid}::/64" = [ "2001:db8:${toString vid}::${toString id}" ];
@@ -285,12 +286,14 @@ rec {
         underlay-netdev = rec {
           description = "Set up underlay loopback device";
           wantedBy = [
-            "network-setup.service"
-            "multi-user.target"
+            "network.target"
+          ];
+          partOf = [
+            "network.target"
+            "networking-scripted.target"
           ];
           before = wantedBy;
           after = [ "network-pre.service" ];
-          requires = [ "network-setup.service" ];
           path = [ pkgs.iproute2 ];
           script = "ip link add underlay type dummy";
           preStop = "ip link delete underlay";
@@ -301,12 +304,16 @@ rec {
       // (listToAttrs (
         map (
           name:
-          lib.nameValuePair "${name}-netdev" {
+          lib.nameValuePair "${name}-netdev" rec {
             wantedBy = [
-              "network-setup.service"
-              "multi-user.target"
+              "network.target"
             ];
-            requires = [ "network-setup.service" ];
+            before = wantedBy;
+            after = [ "network-pre.target" ];
+            partOf = [
+              "network.target"
+              "networking-scripted.target"
+            ];
             script = ":";
             serviceConfig.Type = "oneshot";
             serviceConfig.RemainAfterExit = true;

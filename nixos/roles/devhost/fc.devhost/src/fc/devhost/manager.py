@@ -449,7 +449,7 @@ class Manager:
             fcntl.flock(self.lockfile, fcntl.LOCK_UN)
             # Wait for the VM to get online
             print("Waiting for VM to become pingable ...")
-            ping_timeout = TimeOut(60)
+            ping_timeout = TimeOut(120)
             while ping_timeout.tick():
                 response = os.system(f"ping -c 1 {self.cfg['srv-ip']}")
                 if response == 0:

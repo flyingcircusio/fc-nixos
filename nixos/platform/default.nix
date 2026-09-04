@@ -294,6 +294,8 @@ in
 
         # Output management
         "systemd.log_target=kmsg"
+        "log_buf_len=8388608" # 8MiB kernel ring buffer for bootup messages
+        "systemd.log_ratelimit_kmsg=0" # disable systemd early-boot rate limiting when logging to kmsg
       ];
 
       kernel.sysctl = {
@@ -416,11 +418,17 @@ in
       // (filterAttrs (n: v: n != "commands" && n != "package") e)
     ) cfg.passwordlessSudoPackages;
 
-    services = {
-      # upstream uses cron.enable = mkDefault ... (prio 1000), mkPlatform
-      # overrides it
-      cron.enable = fclib.mkPlatform true;
+    # Upstream cron.service sets no Restart=, so an OOM kill (SIGKILL by
+    # systemd-oomd) leaves the daemon dead. Enable cron and restart it on
+    # termination.
+    # upstream uses cron.enable = mkDefault ... (prio 1000), mkPlatform
+    # overrides it
+    services.cron.enable = fclib.mkPlatform true;
+    systemd.services.cron = lib.mkIf config.services.cron.enable {
+      serviceConfig.Restart = fclib.mkPlatform "always";
+    };
 
+    services = {
       fail2ban = {
         enable = fclib.mkPlatform true;
         maxretry = fclib.mkPlatform 5;

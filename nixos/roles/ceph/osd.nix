@@ -46,10 +46,7 @@ let
 
     # automatically repairing PGs at scrub mismatches is reliable due to Bluestore
     # internal checksumming…
-    # TODO: but we still keep it disabled for Nautilus because it has spurious status
-    # display issues of generally indicating a `repairing` for deep-scrubbing PGs.
-    # see PL-131662
-    osdScrubAutoRepair = false;
+    osdScrubAutoRepair = true;
     # we use the default value of max. number of automatically corrected errors
     # "osd_scrub_auto_repair_num_errors": "5",
 
@@ -291,6 +288,12 @@ in
       }
       // osdServiceDeps;
 
+    })
+    (lib.mkIf (cfg.enable && !fclib.ceph.releaseAtLeast "pacific" cfg.cephRelease) {
+      # we need to disable autorepair for Nautilus because it has spurious status
+      # display issues of generally indicating a `repairing` for deep-scrubbing PGs.
+      # see PL-131662
+      flyingcircus.services.ceph.extraSettings.osdScrubAutoRepair = false;
     })
   ];
 }

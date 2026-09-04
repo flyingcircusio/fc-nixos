@@ -42,6 +42,7 @@ in
   ceph-nautilus = callTest ./ceph-nautilus.nix { };
   ceph-pacific = callTest ./ceph-pacific.nix { };
   coturn = callTest ./coturn.nix { };
+  cron = callTest ./cron.nix { };
   docker = callTest ./docker.nix { };
   fcagent = callTest ./fcagent.nix { };
   fde-tooling = callTest ./fde-tooling.nix { };
@@ -61,7 +62,10 @@ in
   k3s = callTest ./k3s { };
   k3s_ipv6 = callTest ./k3s { enableIPv6 = true; };
   k3s_monitoring = callTest ./k3s/monitoring.nix { };
-  kernelconfig = callTest ./kernelconfig.nix { };
+  kernelconfig = {
+    default = callTest ./kernelconfig.nix { };
+    verification = callTest ./kernelconfig-verification.nix { };
+  };
   kernelversions = callTest ./kernelversions.nix { };
   kvm_host_ceph-nautilus-nautilus = callTest ./kvm_host_ceph-nautilus.nix {
     clientCephRelease = "nautilus";

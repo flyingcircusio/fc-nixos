@@ -68,7 +68,12 @@ def ceph_calls(monkeypatch):
 
 
 def test_successful_maintenance_cycle(
-    ceph_json_calls, ceph_calls, locktoolcalls, maintenance_manager, nosleep, monkeypatch
+    ceph_json_calls,
+    ceph_calls,
+    locktoolcalls,
+    maintenance_manager,
+    nosleep,
+    monkeypatch,
 ):
     monkeypatch.setattr("fc.ceph.maintenance.noup_workaround.run", lambda: 0)
     maintenance_task = maintenance_manager.MaintenanceTasks()
@@ -119,16 +124,13 @@ def test_successful_maintenance_cycle(
     maintenance_task.leave()
 
     assert ceph_json_calls.call_count == 4
-    assert ceph_calls.call_count == 6
+    assert ceph_calls.call_count == 5
     assert locktoolcalls.call_count == 4
 
     ceph_calls.assert_has_calls(
         [
             mock.call("osd", "set-group", "noup", "13", "14", "27"),
             mock.call("osd", "down", "13", "14", "27"),
-            mock.call(
-                "osd", "unset-group", "noup", "localhost", "localhost-ssd"
-            ),
             mock.call("osd", "unset-group", "noup", "13"),
             mock.call("osd", "unset-group", "noup", "14"),
             mock.call("osd", "unset-group", "noup", "27"),
@@ -258,8 +260,9 @@ def test_tempfail_when_another_lockholder(locktoolcalls, maintenance_manager):
 
 
 def test_postpone_and_leave_when_unclean(
-    locktoolcalls, ceph_calls, ceph_json_calls, maintenance_manager
+    locktoolcalls, ceph_calls, ceph_json_calls, maintenance_manager, monkeypatch
 ):
+    monkeypatch.setattr("fc.ceph.maintenance.noup_workaround.run", lambda: 0)
     maintenance_task = maintenance_manager.MaintenanceTasks()
 
     locktoolcalls.side_effect = [
@@ -277,9 +280,18 @@ def test_postpone_and_leave_when_unclean(
     ceph_json_calls.side_effect = [
         {"status": "HEALTH_ERR"},
         # osd tree
-        {"nodes": []},
+        {
+            "nodes": [
+                {"name": "localhost", "type": "host", "children": [14]},
+                {
+                    "name": "localhost-ssd",
+                    "type": "host",
+                    "children": [27, 13],
+                },
+            ]
+        },
         # health detail
-        {},
+        CEPH_HEALTH_NOUP_DATA,
     ]
 
     with pytest.raises(SystemExit, match="69"):
@@ -292,6 +304,14 @@ def test_postpone_and_leave_when_unclean(
             mock.call("-l", "rbd/.maintenance", timeout=30),
             mock.call("-q", "-i", "rbd/.maintenance", timeout=30),
             mock.call("-q", "-u", "rbd/.maintenance", timeout=30),
+        ]
+    )
+    ceph_calls.assert_has_calls(
+        [
+            # particularly important to ensure the health warnings can clear up for the next attempt
+            mock.call("osd", "unset-group", "noup", "13"),
+            mock.call("osd", "unset-group", "noup", "14"),
+            mock.call("osd", "unset-group", "noup", "27"),
         ]
     )
 

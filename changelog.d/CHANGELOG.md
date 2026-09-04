@@ -1,3 +1,144 @@
+# Release 2026_036
+
+
+# Release 2026_035
+
+## NixOS XX.XX platform
+
+- frr-wait-online.service: fix typo in timeout specification (PL-135151)
+
+
+
+# Release 2026_034
+
+## NixOS XX.XX platform
+
+- cron: restart the daemon after unexpected termination (PL-135543)
+
+- network-online.target: on physical machines, fails-stop when no FRR-based routes appear (PL-135151)
+
+- KVM hosts: reduce keepalive check's critical threshold (PL-135533)
+
+  This speeds up visibility of KVM host crashes in our alerting.
+
+
+
+# Release 2026_033
+
+## Impact
+
+- GitLab has been updated to version 19. Instances require a PostgreSQL database update to version 17.
+
+
+## NixOS XX.XX platform
+
+- imporve early boot logging for physical and virtual machines (PL-135546)
+
+  adjust buffer size and rate limiting settings to get rid off `Too many messages being logged to kmsg, ignoring`
+
+
+
+# Release 2026_032
+
+## NixOS XX.XX platform
+
+- Adjust the alloy configuration for the mariadb slowlog to only be added if the role is active. (PL-135621)
+
+- physical hosts: explicitly load ext4 kernel module in initrd (PL-135613)
+
+
+
+# Release 2026_031
+
+
+# Release 2026_030
+
+## NixOS XX.XX platform
+
+- router: add 26.05 release to IPXE (PL-134240)
+
+
+
+# Release 2026_029
+
+## NixOS XX.XX platform
+
+- physical hosts: explicitly load more filesystem kernel modules to fix an intermittent issue where servers would occasionally fail to recognize the boot partition during startup (PL-135585)
+
+
+
+# Release 2026_028
+
+
+# Release 2026_027
+
+## Impact
+
+- A bullet item for the Impact category.
+
+
+## NixOS XX.XX platform
+
+- linuxKernelVerify: bump to 6.18
+
+  All non-production machines, as well as all machines running in our WHQ and DEV locations, will now use a 6.18 kernel. Production RZOB machines remain at kernel 6.12 for now.
+
+- Fast track kernel updated to 6.12.95 and 6.18.38 to fix Januscape (PL-135580, CVE-2026-53359)
+
+
+
+# Release 2026_026
+
+## Impact
+
+-
+
+
+## NixOS XX.XX platform
+
+- Remove a deprecated proxy pass to prometheus on root location of the default statshost domain that was causing a number of basic auth pop ups (PL-134309)
+
+- ceph/rgw: take separate maintenance lock for radosgw, preventing race conditions in shutdown of instances (PL-135499)
+
+
+
+# Release 2026_025
+
+
+# Release 2026_024
+
+## Impact
+
+-
+
+
+## NixOS XX.XX platform
+
+- Increase loki's internal grpc message size limit to enable larger queries against log lines (PL-135503)
+
+- Default to storing loki's data in the automatically configured object storage (PL-135489)
+
+
+
+# Release 2026_023
+
+## Impact
+
+-
+
+-
+
+
+## NixOS XX.XX platform
+
+- fc.devhost: increase timeout for VM provisioning (PL-135475)
+
+- Fix a small with the Grafana frontend showing a basic auth form sometimes due to improper subpath handling in the frontend.
+
+- Fix an issue where object storage credentials were not passed to loki correctly. (PL-135488)
+
+
+
 # Release 2026_022
 
 ## Impact

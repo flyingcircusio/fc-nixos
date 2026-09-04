@@ -41,8 +41,7 @@ let
     fclib.filterConfiguredNetworks role.routerUplinkNetworks
   );
 
-  # TODO: this should use routerGatewayNetworks in the future.
-  gatewayInterfaces = map (network: fclib.network."${network}") role.floatingGatewayNetworks;
+  gatewayInterfaces = map (network: fclib.network."${network}") role.routerGatewayNetworks;
 
   martianIptablesInput = (
     lib.concatMapStringsSep "\n" (
@@ -71,7 +70,7 @@ let
 
   sensuSourceAddress = head (filter (i: fclib.isIp4 i) (locationSensuServer.ips));
 
-  routedVrfsEnabled = any (net: net.routed or false) (attrValues fclib.network);
+  routedVrfsEnabled = any (net: net.linktype == "routed") (attrValues fclib.network);
 in
 {
   options = {
@@ -123,24 +122,42 @@ in
 
       martianNetworks = mkOption {
         type = types.listOf types.str;
-        default = import ./martian_networks.nix;
+        default = fclib.defaultMartianNetworks;
         visible = false;
         description = "Networks considered invalid as source addresses or as forwarding destinations";
       };
 
-      sourceAddressV4 = mkOption {
-        type = types.nullOr (types.addCheck types.str fclib.isIp4);
-        default = null;
-        defaultText = "192.0.2.1";
-        description = "IPv4 address to prefer as source address for outgoing connections";
+      dhcpResolversV4 = mkOption {
+        type = types.listOf (types.addCheck types.str fclib.isIp4);
+        # pass the system resolver configuration through to dhcp.
+        default = filter fclib.isIp4 config.networking.nameservers;
+        description = "IPv4 DNS resolvers to be advertised in DHCP";
       };
-      sourceAddressV6 = mkOption {
-        type = types.nullOr (types.addCheck types.str fclib.isIp6);
-        default = null;
-        defaultText = "2001:db8::1";
-        description = "IPv6 address to prefer as source address for outgoing connections";
+      dhcpResolversV6 = mkOption {
+        type = types.listOf (types.addCheck types.str fclib.isIp6);
+        default =
+          # networking.nameservers never uses IPv6 resolvers, fall
+          # back to static data.
+          if (hasAttr location config.flyingcircus.static.nameservers6) then
+            config.flyingcircus.static.nameservers6."${location}"
+          else
+            [ ];
+        description = "IPv6 DNS resolvers to be advertised in DHCPv6";
       };
 
+      masqueradeNetworks = mkOption {
+        type = types.listOf (types.addCheck types.str fclib.isIp4);
+        description = "List of IPv4 source networks which should get masqueraded upon egress";
+        default = [
+          "172.16.0.0/12"
+          "10.0.0.0/8"
+        ];
+      };
+      masqueradeSourceAddress = mkOption {
+        type = types.nullOr (types.addCheck types.str fclib.isIp4);
+        description = "Source address to be applied when applying masquerading rules to outgoing traffic";
+        default = null;
+      };
     };
   };
 
@@ -299,14 +316,24 @@ in
       ]
     );
 
-    networking.nat.extraCommands = ''
-      #############
-      # Masquerading rules for the uplink interfaces
-      ${lib.concatMapStringsSep "\n" (iface: ''
-        iptables -t nat -A nixos-nat-post -o ${iface} -s 172.16.0.0/12 -j MASQUERADE
-        iptables -t nat -A nixos-nat-post -o ${iface} -s 10.0.0.0/8 -j MASQUERADE
-      '') uplinkInterfaces}
-    '';
+    networking.nat.extraCommands =
+      let
+        masqueradeTarget =
+          if role.masqueradeSourceAddress != null then
+            "SNAT --to ${role.masqueradeSourceAddress}"
+          else
+            "MASQUERADE";
+      in
+      ''
+        #############
+        # Masquerading rules for the uplink interfaces
+        ${lib.concatMapStringsSep "\n" (
+          iface:
+          lib.concatMapStringsSep "\n" (
+            net: "iptables -t nat -A nixos-nat-post -o ${iface} -s ${net} -j ${masqueradeTarget}"
+          ) role.masqueradeNetworks
+        ) uplinkInterfaces}
+      '';
 
     networking.firewall.extraStopCommands = ''
       ip46tables -D FORWARD -j fc-router-forward || true
@@ -373,7 +400,7 @@ in
           interval = 600;
           command =
             let
-              nets = filter (n: n.routed or false) (attrValues fclib.network);
+              nets = filter (n: n.linktype == "routed") (attrValues fclib.network);
             in
             "${pkgs.fc.check-vrf-default-routes}/bin/check_vrf_default_routes ${
               lib.concatMapStringsSep " " (n: n.vrfInterface) nets

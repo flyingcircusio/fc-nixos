@@ -39,6 +39,29 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") (
           "nvme"
         ];
 
+        # We don't know generally which filesystems our machines use for their
+        # /boot partition, so we cannot set this using filesystems.<...>.fsType.
+        # We have seen issues that the filesystem could not be mounted
+        # (likely because of timing issues), so explicitly load the modules for
+        # filesystems we use.
+        supportedFilesystems = [
+          "ext4"
+          "vfat"
+        ];
+        initrd.supportedFilesystems = [
+          "ext4"
+          "vfat"
+        ];
+
+        # We have seen sporadic boot issues where an ext4 filesystem could not be mounted due to the kernel module not
+        # being loaded at mount time.
+        # ext4 was an available kernel module then.
+        # Until we figured out which bug this is, load ext4 by default in the initrd.
+        # PL-135613
+        initrd.kernelModules = [
+          "ext4"
+        ];
+
         # not relevant for boot stage1
         kernelModules = [
           "dm_mirror" # LVM disk migration scenarios

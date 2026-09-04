@@ -11,7 +11,7 @@ let
   inherit (config) fclib;
   inherit (config.flyingcircus) location;
 
-  enableVrfBridge = any (net: net.routed or false) (attrValues fclib.network);
+  enableVrfBridge = any (net: net.linktype == "routed") (attrValues fclib.network);
 
   role = config.flyingcircus.roles.router;
   package = pkgs.bird2-vrf;
@@ -136,7 +136,7 @@ let
       kernel table ${toString net.vrfTable};
     }
 
-  '') (filter (n: n.routed or false) (attrValues fclib.network)));
+  '') (filter (n: n.linktype == "routed") (attrValues fclib.network)));
 
 in
 {

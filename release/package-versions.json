@@ -470,9 +470,9 @@
     "version": "6.12.103"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.103",
+    "name": "linux-6.18.44",
     "pname": "linux",
-    "version": "6.12.103"
+    "version": "6.18.44"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
