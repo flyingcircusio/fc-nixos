@@ -8,10 +8,9 @@ let
   # generated from this list (let's wait for pacific to see if the structure holds)
   releaseOrder = [
     "pacific"
-    "nautilus"
   ];
   cephReleaseType = types.enum releaseOrder;
-  defaultRelease = "nautilus";
+  defaultRelease = "pacific";
 in
 rec {
   # constants
