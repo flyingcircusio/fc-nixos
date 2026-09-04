@@ -307,11 +307,13 @@ def ensure_host_offline(
             break
 
 
-def fmt_IPAddress(address: IPvAnyAddress) -> str:
+def fmt_blocklist_address(address: IPvAnyAddress) -> str:
     if isinstance(address, IPv6Address):
-        return f"[{address}]"
+        addresspart = f"[{address}]"
     else:
-        return str(address)
+        addresspart = str(address)
+    # `<IPAddr>:0/0` is a special EntityAddr that covers all ports and nonces as well
+    return f"{addresspart}:0/0"
 
 
 def main(kvmhostname: str):
@@ -352,14 +354,30 @@ def main(kvmhostname: str):
            [
             "ceph", "--id", ceph_auth_id,
             "osd", "blocklist", "add",
-            # `<IPAddr>:0/0` is a special EntityAddr that covers all ports and nonces as well
-            f"{fmt_IPAddress(locker_address)}:0/0", f"{24*60*60}"
+            f"{fmt_blocklist_address(locker_address)}", f"{24*60*60}"
            ],
            check=True,
            capture_output=True,
            text=True,
        )  # fmt: skip
-        # XXX: print script on how to remove the blocklist entries later
+
+    print()
+    print(
+        f"Blocklisted the current locker addresses of {kvmhostname}.\n"
+        "Once the dead host has recovered, execute the following script on a [b]ceph mon[/b] host of this cluster:"
+    )
+    print("[purple]" + "=" * 80 + "[/purple]")
+    # XXX: persist for later review, present at the end as a cleanup check list that is copied to a ticket
+    print(
+        "\n".join(
+            [
+                f"ceph osd blocklist rm {fmt_blocklist_address(locker_address)}"
+                for locker_address in locker_addresses
+            ]
+        )
+    )
+    print("[purple]" + "=" * 80 + "[/purple]")
+
     for img, lockers in host_locked_images.items():
         # XXX: error handling: locks can be gone, images might have changed
         # XXX: more than 1 lock: collect as a "something is weird" and alert operator afterwards
