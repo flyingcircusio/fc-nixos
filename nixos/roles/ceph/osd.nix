@@ -293,7 +293,7 @@ in
       # we need to disable autorepair for Nautilus because it has spurious status
       # display issues of generally indicating a `repairing` for deep-scrubbing PGs.
       # see PL-131662
-      flyingcircus.services.ceph.extraSettings.osdScrubAutoRepair = false;
+      flyingcircus.roles.ceph_osd.extraSettings.osdScrubAutoRepair = false;
     })
   ];
 }
