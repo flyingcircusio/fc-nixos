@@ -15,10 +15,9 @@ import subprocess
 import sys
 from contextlib import nullcontext
 from dataclasses import dataclass
-from email import message
 from ipaddress import IPv6Address
 from socket import gethostname
-from typing import Any, ClassVar, TypeVar, override, reveal_type
+from typing import Any, ClassVar, TypeVar, cast, override, reveal_type
 
 from pydantic import (
     BaseModel,
@@ -31,10 +30,14 @@ from rich import print
 from rich.markup import escape
 from rich.prompt import Confirm, Prompt
 
+import state
+
 # XXX: can we extract them somewhere from the platform?
 RBD_POOLS = ["rbd.hdd", "rbd.ssd"]
 
 V = TypeVar("V")
+JSONkeys = str | float | int
+JSONdata = JSONkeys | dict[JSONkeys, "JSONdata"] | list["JSONdata"]
 
 
 def plain(value: Any) -> Any:
@@ -209,7 +212,7 @@ class Rbd:
         use_json: bool = True,
         parse_json: bool = True,
         verbose=True,
-    ) -> Any:
+    ) -> str | JSONdata:
         format_arg = ["--format", "json"] if use_json else []
         cmd = ["rbd", "--name", self.ceph_client_name, *format_arg, *args]
         if verbose:
@@ -218,7 +221,7 @@ class Rbd:
             cmd, check=True, capture_output=True, text=True
         ).stdout
         if use_json and parse_json:
-            result = json.loads(result)
+            result = cast(JSONdata, json.loads(result))
         if verbose:
             print(plain(result))
         return result
@@ -317,6 +320,7 @@ def fmt_blocklist_address(address: IPvAnyAddress) -> str:
 
 
 def main(kvmhostname: str):
+    statefile = state.RescueState.ensure_statefile()
     # XXX: support multiple KVM servers?
     # - zu Beginn: hostname des toten hosts angeben
     set_out_of_service(kvmhostname)
@@ -364,7 +368,7 @@ def main(kvmhostname: str):
     print()
     print(
         f"Blocklisted the current locker addresses of {kvmhostname}.\n"
-        "Once the dead host has recovered, execute the following script on a [b]ceph mon[/b] host of this cluster:"
+        + "Once the dead host has recovered, execute the following script on a [b]ceph mon[/b] host of this cluster:"
     )
     print("[purple]" + "=" * 80 + "[/purple]")
     # XXX: persist for later review, present at the end as a cleanup check list that is copied to a ticket
