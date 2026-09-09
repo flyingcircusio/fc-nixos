@@ -6,34 +6,49 @@
 # dependencies = ["rich", "pydantic"]
 # ///
 
+import argparse
 import ctypes
 import getpass
 import json
 import os
-import re
 import subprocess
 import sys
 from contextlib import nullcontext
-from dataclasses import dataclass
+from functools import cached_property
 from ipaddress import IPv6Address
 from socket import gethostname
-from typing import Any, ClassVar, TypeVar, cast, override, reveal_type
+from typing import Any, TypeVar, cast
 
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    IPvAnyAddress,
-    TypeAdapter,
-    model_validator,
-)
+from pydantic import IPvAnyAddress, TypeAdapter
 from rich import print
 from rich.markup import escape
 from rich.prompt import Confirm, Prompt
 
-import state
+from state import (
+    BlocklistEntry,
+    RbdImageSpec,
+    RbdLock,
+    RescueState,
+    foreign_locks,
+    locks_held_by,
+)
+from steps import (
+    STEPS,
+    STEPS_BY_NAME,
+    RescueDone,
+    StepDef,
+    missing_prerequisites,
+    run,
+    step,
+)
 
 # XXX: can we extract them somewhere from the platform?
 RBD_POOLS = ["rbd.hdd", "rbd.ssd"]
+
+# How long the blocklist entries we add ourselves live. Plenty of time to handle
+# a broken host, but short enough to recover on its own should we miss cleaning
+# them up.
+BLOCKLIST_TTL = 24 * 60 * 60
 
 V = TypeVar("V")
 JSONkeys = str | float | int
@@ -48,73 +63,6 @@ def plain(value: Any) -> Any:
     objects go through rich's pretty printer untouched.
     """
     return escape(value) if isinstance(value, str) else value
-
-
-# frozen to stay hashable, so imagespecs can be collected in sets
-@dataclass(frozen=True)
-class RbdImageSpec:
-    pool: str
-    imagename: str
-    # in principle, snapshots are also part of an imagespec, but not relevant here
-
-    @override
-    def __str__(self) -> str:
-        return f"{self.pool}/{self.imagename}"
-
-
-class EntityAddr(BaseModel):
-    # immutable by nature, and hashability allows collecting them in a set
-    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
-
-    # Ceph EntityAddrs look like `172.20.4.101:0/3733721661` or `[dead::1]:0/0`,
-    # optionally prefixed with the messenger protocol version (`v1:`/`v2:`).
-    ADDR_RE: ClassVar[re.Pattern[str]] = re.compile(
-        r"""^
-        (?:(?P<msgr_version>v[12]):)?
-        (?:\[(?P<ip6>[0-9a-fA-F:.]+)\]|(?P<ip4>[0-9.]+))
-        :(?P<port>\d+)
-        /(?P<nonce>\d+)
-        $""",
-        re.VERBOSE,
-    )
-
-    # The original string is kept so it can be handed back to Ceph verbatim,
-    # instead of risking a mismatch when re-formatting (IPv6 compression,
-    # brackets, msgr version prefix).
-    raw: str
-    msgr_version: str | None = None
-    ip: IPvAnyAddress
-    port: int
-    nonce: int
-
-    @model_validator(mode="before")
-    @classmethod
-    def parse(cls, value: Any) -> Any:
-        # Accept both the string form found in `rbd` output and an already
-        # structured mapping.
-        if not isinstance(value, str):
-            return value
-        match = cls.ADDR_RE.match(value)
-        if not match:
-            raise ValueError(f"not a Ceph EntityAddr: {value!r}")
-        groups = match.groupdict()
-        return {
-            "raw": value,
-            "msgr_version": groups["msgr_version"],
-            "ip": groups["ip6"] or groups["ip4"],
-            "port": groups["port"],
-            "nonce": groups["nonce"],
-        }
-
-    @override
-    def __str__(self) -> str:
-        return self.raw
-
-
-class RbdLock(BaseModel):
-    id: str
-    locker: str
-    address: EntityAddr
 
 
 class Ipmitool:
@@ -211,7 +159,7 @@ class Rbd:
         *args: str,
         use_json: bool = True,
         parse_json: bool = True,
-        verbose=True,
+        verbose: bool = False,
     ) -> str | JSONdata:
         format_arg = ["--format", "json"] if use_json else []
         cmd = ["rbd", "--name", self.ceph_client_name, *format_arg, *args]
@@ -227,89 +175,6 @@ class Rbd:
         return result
 
 
-def collect_image_locks(
-    kvmhostname: str, rbd: Rbd
-) -> dict[RbdImageSpec, list[RbdLock]]:
-    # - tote VMs anhand von Ceph Lock identifizieren:
-    host_locked_images: dict[RbdImageSpec, list[RbdLock]] = {}
-    for pool in RBD_POOLS:
-        # XXX: allow pool to not exist
-        for imgspec in rbd.pool_ls(pool):
-            # XXX non-atomic: handle image gone
-            lockers = rbd.lock_ls(imgspec)
-            # XXX: instead of assertion, collect as suspicious image to be investigated by operator later
-            assert len(lockers) <= 1, (
-                f"expected exclusive locking but got more than 1 lock {lockers}"
-            )
-            our_locks = [lock for lock in lockers if lock.id == kvmhostname]
-            if our_locks:
-                host_locked_images[imgspec] = our_locks
-
-    return host_locked_images
-
-
-# XXX: this can become a HostEvacuationTask class with a hostname property
-def set_out_of_service(kvmhostname: str) -> None:
-    # Setting a node permanently out of service is not possible via directory API for now
-    print(
-        f" > Set the host out of service in the directory: https://directory.fcio.net/machine/list?search=name-{kvmhostname}"
-    )
-    print()
-    while not Confirm.ask(f"[purple]Is host {kvmhostname} set out-of-service?"):
-        pass
-
-
-def ensure_host_offline(
-    kvmhostname: str,
-) -> None:  # XXX: persist that the host has been set offline
-    # - zuerst oneshot fc-ipmitool `power status`: wenn host klar down ist, dann können alle rbd locks aufgeräumt werden
-    # XXX: retries?
-    fc_ipmi = Ipmitool(kvmhostname)
-    try:
-        power_status = fc_ipmi(
-            "power", "status", capture_output=True
-        ).stdout.strip()
-
-        if power_status == "Chassis Power is off":
-            # we can force-unlock all the collected images
-            return
-    except subprocess.CalledProcessError as e:
-        print(f"Error calling ipmitool: {escape(str(e))}")
-    else:
-        print(
-            f"{kvmhostname} status is'{escape(power_status)}', please ensure it is not running any VMs before continuing."
-        )
-    # - falls nicht:
-    while True:
-        try:
-            match Prompt.ask(
-                "Do you want to connect to the [green]SOL[/green] console, open an ipmitool [green]shell[/green], or [green]continue[/green] anyway?",
-                choices=["SOL", "shell", "continue"],
-            ):
-                # In practice, BMC connections can turn out to be rather flaky.
-                # But retrying or deactivating-activating the SOL is left as a
-                # task to the operator.
-                case "SOL":
-                    print(
-                        "Opening a SOL console for your interactive investigations:"
-                    )
-                    _ = fc_ipmi("sol", "activate", tty=True)
-                case "shell":
-                    print("Opening an [i]ipmitool shell[/i]")
-                    _ = fc_ipmi("shell", tty=True)
-                case "continue":
-                    print(
-                        f"[yellow]If {kvmhostname} is not reliably down this may corrupt VM images. If there is any doubt, consider disconnecting the host from the Ceph cluster at network level."
-                    )
-                case _:
-                    print("[orange]Invalid choice.")
-                    continue
-        except subprocess.CalledProcessError as e:
-            print(escape(str(e)))
-        if Confirm.ask(f"Did you ensure that {kvmhostname} is reliably down?"):
-            break
-
-
 def fmt_blocklist_address(address: IPvAnyAddress) -> str:
     if isinstance(address, IPv6Address):
         addresspart = f"[{address}]"
@@ -319,101 +184,319 @@ def fmt_blocklist_address(address: IPvAnyAddress) -> str:
     return f"{addresspart}:0/0"
 
 
-def main(kvmhostname: str):
-    statefile = state.RescueState.ensure_statefile()
-    # XXX: support multiple KVM servers?
-    # - zu Beginn: hostname des toten hosts angeben
-    set_out_of_service(kvmhostname)
+class KVMHostRescue:
+    state: RescueState
 
-    ensure_host_offline(kvmhostname)
-
-    rbd = Rbd()
-    host_locked_images: dict[RbdImageSpec, list[RbdLock]] = collect_image_locks(
-        kvmhostname, rbd
-    )
-    if not host_locked_images:
-        print(
-            f"Did not find any VM images locked by {kvmhostname}, nothing to rescue"
+    def __init__(self, kvmhostname: str) -> None:
+        state, pre_existing = RescueState.ensure_statefile(
+            kvmhostname=kvmhostname
         )
-        # XXX: host still out of service
-        sys.exit(2)
-
-    print(host_locked_images)
-
-    locker_addresses: set[IPvAnyAddress] = {
-        lockinfo.address.ip
-        for lockers in host_locked_images.values()
-        for lockinfo in lockers
-        if lockinfo.id == kvmhostname
-    }
-
-    # By default, breaking a lock causes the address of the broken client
-    # to be osd-blocklisted. We do want that, but with a larger blocklist
-    # entry TTL, and for the full host. So adding that entry explicitly ahead of time.
-    # 24h should be plenty enough to handle a broken host, but short enough
-    # to recover in case we miss cleaning up the blocks.
-    ceph_auth_id = gethostname()
-    for locker_address in locker_addresses:
-        _ = subprocess.run(
-           [
-            "ceph", "--id", ceph_auth_id,
-            "osd", "blocklist", "add",
-            f"{fmt_blocklist_address(locker_address)}", f"{24*60*60}"
-           ],
-           check=True,
-           capture_output=True,
-           text=True,
-       )  # fmt: skip
-
-    print()
-    print(
-        f"Blocklisted the current locker addresses of {kvmhostname}.\n"
-        + "Once the dead host has recovered, execute the following script on a [b]ceph mon[/b] host of this cluster:"
-    )
-    print("[purple]" + "=" * 80 + "[/purple]")
-    # XXX: persist for later review, present at the end as a cleanup check list that is copied to a ticket
-    print(
-        "\n".join(
-            [
-                f"ceph osd blocklist rm {fmt_blocklist_address(locker_address)}"
-                for locker_address in locker_addresses
-            ]
-        )
-    )
-    print("[purple]" + "=" * 80 + "[/purple]")
-
-    for img, lockers in host_locked_images.items():
-        # XXX: error handling: locks can be gone, images might have changed
-        # XXX: more than 1 lock: collect as a "something is weird" and alert operator afterwards
-        if len(lockers) > 1:
+        recreate = False
+        if pre_existing and state.kvmhostname != kvmhostname:
             print(
-                f"[orange]f{img} has multiple lockers. Will unlock all locks owned by {kvmhostname}, but please check afterwards."
+                f"[orange]Found existing rescue state file for host {state.kvmhostname} from {state.creation_date}. Starting over with new state."
             )
-            # XXX: add to
-        my_locks = [
-            lockinfo for lockinfo in lockers if lockinfo.id == kvmhostname
-        ]
-        # XXX: id != kvmhostname: skip, collect as a "something is weird" and alert operator afterwards
-        for lockinfo in lockers:
-            if lockinfo.id != kvmhostname:
-                print(
-                    f"[orange]{img} is also locked by {lockinfo.id}. Skipping the unlock, please check afterwards."
+            recreate = True
+        if pre_existing and state.kvmhostname == kvmhostname:
+            recreate = not Confirm.ask(
+                f"Found existing rescue-state from {state.creation_date}. Continue using that data?"
+            )
+        if recreate:
+            state.move_aside()
+            state = RescueState.new_state(kvmhostname=kvmhostname)
+        self.state = state
+
+    @property
+    def kvmhostname(self) -> str:
+        return self.state.kvmhostname
+
+    # lazy singletons
+    @cached_property
+    def rbd(self) -> Rbd:
+        return Rbd()
+
+    @cached_property
+    def ipmi(self) -> Ipmitool:
+        return Ipmitool(self.kvmhostname)
+
+    # -- steps, in the order they run --------------------------------------
+
+    @step()
+    def set_out_of_service(self) -> None:
+        """Have the operator take the host out of service in the directory."""
+        # Setting a node permanently out of service is not possible via
+        # directory API for now
+        url = f"https://directory.fcio.net/machine/list?search=name-{self.kvmhostname}"
+        print(" > Set the host out of service in the directory:")
+        # As an explicit OSC 8 hyperlink, so the terminal does not have to guess
+        # where the URL ends -- iTerm's own detection ran it into the following
+        # prompt. On its own line for terminals that lack OSC 8 and do guess.
+        print(f"   [link={url}]{url}[/link]")
+        print()
+        while not Confirm.ask(
+            f"[purple]Is host {self.kvmhostname} set out-of-service?"
+        ):
+            pass
+
+    @step(skip=False)
+    def ensure_host_offline(self) -> None:
+        """Establish that the host is really down before touching its locks."""
+        try:
+            power_status = self.ipmi(
+                "power", "status", capture_output=True
+            ).stdout.strip()
+
+            if power_status == "Chassis Power is off":
+                # we can force-unlock all the collected images
+                return
+        except subprocess.CalledProcessError as e:
+            print(f"Error calling ipmitool: {escape(str(e))}")
+        else:
+            print(
+                f"{self.kvmhostname} status is '{escape(power_status)}', please ensure it is not running any VMs before continuing."
+            )
+        # - falls nicht:
+        while True:
+            try:
+                match Prompt.ask(
+                    "Do you want to connect to the [green]SOL[/green] console, open an ipmitool [green]shell[/green], or [green]continue[/green] anyway?",
+                    choices=["SOL", "shell", "continue"],
+                ):
+                    # In practice, BMC connections can turn out to be rather flaky.
+                    # But retrying or deactivating-activating the SOL is left as a
+                    # task to the operator.
+                    case "SOL":
+                        print(
+                            "Opening a SOL console for your interactive investigations:"
+                        )
+                        _ = self.ipmi("sol", "activate", tty=True)
+                    case "shell":
+                        print("Opening an [i]ipmitool shell[/i]")
+                        _ = self.ipmi("shell", tty=True)
+                    case "continue":
+                        print(
+                            f"[yellow]If {self.kvmhostname} is not reliably down this may corrupt VM images. If there is any doubt, consider disconnecting the host from the Ceph cluster at network level."
+                        )
+                    case _:
+                        print("[orange]Invalid choice.")
+                        continue
+            except subprocess.CalledProcessError as e:
+                print(escape(str(e)))
+            if Confirm.ask(
+                f"Did you ensure that {self.kvmhostname} is reliably down?"
+            ):
+                break
+
+    @step()
+    def collect_locks(self) -> None:
+        """Find the VM images the dead host still holds Ceph locks on."""
+        # - tote VMs anhand von Ceph Lock identifizieren:
+        locked_images: dict[RbdImageSpec, list[RbdLock]] = {}
+        for pool in RBD_POOLS:
+            # XXX: allow pool to not exist
+            for imgspec in self.rbd.pool_ls(pool):
+                # XXX non-atomic: handle image gone
+                lockers = self.rbd.lock_ls(imgspec)
+                if not any(lock.id == self.kvmhostname for lock in lockers):
+                    continue
+                if len(lockers) > 1:
+                    held_by = ", ".join(sorted(lock.id for lock in lockers))
+                    self.state.warn(
+                        f"{imgspec} is locked by {held_by}, but locking is expected to be exclusive."
+                    )
+                # Foreign locks are kept alongside ours, so break_locks can tell
+                # them apart and the state file shows the operator what was
+                # actually there.
+                locked_images[imgspec] = lockers
+
+        self.state.locked_images = locked_images
+        self.state.save()
+
+        if not locked_images:
+            # XXX: host still out of service
+            raise RescueDone(
+                f"Did not find any VM images locked by {self.kvmhostname}, nothing to rescue.\n"
+                + "[yellow]Note: Host is still set out-of-service."
+            )
+
+        print(locked_images)
+
+    @step()
+    def blocklist_lockers(self) -> None:
+        """Blocklist the dead host's Ceph client addresses ahead of time."""
+        # By default, breaking a lock causes the address of the broken client
+        # to be osd-blocklisted. We do want that, but with a larger blocklist
+        # entry TTL, and for the full host. So adding that entry explicitly
+        # ahead of time.
+        ceph_auth_id = gethostname()
+        for locker_address in self.state.locker_addresses:
+            address = fmt_blocklist_address(locker_address)
+            _ = subprocess.run(
+               [
+                "ceph", "--id", ceph_auth_id,
+                "osd", "blocklist", "add",
+                address, f"{BLOCKLIST_TTL}",
+               ],
+               check=True,
+               capture_output=True,
+               text=True,
+           )  # fmt: skip
+
+            # continually persist the blocklist state, such that already blocked
+            # hosts do not get lost when a single loop iteration fails.
+            self.state.blocklist_entries.add(
+                BlocklistEntry(
+                    address=address,
                 )
-                continue
-
-            _ = rbd.rbd_(
-                "lock",
-                "remove",
-                "--rbd_blocklist_on_break_lock=false",
-                str(img),
-                lockinfo.id,
-                lockinfo.locker,
-                use_json=False,
             )
+            self.state.save()
 
-    # - finally evacuate all VMs away
-    subprocess.run(["fc-directory", f"d.evacuate_vms('{kvmhostname}')"], check=True)  # fmt: skip
+    @step(skip=False)
+    def report_blocklist_cleanup(self) -> None:
+        """Print the script that removes those blocklist entries again."""
+        # Not skippable: it only reads persisted state, and wanting the script
+        # back is a perfectly good reason to re-run the tool.
+        print()
+        print(
+            f"Blocklisted the current locker addresses of {self.kvmhostname}.\n"
+            + "Once the dead host has recovered, execute the following script on a [b]ceph mon[/b] host of this cluster:"
+        )
+        print("[purple]" + "=" * 80 + "[/purple]")
+        print(
+            "\n".join(
+                plain(entry.cleanup_command)
+                for entry in self.state.blocklist_entries
+            )
+        )
+        print("[purple]" + "=" * 80 + "[/purple]")
+
+    @step()
+    def break_locks(self) -> None:
+        """Remove the dead host's locks from the collected images."""
+        for imgspec, locks in self.state.locked_images.items():
+            # XXX: error handling: locks can be gone, images might have changed
+            for foreign in foreign_locks(locks, self.kvmhostname):
+                self.state.warn(
+                    f"{imgspec} is also locked by {foreign.id}; left that lock alone, please check afterwards."
+                )
+            for lockinfo in locks_held_by(locks, self.kvmhostname):
+                _ = self.rbd.rbd_(
+                    "lock",
+                    "remove",
+                    # speeds up the process and is okay due to us having created a blocklist entry earlier
+                    "--rbd_blocklist_on_break_lock=false",
+                    str(imgspec),
+                    lockinfo.id,
+                    lockinfo.locker,
+                    use_json=False,
+                )
+
+    @step()
+    def evacuate_vms(self) -> None:
+        """Hand the VMs over to the directory for evacuation."""
+        # - finally evacuate all VMs away
+        _ = subprocess.run(["fc-directory", f"d.evacuate_vms('{self.kvmhostname}')"], check=True)  # fmt: skip
+
+
+def report_warnings(state: RescueState) -> None:
+    if not state.warnings:
+        return
+    print()
+    print("[yellow]Things that looked off and should be investigated:")
+    for warning in state.warnings:
+        print(f"  - {plain(warning)}")
+
+
+def list_steps(kvmhostname: str) -> int:
+    state = RescueState.load()
+    if state is not None and state.kvmhostname != kvmhostname:
+        print(
+            f"[orange]The state file belongs to {state.kvmhostname}, not {kvmhostname}. Showing an empty run."
+        )
+        state = None
+    completed = state.completed if state else []
+
+    for definition in STEPS:
+        if definition.name in completed:
+            status = "[green]done[/green]"
+        else:
+            status = "[yellow]pending[/yellow]"
+        always = " [dim](always runs)[/dim]" if not definition.skip else ""
+        print(f"  {definition.name:<26} {status}{always}  {definition.doc}")
+
+    if state:
+        report_warnings(state)
+    return 0
+
+
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Rescue the VMs of a dead KVM host.",
+        epilog="Without a step, the whole sequence runs; steps already recorded as done skip themselves, so this doubles as resuming an interrupted rescue.",
+    )
+    _ = parser.add_argument("kvmhostname", help="the dead KVM host")
+    _ = parser.add_argument(
+        "step",
+        nargs="?",
+        choices=[definition.name for definition in STEPS],
+        help="run only this step",
+    )
+    _ = parser.add_argument(
+        "--list",
+        action="store_true",
+        dest="list_steps",
+        help="show the steps and what has already run, then exit",
+    )
+    _ = parser.add_argument(
+        "--no-skip",
+        action="store_false",
+        dest="skip",
+        help="run steps even if they are already recorded as done",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str]) -> int:
+    args = parse_args(argv)
+
+    if args.list_steps:
+        return list_steps(args.kvmhostname)
+
+    rescue = KVMHostRescue(args.kvmhostname)
+
+    start: StepDef | None = None
+    if args.step:
+        start = STEPS_BY_NAME[args.step]
+        missing = missing_prerequisites(start, rescue.state.completed)
+        if missing:
+            print(
+                f"[red]{start.name} requires steps that have not run yet:[/red]"
+            )
+            for position, definition in enumerate(missing, start=1):
+                print(f"  {position}. {definition.name}")
+            print(
+                f"Run `fc-kvmrescue {rescue.kvmhostname}` to work through the sequence from where it stopped."
+            )
+            return 1
+
+    try:
+        for rstep in run(rescue, start, skip=args.skip):
+            if rstep.skipped:
+                print(f"[dim]skip {rstep.definition.name} (already done)[/dim]")
+            else:
+                print()
+                print(f"[b]{rstep.definition.name}[/b]: {rstep.definition.doc}")
+            rstep()
+            if args.step:
+                break
+    except RescueDone as done:
+        print(f"[green]{plain(str(done))}[/green]")
+        report_warnings(rescue.state)
+        return 2
+
+    report_warnings(rescue.state)
+    return 0
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    sys.exit(main(sys.argv[1:]))
