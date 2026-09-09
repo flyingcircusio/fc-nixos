@@ -111,8 +111,6 @@ let
 
   quoteLabel = replaceStrings [ "/" ] [ "-" ];
 
-  subsystemDevice = interface: "sys-subsystem-net-devices-${interface}.device";
-
   concatFuncWithIndent =
     func: indent:
     let
@@ -585,36 +583,156 @@ in
         ];
       }
       //
-        # Units performing network interface setup must be wanted by
-        # network.target (which is itself wanted by multi-user.target),
-        # and be partOf networking-scripted.target (the upstream
-        # scripted networking reset button).
+
+        # These units performing network interface setup must be
+        # explicitly wanted by the multi-user target, otherwise they
+        # will not get initially added as the individual address units
+        # won't get restarted because triggering multi-user.target alone
+        # does not propagate to the network target, etc etc.
         (listToAttrs (
+
           (map (
             iface:
             (lib.nameValuePair "${iface.link}-netdev" rec {
               description = "Ensure network device settings for ${iface.link}";
               wantedBy = [
-                "network.target"
-                (subsystemDevice iface.link)
+                "network-setup.service"
+                "multi-user.target"
               ];
-              partOf = [
-                "network.target"
-                "networking-scripted.target"
-              ];
-              after = [ "network-pre.target" ];
-              before = [ "network.target" ];
-              stopIfChanged = false;
+              requires = [ "network-setup.service" ];
               path = [
-                pkgs.fc.netdev
+                pkgs.nettools
+                pkgs.ethtool
+                pkgs.procps
+                fclib.relaxedIp
+                pkgs.jq
+                pkgs.util-linux
               ];
-              environment.PYTHONUNBUFFERED = "1";
-              script =
-                "netdev start "
-                + (lib.optionalString config.flyingcircus.networking.physicalHostNetworking "-F ")
-                + (lib.optionalString (iface.externalLabel != null) "-l ${iface.externalLabel} ")
-                + "${iface.link} ${iface.mac} ${toString iface.mtu}";
-              preStop = "netdev stop ${iface.link}";
+              stopIfChanged = false;
+              script = ''
+                set -e
+
+                touch /var/lock/interface-rename.lock
+                exec 4</var/lock/interface-rename.lock
+
+                echo "Ensuring interface name '${iface.link}' ..."
+
+                echo "Acquiring interface renaming lock ..."
+                flock -x -w 60 4 || exit 1
+                echo "Got interface renaming lock ..."
+
+                # Look up the desired interface's current name by mac address
+                interface="$(ip -j -d link show | jq -r '.[] | select(.linkinfo?.info_kind? == null) | select(.address == "${iface.mac}") | .ifname')"
+
+                if [[ "$interface" == "" ]]; then
+                  echo "ERROR: Missing interface with MAC address '${iface.mac}'."
+                  echo "Found interfaces:"
+                  ip link show
+                  exit 1
+                fi
+
+                if [[ "$interface" != "${iface.link}" ]]; then
+                  echo "Interface is currently known as \`$interface\` ..."
+
+                  # Check whether our desired name is also already in use,
+                  # rename that one to a unique name.
+                  counter=0
+                  while ip l show dev ${iface.link} > /dev/null; do
+                    echo "'${iface.link}' is still being used, trying to clean up."
+                    # Down the other interface and rename it
+                    ip l set ${iface.link} down
+                    # Try, don't care if it fails. We check the success on the
+                    # next loop.
+                    ip l set ${iface.link} name eth$counter || true
+                    # The interface's name might not have been it's primary name
+                    # but an altname, try to delete that as well.
+                    # This looks funny, but we can use the altname to look up the
+                    # link to remove the altname ...
+                    # don't do this if the name is already gone
+                    ip l property del altname ${iface.link} dev ${iface.link} || true
+                    counter=$((counter+1))
+                  done
+
+                  echo "Performing rename from '$interface' to '${iface.link}'"
+                  ip l set $interface down
+                  ip l set $interface name ${iface.link}
+                fi
+
+                LINK_DRIVER=$(ethtool -i ${iface.link} | grep "driver: " | cut -d ':' -f 2 | sed -e 's/ //')
+                case $LINK_DRIVER in
+                    e1000|e1000e|igb|ixgbe|i40e)
+                        # Set adaptive interrupt moderation. This does increase
+                        # latency.
+                        echo "Enabling adaptive interrupt moderation ..."
+                        ethtool -C "${iface.link}" rx-usecs 1 || true
+                        # Larger buffers.
+                        echo "Setting ring buffer ..."
+                        ethtool -G "${iface.link}" rx 4096 tx 4096 || true
+                        # Large receive offload to reduce small packet CPU/interrupt impact.
+                        echo "Enabling large receive offload ..."
+                        ethtool -K "${iface.link}" lro on || true
+                        ;;
+                esac
+
+                # TODO: it'd be preferrable to manage this on a by-interface base
+                # and distinguish whether an interface is physical.
+                # Can this be done based on `config.flyingcircus.enc.parameters.interfaces.fe.policy`?
+                ${lib.optionalString (config.flyingcircus.networking.physicalHostNetworking) ''
+                  echo "Disabling flow control"
+                  ethtool -A ${iface.link} autoneg off rx off tx off || true
+                ''}
+
+                # Ensure MTU
+                ip l set ${iface.link} mtu ${toString iface.mtu}
+
+              ''
+
+              + (lib.optionalString (iface.externalLabel != null) ''
+                # Add long alternative names according to the external label
+                if ip l show dev ${quoteLabel iface.externalLabel} > /dev/null; then
+                  # XXX There is an edge case we don't cover here:
+                  # if the desired altname is already the primary name of an interface
+                  # the altname del will fail and this unit will not come up properly
+                  # but that means we notice it and will fix it then.
+                  ip l property del altname ${quoteLabel iface.externalLabel} dev ${quoteLabel iface.externalLabel}
+                fi
+                ip l property add altname ${quoteLabel iface.externalLabel} dev ${iface.link}
+
+              '')
+              + ''
+                echo "Releasing lock"
+                exec 4>&-
+              '';
+              preStop = ''
+                set -e
+
+                touch /var/lock/interface-rename.lock
+                exec 4</var/lock/interface-rename.lock
+
+                echo "Renaming ${iface.link} to neutral name ..."
+
+                echo "Acquiring interface renaming lock ..."
+                flock -x -w 60 4 || exit 1
+                echo "Got interface renaming lock ..."
+
+                # Shut down the interface so the systemd device unit goes away
+                # so we can perform proper renames.
+                ip l set ${iface.link} down
+
+                counter=0
+                while ip l show dev ${iface.link} > /dev/null; do
+                  ip l set ${iface.link} down
+                  # Try, don't care if it fails. We check the success on the
+                  # next loop.
+                  ip l set ${iface.link} name eth$counter || true
+                  # don't do this if the name is already gone
+                  ip l property del altname ${iface.link} dev ${iface.link} || true
+                  counter=$((counter+1))
+                done
+
+                echo "Releasing lock"
+                exec 4>&-
+              '';
               serviceConfig = {
                 Type = "oneshot";
                 RemainAfterExit = true;
@@ -709,15 +827,12 @@ in
                   (lib.nameValuePair "${linkName}-netdev" rec {
                     description = "Dummy interface ${linkName}";
                     wantedBy = [
-                      "network.target"
-                      (subsystemDevice linkName)
+                      "network-setup.service"
+                      "multi-user.target"
                     ];
-                    partOf = [
-                      "network.target"
-                      "networking-scripted.target"
-                    ];
-                    before = [ "network.target" ];
+                    before = wantedBy;
                     after = [ "network-pre.service" ];
+                    requires = [ "network-setup.service" ];
                     path = [
                       pkgs.nettools
                       pkgs.procps
@@ -749,20 +864,19 @@ in
                     (lib.nameValuePair "${iface.link}-netdev" rec {
                       description = "VXLAN link device ${iface.link}";
                       wantedBy = [
-                        "network.target"
-                        (subsystemDevice iface.link)
+                        "network-setup.service"
+                        "multi-user.target"
                       ];
-                      partOf = [
-                        "network.target"
-                        "networking-scripted.target"
+                      before = wantedBy;
+                      requires = [
+                        "network-addresses-${fclib.underlay.interface}.service"
+                        "network-setup.service"
                       ];
-                      before = [ "network.target" ];
+                      # do not order after network-setup.service as we already declare
+                      # a before= dependency.
                       after = [
                         "network-addresses-${fclib.underlay.interface}.service"
                         "network-pre.target"
-                      ];
-                      requires = [
-                        "network-addresses-${fclib.underlay.interface}.service"
                       ];
                       reloadIfChanged = true;
                       path = [
@@ -816,11 +930,9 @@ in
                     iface:
                     (lib.nameValuePair "network-bridge-suppress-flooding-${iface.link}" {
                       description = "Ensure ARP/ND suppression is enabled for bridge port ${iface.link}";
-                      wantedBy = [ "network.target" ];
-                      partOf = [ "networking-scripted.target" ];
-                      before = [ "network.target" ];
-                      after = [ "${iface.interface}-netdev.service" ];
+                      wantedBy = [ "multi-user.target" ];
                       requires = [ "${iface.interface}-netdev.service" ];
+                      after = [ "${iface.interface}-netdev.service" ];
                       stopIfChanged = false;
                       path = [ fclib.relaxedIp ];
                       script = ''
@@ -843,11 +955,9 @@ in
                   iface:
                   (lib.nameValuePair "network-bridge-disable-learning-${iface.link}" {
                     description = "Ensure MAC address learning is disabled for bridge port ${iface.link}";
-                    wantedBy = [ "network.target" ];
-                    partOf = [ "networking-scripted.target" ];
-                    before = [ "network.target" ];
-                    after = [ "${iface.interface}-netdev.service" ];
+                    wantedBy = [ "multi-user.target" ];
                     requires = [ "${iface.interface}-netdev.service" ];
+                    after = [ "${iface.interface}-netdev.service" ];
                     stopIfChanged = false;
                     path = [ fclib.relaxedIp ];
                     script = ''
@@ -875,12 +985,11 @@ in
                       description = "Ensure underlay properties for ${iface.link}";
                       wantedBy = [
                         "network-addresses-${iface.link}.service"
-                        "network.target"
+                        "multi-user.target"
                       ];
-                      requires = [ "${iface.link}-netdev.service" ];
                       before = wantedBy;
+                      requires = [ "${iface.link}-netdev.service" ];
                       after = requires;
-                      partOf = [ "networking-scripted.target" ];
                       path = [ pkgs.procps ];
                       script = ''
                         sysctl net.ipv4.conf.${iface.link}.rp_filter=0
@@ -904,20 +1013,17 @@ in
                     lib.nameValuePair "${name}-netdev" {
                       description = "VRF Interface ${name}";
                       wantedBy = [
-                        "network.target"
-                        (subsystemDevice name)
+                        "network-setup.service"
+                        "sys-subsystem-net-devices-${name}.device"
                       ];
                       bindsTo = [ interfaceUnit ];
-                      partOf = [
-                        "network.target"
-                        "networking-scripted.target"
-                      ];
+                      requires = [ "network-setup.service" ];
                       after = [
                         "network-pre.target"
                         interfaceUnit
                       ];
                       before = [
-                        "network.target"
+                        "network-setup.service"
                         addressUnit
                       ];
                       serviceConfig.Type = "oneshot";
@@ -951,14 +1057,10 @@ in
                       description = "Ensure fallback unreachable route for underlay prefixes";
                       wantedBy = [
                         "network-addresses-${fclib.underlay.interface}.service"
-                        "network.target"
+                        "multi-user.target"
                       ];
                       before = wantedBy;
-                      partOf = [ "networking-scripted.target" ];
-                      after = [
-                        "${fclib.underlay.interface}-netdev.service"
-                        "network-pre.target"
-                      ];
+                      after = [ "${fclib.underlay.interface}-netdev.service" ];
                       path = [ fclib.relaxedIp ];
                       stopIfChanged = false;
                       # https://docs.frrouting.org/en/stable-8.5/zebra.html#administrative-distance
