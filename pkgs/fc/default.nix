@@ -45,13 +45,6 @@ rec {
   megacli = callPackage ./megacli { };
   multiping = callPackage ./multiping.nix { };
   neighbour-cache-monitor = callPackage ./neighbour-cache-monitor { };
-  netdev = pkgs.writers.writePython3BinFromFile ./netdev.py {
-    libraries = with pkgs.python3Packages; [ netaddr ];
-    dependencies = with pkgs; [
-      iproute2
-      ethtool
-    ];
-  };
   ping-on-tap = callPackage ./ping-on-tap { };
 
   qemu-nautilus =
