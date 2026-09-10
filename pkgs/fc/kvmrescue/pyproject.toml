@@ -12,9 +12,10 @@
 # Most editors only read this from the workspace root, so open this
 # directory as its own workspace to pick it up.
 
-[tool.pyright]
+[tool.basedpyright]
 venvPath = "."
 venv = ".venv"
+typeCheckingMode = "recommended"
 
 [tool.ruff]
 line-length = 80
