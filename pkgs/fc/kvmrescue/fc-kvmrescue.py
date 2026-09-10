@@ -22,6 +22,13 @@ from typing import Any, TypeVar, cast
 from pydantic import IPvAnyAddress, TypeAdapter
 from rich import box, print
 from rich.markup import escape
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    TextColumn,
+    TimeElapsedColumn,
+)
 from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
@@ -134,6 +141,14 @@ class Ipmitool:
             )
 
 
+class PoolMissing(Exception):
+    """This cluster has no such pool.
+
+    Expected: RBD_POOLS lists what a cluster *may* have, and not every cluster
+    has every pool.
+    """
+
+
 # XXX: replace with more robust subprocess call chain that cares about errors
 class Rbd:
     ceph_client_name: str
@@ -149,7 +164,14 @@ class Rbd:
         return TypeAdapter(tp).validate_json(output)
 
     def pool_ls(self, pool: str) -> set[RbdImageSpec]:
-        imgnames = self.validate_json_cmd(list[str], "ls", pool)
+        try:
+            imgnames = self.validate_json_cmd(list[str], "ls", pool)
+        except subprocess.CalledProcessError as e:
+            # `rbd ls` exits 2 both for a missing pool and for other failures,
+            # so go by the message to avoid swallowing anything else.
+            if "error opening pool" in (e.stderr or ""):
+                raise PoolMissing(pool) from e
+            raise
         return {RbdImageSpec(pool, imgname) for imgname in imgnames}
 
     def lock_ls(self, imgspec: RbdImageSpec) -> list[RbdLock]:
@@ -174,6 +196,22 @@ class Rbd:
         if verbose:
             print(plain(result))
         return result
+
+
+def item_progress() -> Progress:
+    """Progress bar that names the item currently being worked on.
+
+    The steps below walk one Ceph call per image or address, which is slow
+    enough on a full pool that an operator wants to see it move -- and see what
+    it is stuck on if it stops moving.
+    """
+    return Progress(
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        TimeElapsedColumn(),
+        TextColumn("[dim]{task.fields[item]}"),
+    )
 
 
 def fmt_blocklist_address(address: IPvAnyAddress) -> str:
@@ -293,11 +331,29 @@ class KVMHostRescue:
         """Find the VM images the dead host still holds Ceph locks on."""
         # - tote VMs anhand von Ceph Lock identifizieren:
         locked_images: dict[RbdImageSpec, list[RbdLock]] = {}
+        # Listed up front so the bar below has a total: one `rbd ls` per pool is
+        # cheap next to the `lock ls` per image that follows.
+        imgspecs: list[RbdImageSpec] = []
         for pool in RBD_POOLS:
-            # XXX: allow pool to not exist
-            for imgspec in self.rbd.pool_ls(pool):
+            try:
+                imgspecs.extend(self.rbd.pool_ls(pool))
+            except PoolMissing:
+                # Not a state warning: a cluster without this pool is normal,
+                # and putting it on the check list every time would train
+                # operators to ignore that list.
+                print(
+                    f"[dim]No pool {pool} in this cluster, skipping it.[/dim]"
+                )
+
+        with item_progress() as progress:
+            task = progress.add_task(
+                "Checking locks", total=len(imgspecs), item=""
+            )
+            for imgspec in imgspecs:
+                progress.update(task, item=str(imgspec))
                 # XXX non-atomic: handle image gone
                 lockers = self.rbd.lock_ls(imgspec)
+                progress.advance(task)
                 if not any(lock.id == self.kvmhostname for lock in lockers):
                     continue
                 if len(lockers) > 1:
@@ -314,10 +370,8 @@ class KVMHostRescue:
         self.state.save()
 
         if not locked_images:
-            # XXX: host still out of service
             raise RescueDone(
-                f"Did not find any VM images locked by {self.kvmhostname}, nothing to rescue.\n"
-                + "[yellow]Note: Host is still set out-of-service."
+                f"Did not find any VM images locked by {self.kvmhostname}, nothing to rescue."
             )
 
         print(locked_images)
@@ -330,27 +384,34 @@ class KVMHostRescue:
         # entry TTL, and for the full host. So adding that entry explicitly
         # ahead of time.
         ceph_auth_id = gethostname()
-        for locker_address in self.state.locker_addresses:
-            address = fmt_blocklist_address(locker_address)
-            _ = subprocess.run(
-               [
-                "ceph", "--id", ceph_auth_id,
-                "osd", "blocklist", "add",
-                address, f"{BLOCKLIST_TTL}",
-               ],
-               check=True,
-               capture_output=True,
-               text=True,
-           )  # fmt: skip
-
-            # continually persist the blocklist state, such that already blocked
-            # hosts do not get lost when a single loop iteration fails.
-            self.state.blocklist_entries.add(
-                BlocklistEntry(
-                    address=address,
-                )
+        locker_addresses = self.state.locker_addresses
+        with item_progress() as progress:
+            task = progress.add_task(
+                "Blocklisting", total=len(locker_addresses), item=""
             )
-            self.state.save()
+            for locker_address in locker_addresses:
+                address = fmt_blocklist_address(locker_address)
+                progress.update(task, item=address)
+                _ = subprocess.run(
+                   [
+                    "ceph", "--id", ceph_auth_id,
+                    "osd", "blocklist", "add",
+                    address, f"{BLOCKLIST_TTL}",
+                   ],
+                   check=True,
+                   capture_output=True,
+                   text=True,
+               )  # fmt: skip
+
+                # continually persist the blocklist state, such that already blocked
+                # hosts do not get lost when a single loop iteration fails.
+                self.state.blocklist_entries.add(
+                    BlocklistEntry(
+                        address=address,
+                    )
+                )
+                self.state.save()
+                progress.advance(task)
 
     @step(skip=False)
     def report_blocklist_cleanup(self) -> None:
@@ -374,23 +435,29 @@ class KVMHostRescue:
     @step()
     def break_locks(self) -> None:
         """Remove the dead host's locks from the collected images."""
-        for imgspec, locks in self.state.locked_images.items():
-            # XXX: error handling: locks can be gone, images might have changed
-            for foreign in foreign_locks(locks, self.kvmhostname):
-                self.state.warn(
-                    f"{imgspec} is also locked by {foreign.id}; left that lock alone, please check afterwards."
-                )
-            for lockinfo in locks_held_by(locks, self.kvmhostname):
-                _ = self.rbd.rbd_(
-                    "lock",
-                    "remove",
-                    # speeds up the process and is okay due to us having created a blocklist entry earlier
-                    "--rbd_blocklist_on_break_lock=false",
-                    str(imgspec),
-                    lockinfo.id,
-                    lockinfo.locker,
-                    use_json=False,
-                )
+        with item_progress() as progress:
+            task = progress.add_task(
+                "Breaking locks", total=len(self.state.locked_images), item=""
+            )
+            for imgspec, locks in self.state.locked_images.items():
+                progress.update(task, item=str(imgspec))
+                # XXX: error handling: locks can be gone, images might have changed
+                for foreign in foreign_locks(locks, self.kvmhostname):
+                    self.state.warn(
+                        f"{imgspec} is also locked by {foreign.id}; left that lock alone, please check afterwards."
+                    )
+                for lockinfo in locks_held_by(locks, self.kvmhostname):
+                    _ = self.rbd.rbd_(
+                        "lock",
+                        "remove",
+                        # speeds up the process and is okay due to us having created a blocklist entry earlier
+                        "--rbd_blocklist_on_break_lock=false",
+                        str(imgspec),
+                        lockinfo.id,
+                        lockinfo.locker,
+                        use_json=False,
+                    )
+                progress.advance(task)
 
     @step()
     def evacuate_vms(self) -> None:
@@ -512,6 +579,12 @@ def main(argv: list[str]) -> int:
                 break
     except RescueDone as done:
         print(f"[green]{plain(str(done))}[/green]")
+        if "set_out_of_service" in rescue.state.completed:
+            # Ending early leaves that first step's effect in place, and nothing
+            # later undoes it.
+            print(
+                f"[yellow]Note: {rescue.kvmhostname} is still set out-of-service."
+            )
         report_warnings(rescue.state)
         return 2
 
