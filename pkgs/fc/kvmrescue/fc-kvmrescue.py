@@ -9,7 +9,6 @@
 import argparse
 import ctypes
 import getpass
-import json
 import os
 import subprocess
 import sys
@@ -17,7 +16,7 @@ from contextlib import nullcontext
 from functools import cached_property
 from ipaddress import IPv6Address
 from socket import gethostname
-from typing import Any, TypeVar, cast
+from typing import ClassVar, cast, overload
 
 from pydantic import IPvAnyAddress, TypeAdapter
 from rich import box, print
@@ -58,12 +57,12 @@ RBD_POOLS = ["rbd.hdd", "rbd.ssd"]
 # them up.
 BLOCKLIST_TTL = 24 * 60 * 60
 
-V = TypeVar("V")
-JSONkeys = str | float | int
-JSONdata = JSONkeys | dict[JSONkeys, "JSONdata"] | list["JSONdata"]
 
-
-def plain(value: Any) -> Any:
+@overload
+def plain(value: str) -> str: ...
+@overload
+def plain[T](value: T) -> T: ...
+def plain(value: object) -> object:
     """Keep rich from swallowing `[...]` in data as console markup.
 
     Bracketed data is common here: IPv6 EntityAddrs (`[dead::1]:0/0`) and the
@@ -79,22 +78,22 @@ class Ipmitool:
     # Constants defined by kernel, not dynamically accessible here:
     # https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/include/uapi/asm-generic/mman.h#n18
 
-    MCL_CURRENT = 1
-    MCL_FUTURE = 2
+    MCL_CURRENT: ClassVar[int] = 1
+    MCL_FUTURE: ClassVar[int] = 2
 
     hostname: str
 
     _ipmipw: str | None = None
     _ipmiuser: str | None = None
 
-    libc = ctypes.CDLL("libc.so.6", use_errno=True)
+    libc: ClassVar[ctypes.CDLL] = ctypes.CDLL("libc.so.6", use_errno=True)
 
     def __init__(self, hostname: str) -> None:
         self.hostname = hostname
 
     @classmethod
     def mlockall(cls) -> None:
-        result = cls.libc.mlockall(cls.MCL_CURRENT | cls.MCL_FUTURE)
+        result = cast(int, cls.libc.mlockall(cls.MCL_CURRENT | cls.MCL_FUTURE))
         if result != 0:
             raise Exception("cannot lock memory, errno=%s" % ctypes.get_errno())
 
@@ -157,11 +156,10 @@ class Rbd:
     def __init__(self) -> None:
         self.ceph_client_name = f"client.{gethostname()}"
 
-    def validate_json_cmd(self, tp: type[V], *args: Any, **kw: Any) -> V:
+    def validate_json_cmd[V](self, tp: type[V], *args: str) -> V:
         # `tp` may be any type pydantic can validate: a BaseModel subclass just
         # as well as a plain container like `list[str]`.
-        output = self.rbd_(*args, parse_json=False, **kw)
-        return TypeAdapter(tp).validate_json(output)
+        return TypeAdapter(tp).validate_json(self.rbd_(*args))
 
     def pool_ls(self, pool: str) -> set[RbdImageSpec]:
         try:
@@ -169,7 +167,10 @@ class Rbd:
         except subprocess.CalledProcessError as e:
             # `rbd ls` exits 2 both for a missing pool and for other failures,
             # so go by the message to avoid swallowing anything else.
-            if "error opening pool" in (e.stderr or ""):
+            # typeshed types `stderr` as Any because it depends on the flags
+            # `run` was called with; ours captures it as text.
+            stderr = cast(str, e.stderr)
+            if "error opening pool" in stderr:
                 raise PoolMissing(pool) from e
             raise
         return {RbdImageSpec(pool, imgname) for imgname in imgnames}
@@ -181,9 +182,13 @@ class Rbd:
         self,
         *args: str,
         use_json: bool = True,
-        parse_json: bool = True,
         verbose: bool = False,
-    ) -> str | JSONdata:
+    ) -> str:
+        """Run an `rbd` subcommand and hand back its raw output.
+
+        Callers that want structured data go through `validate_json_cmd`, which
+        lets pydantic parse the JSON straight into the target type.
+        """
         format_arg = ["--format", "json"] if use_json else []
         cmd = ["rbd", "--name", self.ceph_client_name, *format_arg, *args]
         if verbose:
@@ -191,8 +196,6 @@ class Rbd:
         result = subprocess.run(
             cmd, check=True, capture_output=True, text=True
         ).stdout
-        if use_json and parse_json:
-            result = cast(JSONdata, json.loads(result))
         if verbose:
             print(plain(result))
         return result
@@ -517,7 +520,25 @@ def list_steps(kvmhostname: str) -> int:
     return 0
 
 
-def parse_args(argv: list[str]) -> argparse.Namespace:
+class Args(argparse.Namespace):
+    """The parsed command line.
+
+    Declared so the attributes are typed: `Namespace` hands them back as `Any`.
+
+    They are deliberately left without defaults -- argparse populates every one
+    of them from the parser below, and a default repeated here would take effect
+    whenever its flag is absent, silently overriding the action it belongs to if
+    the two ever drifted apart. Hence the ignores: the checker cannot see that
+    argparse does the initialising.
+    """
+
+    kvmhostname: str  # pyright: ignore[reportUninitializedInstanceVariable]
+    step: str | None  # pyright: ignore[reportUninitializedInstanceVariable]
+    list_steps: bool  # pyright: ignore[reportUninitializedInstanceVariable]
+    skip: bool  # pyright: ignore[reportUninitializedInstanceVariable]
+
+
+def parse_args(argv: list[str]) -> Args:
     parser = argparse.ArgumentParser(
         description="Rescue the VMs of a dead KVM host.",
         epilog="Without a step, the whole sequence runs; steps already recorded as done skip themselves, so this doubles as resuming an interrupted rescue.",
@@ -541,7 +562,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         dest="skip",
         help="run steps even if they are already recorded as done",
     )
-    return parser.parse_args(argv)
+    return parser.parse_args(argv, namespace=Args())
 
 
 def main(argv: list[str]) -> int:

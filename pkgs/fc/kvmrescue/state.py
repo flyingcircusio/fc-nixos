@@ -10,7 +10,7 @@ import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Annotated, Any, ClassVar, Self, override
+from typing import Annotated, ClassVar, Self, override
 
 from pydantic import (
     BaseModel,
@@ -38,7 +38,7 @@ class RbdImageSpec:
         return f"{self.pool}/{self.imagename}"
 
 
-def parse_imagespec(value: Any) -> Any:
+def parse_imagespec(value: object) -> object:
     # Accepts the `pool/imagename` form we serialize to, and passes anything
     # else through for pydantic to validate as the dataclass itself.
     if not isinstance(value, str):
@@ -85,7 +85,7 @@ class EntityAddr(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def parse(cls, value: Any) -> Any:
+    def parse(cls, value: object) -> object:
         # Accept both the string form found in `rbd` output and an already
         # structured mapping -- the latter is what we read back from the state
         # file.
