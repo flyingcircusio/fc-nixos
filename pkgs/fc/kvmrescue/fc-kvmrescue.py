@@ -20,9 +20,10 @@ from socket import gethostname
 from typing import Any, TypeVar, cast
 
 from pydantic import IPvAnyAddress, TypeAdapter
-from rich import print
+from rich import box, print
 from rich.markup import escape
 from rich.prompt import Confirm, Prompt
+from rich.table import Table
 
 from state import (
     BlocklistEntry,
@@ -194,7 +195,7 @@ class KVMHostRescue:
         recreate = False
         if pre_existing and state.kvmhostname != kvmhostname:
             print(
-                f"[orange]Found existing rescue state file for host {state.kvmhostname} from {state.creation_date}. Starting over with new state."
+                f"[orange1]Found existing rescue state file for host {state.kvmhostname} from {state.creation_date}. Starting over with new state."
             )
             recreate = True
         if pre_existing and state.kvmhostname == kvmhostname:
@@ -278,7 +279,7 @@ class KVMHostRescue:
                             f"[yellow]If {self.kvmhostname} is not reliably down this may corrupt VM images. If there is any doubt, consider disconnecting the host from the Ceph cluster at network level."
                         )
                     case _:
-                        print("[orange]Invalid choice.")
+                        print("[orange1]Invalid choice.")
                         continue
             except subprocess.CalledProcessError as e:
                 print(escape(str(e)))
@@ -411,18 +412,38 @@ def list_steps(kvmhostname: str) -> int:
     state = RescueState.load()
     if state is not None and state.kvmhostname != kvmhostname:
         print(
-            f"[orange]The state file belongs to {state.kvmhostname}, not {kvmhostname}. Showing an empty run."
+            f"[orange1]The state file belongs to {state.kvmhostname}, not {kvmhostname}. Showing an empty run."
         )
         state = None
     completed = state.completed if state else []
+
+    table = Table(
+        title=f"Rescue steps for {kvmhostname}",
+        title_justify="left",
+        box=box.SIMPLE,
+    )
+    table.add_column("#", justify="right", style="dim")
+    # the first two columns get whatever they need, the docs absorb the squeeze
+    table.add_column("step", no_wrap=True)
+    table.add_column("status", no_wrap=True)
+    table.add_column("description")
 
     for definition in STEPS:
         if definition.name in completed:
             status = "[green]done[/green]"
         else:
             status = "[yellow]pending[/yellow]"
-        always = " [dim](always runs)[/dim]" if not definition.skip else ""
-        print(f"  {definition.name:<26} {status}{always}  {definition.doc}")
+        if not definition.skip:
+            # runs again on every pass, done or not
+            status += " [dim](always runs)[/dim]"
+        table.add_row(
+            str(definition.index + 1),
+            definition.name,
+            status,
+            definition.doc,
+        )
+
+    print(table)
 
     if state:
         report_warnings(state)
