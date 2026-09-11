@@ -370,10 +370,9 @@ def add_pid(logger, method_name, event_dict):
 
 _REDACTED = "[REDACTED]"
 
-# Key names (substring, case-insensitive) whose values are treated as secrets.
-# Conservative: only redact credential-like fields, leave the rest (e.g.
-# usernames, buckets) intact for debuggability.
-_SENSITIVE_KEY_HINTS = (
+# Key names (substring, case-insensitive) whose values are treated as secrets
+# when censoring (in Stamina retry args)
+_SENSITIVE_KEY_NAMES = (
     "secret",
     "password",
     "passwd",
@@ -385,13 +384,13 @@ _SENSITIVE_KEY_HINTS = (
 )
 
 
-def _is_sensitive_key(key):
-    return isinstance(key, str) and any(
-        hint in key.lower() for hint in _SENSITIVE_KEY_HINTS
-    )
+def _is_sensitive_key(key: str) -> bool:
+    return any(hint in key.lower() for hint in _SENSITIVE_KEY_NAMES)
 
 
-def _censor(value):
+def _censor(value: object) -> object:
+    # censors value which may be any composite value recursively
+    # replacing values of sensitive keys with "[REDACTED]" in dicts
     if isinstance(value, dict):
         return {
             key: (_REDACTED if _is_sensitive_key(key) else _censor(item))
@@ -403,13 +402,7 @@ def _censor(value):
 
 
 def redact_stamina_retry_args(logger, method_name, event_dict):
-    """Selectively redact sensitive values in Stamina's retry logs.
-
-    ``stamina.retry_scheduled`` carries the retried callable's ``args`` and
-    ``kwargs``. Redact only credential-like values (e.g. S3 ``secret_key`` /
-    ``access_key``), keeping non-sensitive data (e.g. usernames, buckets) so
-    the retry stays debuggable.
-    """
+    """structlog log processor for stamina: redact sensitive values in Stamina's retry logs"""
     if not event_dict.get("event", "").startswith("stamina."):
         return event_dict
     if "args" in event_dict:
@@ -420,20 +413,16 @@ def redact_stamina_retry_args(logger, method_name, event_dict):
 
 
 def _install_stamina_retry_hook():
-    """Install a raw-args on_retry hook so retry args can be selectively redacted.
+    """Reimplementation of staminas on_retry hook so args are preserved
 
-    Stamina's default structlog hook serializes the retried callable's args with
-    ``repr()`` before logging (upstream stamina/instrumentation/_structlog.py:32:
-    ``args=tuple(repr(a) for a in details.args)``), which hides their structure
-    from structlog processors. To keep non-sensitive args (e.g. usernames,
-    buckets) while redacting only secrets, we install our own on_retry hook via
-    Stamina's public ``instrumentation.set_on_retry_hooks`` API (available since
-    23.2.0) that logs the raw args/kwargs, which ``redact_stamina_retry_args``
-    then censors.
+    upstream https://github.com/hynek/stamina/blob/ae777564650fda1c6ec24c09d0e73db75eef6dd8/src/stamina/instrumentation/_structlog.py#L24
+    includes args=tuple(repr(a) for a in details.args) which hides their
+    structure from structlog processors
     """
     from stamina import instrumentation
 
-    def on_retry(details):
+    # on_retry: instrumentation.RetryHook
+    def on_retry(details: instrumentation.RetryDetails):
         structlog.get_logger("stamina").warning(
             "stamina.retry_scheduled",
             callable=details.name,
