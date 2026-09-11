@@ -1,0 +1,15 @@
+diff --git a/src/data_provider/src/packages/packageLinuxParserSnap.cpp b/src/data_provider/src/packages/packageLinuxParserSnap.cpp
+--- a/src/data_provider/src/packages/packageLinuxParserSnap.cpp
++++ b/src/data_provider/src/packages/packageLinuxParserSnap.cpp
+@@ -34,10 +34,9 @@
+         }
+     };
+ 
+-    const auto onError = [&](const std::string & result, const long responseCode, const std::string & responseBody)
++    const auto onError = [&](const std::string & result, const long responseCode)
+     {
+         std::cerr << "Error retrieving packages using snap unix-socket (" << responseCode << ") " << result << "\n";
+-        std::cerr << "Response body: " << responseBody << "\n";
+     };
+ 
+     const auto url = HttpUnixSocketURL("/run/snapd.socket", "http://localhost/v2/snaps");

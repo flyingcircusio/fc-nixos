@@ -1,0 +1,12 @@
+diff --git a/src/shared_modules/dbsync/src/sqlite/sqlite_wrapper.h b/src/shared_modules/dbsync/src/sqlite/sqlite_wrapper.h
+index 3333333..4444444 100644
+--- a/src/shared_modules/dbsync/src/sqlite/sqlite_wrapper.h
++++ b/src/shared_modules/dbsync/src/sqlite/sqlite_wrapper.h
+@@ -15,6 +15,7 @@
+ #include "isqlite_wrapper.h"
+ #include "sqlite3.h"
+ 
++#include <cstdint>
+ #include <string>
+ #include <memory>
+ namespace SQLite

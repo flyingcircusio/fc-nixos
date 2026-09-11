@@ -1,0 +1,96 @@
+--- a/src/Makefile	2026-05-13 00:20:31.089974326 +0200
++++ b/src/Makefile	2026-05-13 00:22:03.760323863 +0200
+@@ -826,13 +826,11 @@
+ ${WAZUH_LIB_OUTPUT_PATH}${LIBSTDCPP_NAME}: ${libstdc++_path}
+ 	cp $< $@
+ ifneq (${uname_S},AIX)
+-	${STRIP_TOOL} -x $@
+ endif
+ 
+ ${WAZUH_LIB_OUTPUT_PATH}${LIBGCC_S_NAME}: ${libgcc_s_path}
+ 	cp $< $@
+ ifneq (${uname_S},AIX)
+-	${STRIP_TOOL} -x $@
+ endif
+ 
+ .PHONY: server local hybrid agent selinux
+@@ -989,7 +987,7 @@
+ ifeq ($(CHECK_CENTOS5),YES)
+ EXTERNAL_LIBS += $(PROCPS_LIB)
+ else
+-EXTERNAL_LIBS += $(PROCPS_LIB) $(LIBALPM_LIB) $(LIBARCHIVE_LIB)
++EXTERNAL_LIBS += $(PROCPS_LIB) $(LIBALPM_LIB) $(LIBARCHIVE_LIB) $(DB_LIB)
+ endif
+ endif
+ endif
+@@ -1067,7 +1065,7 @@
+ 	cd ${EXTERNAL_OPENSSL} && ./Configure $(OPENSSL_FLAGS) solaris-sparcv9-gcc && ${MAKE} build_libs
+ endif
+ else
+-	cd ${EXTERNAL_OPENSSL} && ./config $(OPENSSL_FLAGS) && ${MAKE} build_libs
++	cd ${EXTERNAL_OPENSSL} && perl ./Configure $(OPENSSL_FLAGS) && ${MAKE} build_libs
+ endif
+ endif
+ endif
+@@ -1225,7 +1223,7 @@
+ 	 ${MAKE} -C $(EXTERNAL_LIBDB) libdb.a
+ 
+ $(EXTERNAL_LIBDB)Makefile:
+-	cd ${EXTERNAL_LIBDB} && CPPFLAGS=-fPIC ../dist/configure --with-cryptography=no --disable-queue --disable-heap --disable-partition --disable-mutexsupport --disable-replication --disable-verify --disable-statistics ac_cv_func_pthread_yield=no
++	cd ${EXTERNAL_LIBDB} && CPPFLAGS=-fPIC CFLAGS="-Wno-error=incompatible-pointer-types -Wno-error=old-style-definition" ../dist/configure --with-cryptography=no --disable-queue --disable-heap --disable-partition --disable-mutexsupport --disable-replication --disable-verify --disable-statistics ac_cv_func_pthread_yield=no
+ endif
+ 
+ #### libarchive ######
+--- a/src/shared/file_op.c	2026-05-13 00:19:17.597828305 +0200
++++ b/src/shared/file_op.c	2026-05-13 00:19:59.664897979 +0200
+@@ -3276,6 +3276,15 @@
+     struct stat buff_stat;
+     char * delim = "/bin";
+     os_calloc(PATH_MAX, sizeof(char), buff);
++    // NixOS: WAZUH_HOME takes priority — /proc/self/exe resolves to /nix/store
++    // but runtime state (config, data) lives at /var/ossec
++    {
++        char * home_env = getenv(WAZUH_HOME_ENV);
++        if (home_env != NULL) {
++            snprintf(buff, PATH_MAX, "%s", home_env);
++            return buff;
++        }
++    }
+ #ifdef __MACH__
+     pid_t pid = getpid();
+     if (proc_pidpath(pid, buff, PATH_MAX) > 0) {
+--- a/src/shared/privsep_op.c	2026-05-13 00:22:13.774340297 +0200
++++ b/src/shared/privsep_op.c	2026-05-13 00:22:39.721388623 +0200
+@@ -132,6 +132,18 @@
+ 
+ int Privsep_SetUser(uid_t uid)
+ {
++    // NixOS: systemd sets User= in serviceConfig before exec.
++    // Validate that we're running as the expected user.
++    if (getuid() == uid) {
++        // Already running as target user - systemd did its job
++        return (OS_SUCCESS);
++    }
++    if (uid != 0 && getuid() == 0) {
++        // Security: Running as root when we shouldn't be
++        merror("Privsep_SetUser: Running as root but target uid=%d. Check systemd User= setting.", uid);
++        return (OS_INVALID);
++    }
++
+     if (setuid(uid) < 0) {
+         return (OS_INVALID);
+     }
+@@ -147,6 +159,13 @@
+ 
+ int Privsep_SetGroup(gid_t gid)
+ {
++    // NixOS: systemd sets Group= in serviceConfig before exec.
++    // Validate that we're running as the expected group.
++    if (getgid() == gid) {
++        // Already running as target group - systemd did its job
++        return (OS_SUCCESS);
++    }
++
+     if (setgroups(1, &gid) == -1) {
+         return (OS_INVALID);
+     }
