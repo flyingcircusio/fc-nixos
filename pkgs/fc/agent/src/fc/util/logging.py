@@ -368,6 +368,73 @@ def add_pid(logger, method_name, event_dict):
     return event_dict
 
 
+# Key names (substring, case-insensitive) whose values are treated as secrets
+# when censoring (in Stamina retry args)
+def _is_sensitive_key(key: str) -> bool:
+    return any(
+        hint in key.lower()
+        for hint in (
+            "secret",
+            "password",
+            "passwd",
+            "token",
+            "api_key",
+            "apikey",
+            "access_key",
+            "auth",
+        )
+    )
+
+
+def _censor(value: object) -> object:
+    # censors value which may be any composite value recursively
+    # replacing values of sensitive keys with "[REDACTED]" in dicts
+    if isinstance(value, dict):
+        return {
+            key: ("[REDACTED]" if _is_sensitive_key(key) else _censor(item))
+            for key, item in value.items()
+        }
+    if isinstance(value, (list, tuple)):
+        return type(value)(_censor(item) for item in value)
+    return value
+
+
+def redact_stamina_retry_args(logger, method_name, event_dict):
+    """structlog log processor for stamina: redact sensitive values in Stamina's retry logs"""
+    if not event_dict.get("event", "").startswith("stamina."):
+        return event_dict
+    if "args" in event_dict:
+        event_dict["args"] = _censor(event_dict["args"])
+    if "kwargs" in event_dict:
+        event_dict["kwargs"] = _censor(event_dict["kwargs"])
+    return event_dict
+
+
+def _install_stamina_retry_hook():
+    """Reimplementation of staminas on_retry hook so args are preserved
+
+    upstream https://github.com/hynek/stamina/blob/ae777564650fda1c6ec24c09d0e73db75eef6dd8/src/stamina/instrumentation/_structlog.py#L24
+    includes args=tuple(repr(a) for a in details.args) which hides their
+    structure from structlog processors
+    """
+    from stamina import instrumentation
+
+    # on_retry: instrumentation.RetryHook
+    def on_retry(details: instrumentation.RetryDetails):
+        structlog.get_logger("stamina").warning(
+            "stamina.retry_scheduled",
+            callable=details.name,
+            args=details.args,
+            kwargs=details.kwargs,
+            retry_num=details.retry_num,
+            wait_for=details.wait_for,
+            waited_so_far=details.waited_so_far,
+            caused_by=details.caused_by,
+        )
+
+    instrumentation.set_on_retry_hooks([on_retry])
+
+
 def add_caller_info(logger, method_name, event_dict):
     frame, module_str = structlog._frames._find_first_app_frame_and_name(
         additional_ignores=[__name__]
@@ -626,6 +693,7 @@ def init_logging(
 
     processors = [
         add_pid,
+        redact_stamina_retry_args,
         structlog.processors.add_log_level,
         process_exc_info,
         format_exc_info,
@@ -674,6 +742,7 @@ def init_logging(
         wrapper_class=structlog.BoundLogger,
         logger_factory=MultiOptimisticLoggerFactory(context, loggers),
     )
+    _install_stamina_retry_hook()
 
     log = structlog.get_logger()
 
