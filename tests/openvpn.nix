@@ -189,6 +189,25 @@ import ./make-test-python.nix (
         gw.succeed("sudo -u sensuclient ${testlib.sensuCheckCmd nodes.gw "openvpn_pki_ca"}")
         gw.succeed("sudo -u sensuclient ${testlib.sensuCheckCmd nodes.gw "openvpn_pki_server"}")
 
+        # PKI cert expiry checks should go red for certs within the warning
+        # (25d) and critical (14d) windows. Swap in short-lived certs and
+        # expect both checks to fail. The CA cert is made to warn (20 days
+        # left), the server cert to fail critically (10 days left).
+        gw.succeed(
+          "openssl req -x509 -newkey rsa:2048 -nodes -days 20"
+          + " -subj /CN=test-expiring-ca -keyout /tmp/test-ca.key"
+          + " -out /var/lib/openvpn-pki/pki/ca.crt"
+        )
+        gw.succeed(
+          "openssl req -x509 -newkey rsa:2048 -nodes -days 10"
+          + " -subj /CN=test-expiring-server -keyout /tmp/test-server.key"
+          + " -out /var/lib/openvpn-pki/server.crt"
+        )
+        ca_out = gw.fail("sudo -u sensuclient ${testlib.sensuCheckCmd nodes.gw "openvpn_pki_ca"}")
+        server_out = gw.fail("sudo -u sensuclient ${testlib.sensuCheckCmd nodes.gw "openvpn_pki_server"}")
+        assert "expires within warning time" in ca_out, ca_out
+        assert "expires within critical time" in server_out, server_out
+
         gw.succeed("systemctl stop openvpn-access")
         gw.wait_until_fails("ip link show tun0")
 
