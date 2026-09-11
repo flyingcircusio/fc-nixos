@@ -16,9 +16,11 @@ import ./make-test-python.nix (
 
     testScript = with pkgs; ''
       package_versions = {
+        "${nodejs-slim_20}": "20",
         "${nodejs-slim_22}": "22",
         "${nodejs-slim_24}": "24",
         "${nodejs-slim}": "24",
+        "${nodejs_20}": "20",
         "${nodejs_22}": "22",
         "${nodejs_24}": "24",
         "${nodejs}": "24",
