@@ -391,7 +391,8 @@ let
             "ns": .metadata.namespace,
             "phase": .status.phase,
             "since": .status.conditions[].lastTransitionTime,
-            "message": .status.conditions[].message}') || ret=$?
+            "message": .status.conditions[].message}
+          | select(.message != null)' | ${jqBin} -s "unique") || ret=$?
 
     if [ "$ret" -eq "4" ]; then
         # no output, good.
