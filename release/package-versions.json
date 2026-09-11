@@ -465,14 +465,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.108",
+    "name": "linux-6.12.109",
     "pname": "linux",
-    "version": "6.12.108"
+    "version": "6.12.109"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.18.49",
+    "name": "linux-6.18.50",
     "pname": "linux",
-    "version": "6.18.49"
+    "version": "6.18.50"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -510,9 +510,9 @@
     "version": "5.12.0"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-1.159.0",
+    "name": "matrix-synapse-1.160.0",
     "pname": "matrix-synapse",
-    "version": "1.159.0"
+    "version": "1.160.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.3",
@@ -665,9 +665,9 @@
     "version": "10.46"
   },
   "pdns": {
-    "name": "pdns-5.0.5",
+    "name": "pdns-5.0.6",
     "pname": "pdns",
-    "version": "5.0.5"
+    "version": "5.0.6"
   },
   "percona-server": {
     "name": "percona-server-8.4.10-10",
@@ -750,9 +750,9 @@
     "version": "127"
   },
   "postfix": {
-    "name": "postfix-3.11.6",
+    "name": "postfix-3.11.7",
     "pname": "postfix",
-    "version": "3.11.6"
+    "version": "3.11.7"
   },
   "postgresql": {
     "name": "postgresql-17.11",
@@ -950,14 +950,14 @@
     "version": "10.2.4"
   },
   "rabbitmq-server": {
-    "name": "rabbitmq-server-4.2.5",
+    "name": "rabbitmq-server-4.2.9",
     "pname": "rabbitmq-server",
-    "version": "4.2.5"
+    "version": "4.2.9"
   },
   "rclone": {
-    "name": "rclone-1.75.0",
+    "name": "rclone-1.75.1",
     "pname": "rclone",
-    "version": "1.75.0"
+    "version": "1.75.1"
   },
   "re2c": {
     "name": "re2c-4.5.1",
@@ -975,9 +975,9 @@
     "version": "1.8.1"
   },
   "roundcube": {
-    "name": "roundcube-1.7.3",
+    "name": "roundcube-1.7.4",
     "pname": "roundcube",
-    "version": "1.7.3"
+    "version": "1.7.4"
   },
   "rsync": {
     "name": "rsync-3.5.0",
@@ -990,9 +990,9 @@
     "version": "3.4.9"
   },
   "runc": {
-    "name": "runc-1.4.2",
+    "name": "runc-1.4.3",
     "pname": "runc",
-    "version": "1.4.2"
+    "version": "1.4.3"
   },
   "screen": {
     "name": "screen-5.0.1",
