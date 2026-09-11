@@ -344,7 +344,7 @@ class KVMHostRescue:
                         _ = self.ipmi("shell", tty=True)
                     case "continue":
                         print(
-                            f"[yellow]If {self.kvmhostname} is not reliably down this may corrupt VM images. If there is any doubt, consider disconnecting the host from the Ceph cluster at network level."
+                            f"[yellow]If {self.kvmhostname} is not reliably down, there is a danger of corrupting VM images. As a safeguard, we will blocklist the host's access to the Ceph cluster."
                         )
                     case _:
                         print("[orange1]Invalid choice.")
