@@ -12,8 +12,9 @@ import getpass
 import os
 import subprocess
 import sys
+from collections.abc import Callable
 from contextlib import nullcontext
-from functools import cached_property
+from functools import cached_property, wraps
 from ipaddress import IPv6Address
 from socket import gethostname
 from typing import ClassVar, cast, overload
@@ -49,12 +50,12 @@ from steps import (
     step,
 )
 
-# XXX: can we extract them somewhere from the platform?
+# we *could* extract them somewhere from the platform, but let's not do this for now.
 RBD_POOLS = ["rbd.hdd", "rbd.ssd"]
 
-# How long the blocklist entries we add ourselves live. Plenty of time to handle
-# a broken host, but short enough to recover on its own should we miss cleaning
-# them up.
+# Lifetime of the host-global `ceph osd blocklist` entries we add in
+# @blocklist_lockers. Plenty of time to handle a broken host, but short enough
+# to recover on its own should we miss cleaning them up.
 BLOCKLIST_TTL = 24 * 60 * 60
 
 
@@ -148,7 +149,33 @@ class PoolMissing(Exception):
     """
 
 
-# XXX: replace with more robust subprocess call chain that cares about errors
+def handle_image_gone[**P, R](f: Callable[P, R]) -> Callable[P, R]:
+    """Wrap around any `rbd` call and provide an actionable message for the case
+    of a missing image. Apply this at places where we can expect images to be
+    gone due to non-atomicites.
+    """
+
+    @wraps(f)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        try:
+            return f(*args, **kwargs)
+        except subprocess.CalledProcessError as e:
+            # typeshed types `stderr` as Any because it depends on the flags
+            # `run` was called with; ours captures it as text.
+            if (
+                "error opening image" in (errmsg := cast(str, e.stderr) or "")
+                and "No such file or directory" in errmsg
+            ):
+                raise RuntimeError(
+                    f"Did not find image: {e}\n"
+                    + "Try re-running the `collect_locks` step and continue step-wise from there."
+                ) from e
+            else:
+                raise
+
+    return wrapper
+
+
 class Rbd:
     ceph_client_name: str
     # for now assuming default ceph conf location, while fc.qemu handles this explicitly
@@ -341,9 +368,7 @@ class KVMHostRescue:
             try:
                 imgspecs.extend(self.rbd.pool_ls(pool))
             except PoolMissing:
-                # Not a state warning: a cluster without this pool is normal,
-                # and putting it on the check list every time would train
-                # operators to ignore that list.
+                # not adding a state warning: some clusters normally do not have all pools
                 print(
                     f"[dim]No pool {pool} in this cluster, skipping it.[/dim]"
                 )
@@ -354,8 +379,7 @@ class KVMHostRescue:
             )
             for imgspec in imgspecs:
                 progress.update(task, item=str(imgspec))
-                # XXX non-atomic: handle image gone
-                lockers = self.rbd.lock_ls(imgspec)
+                lockers = handle_image_gone(self.rbd.lock_ls)(imgspec)
                 progress.advance(task)
                 if not any(lock.id == self.kvmhostname for lock in lockers):
                     continue
@@ -444,13 +468,12 @@ class KVMHostRescue:
             )
             for imgspec, locks in self.state.locked_images.items():
                 progress.update(task, item=str(imgspec))
-                # XXX: error handling: locks can be gone, images might have changed
                 for foreign in foreign_locks(locks, self.kvmhostname):
                     self.state.warn(
                         f"{imgspec} is also locked by {foreign.id}; left that lock alone, please check afterwards."
                     )
                 for lockinfo in locks_held_by(locks, self.kvmhostname):
-                    _ = self.rbd.rbd_(
+                    _ = handle_image_gone(self.rbd.rbd_)(
                         "lock",
                         "remove",
                         # speeds up the process and is okay due to us having created a blocklist entry earlier

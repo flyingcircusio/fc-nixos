@@ -46,9 +46,9 @@ STEPS: list[StepDef] = []
 STEPS_BY_NAME: dict[str, StepDef] = {}
 
 
-def step(
+def step[StepMethod: Callable[..., None]](
     *, skip: bool = True
-) -> Callable[[Callable[..., None]], Callable[..., None]]:
+) -> Callable[[StepMethod], StepMethod]:
     """Register a step host's method as a rescue step, in definition order.
 
     `skip=False` marks a step that runs again on every pass even once recorded
@@ -56,7 +56,7 @@ def step(
     re-print something out of the persisted state.
     """
 
-    def register(fn: Callable[..., None]) -> Callable[..., None]:
+    def register(fn: StepMethod) -> StepMethod:
         definition = StepDef(
             name=fn.__name__,
             index=len(STEPS),
