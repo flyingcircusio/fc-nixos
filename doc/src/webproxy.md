@@ -26,26 +26,28 @@ and how you are used to configure, start, stop and maintain these packages.
 
 ### Role configuration
 
-
 There are currently two ways to configure Vinyl Cache.
 Please note that all configurations must be performed by a service user.
 
-The recommended method is to use Nix. For an overview of the available configuration
-options, look at the options in our search: [https://search.flyingcircus.io/search/options?q=flyingcircus.services.vinyl-cache&channel=fc-26.05-dev&page=1](search.flyingcircus.io).
-As with all NixOS modules, place your configuration in an appropriately named file in the
-{file}`/etc/local/nixos` directory (e.g. {file}`/etc/local/nixos/vinyl-cache.nix`).
+For simple setups, you can put your verbatim Vinyl Cache configuration into {file}`/etc/local/vinyl-cache/default.vcl`.
+If you still have configuration in {file}`/etc/local/varnish/default.vcl`,
+it will only be used as long as there is no configuration in
+{file}`/etc/local/vinyl-cache/default.vcl`.
+Migrating your configuration to the new path is recommended.
 
-Alternatively, you can also put your verbatim Vinyl Cache configuration into {file}`/etc/local/vinyl-cache/default.vcl`.
-This configuration is used as a fallback config, which means that it triggers
-on all requests, if no more specific match was found in the configuration via Nix.
+The other option is to use our Vinyl Cache NixOS module. We recommended this approach
+when your setup is more involved, e.g. when caching multiple domains on a single VM.
+For an overview of the available configuration options, look at the options in our search: [https://search.flyingcircus.io/search/options?q=flyingcircus.services.vinyl-cache&channel=fc-26.05-dev&page=1](search.flyingcircus.io).
+If you provide configuration via both {file}`/etc/local/vinyl-cache/default.vcl` and the NixOS module,
+the configuration in {file}`default.vcl` will be used as a fallback when none of the configurations defined in the module
+match on incoming requests.
 
-When you still have configuration in the `/etc/local/varnish/default.vcl` file,
-this configuration will only be used as long as there is no nonempty
-`/etc/local/vinyl-cache/default.vcl` file.
+As with all NixOS modules on our VMs, place your configuration in an appropriately named file in the directory
+{file}`/etc/local/nixos` (e.g. {file}`/etc/local/nixos/vinyl-cache.nix`).
 
 The role passes a handful of command line arguments to Vinyl Cache to
 ensure reasonable default behaviour. If you wish to pass extra command
-line arguments to the executable, then you should use the provided
+line arguments to the executable, you should use the provided
 `flyingcircus.services.vinyl-cache.extraCommandLine` NixOS
 option. Arguments specified using this option (which may be defined
 multiple times) will be merged into the list of arguments passed to
