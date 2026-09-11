@@ -368,24 +368,22 @@ def add_pid(logger, method_name, event_dict):
     return event_dict
 
 
-_REDACTED = "[REDACTED]"
-
 # Key names (substring, case-insensitive) whose values are treated as secrets
 # when censoring (in Stamina retry args)
-_SENSITIVE_KEY_NAMES = (
-    "secret",
-    "password",
-    "passwd",
-    "token",
-    "api_key",
-    "apikey",
-    "access_key",
-    "auth",
-)
-
-
 def _is_sensitive_key(key: str) -> bool:
-    return any(hint in key.lower() for hint in _SENSITIVE_KEY_NAMES)
+    return any(
+        hint in key.lower()
+        for hint in (
+            "secret",
+            "password",
+            "passwd",
+            "token",
+            "api_key",
+            "apikey",
+            "access_key",
+            "auth",
+        )
+    )
 
 
 def _censor(value: object) -> object:
@@ -393,7 +391,7 @@ def _censor(value: object) -> object:
     # replacing values of sensitive keys with "[REDACTED]" in dicts
     if isinstance(value, dict):
         return {
-            key: (_REDACTED if _is_sensitive_key(key) else _censor(item))
+            key: ("[REDACTED]" if _is_sensitive_key(key) else _censor(item))
             for key, item in value.items()
         }
     if isinstance(value, (list, tuple)):
