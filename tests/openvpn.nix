@@ -183,9 +183,11 @@ import ./make-test-python.nix (
         # sensu check for openvpn server should be green
         gw.succeed("/etc/local/openvpn/check")
 
-        # PKI cert expiry checks should be green (certs are valid for years)
-        gw.succeed("${testlib.sensuCheckCmd nodes.gw "openvpn_pki_ca"}")
-        gw.succeed("${testlib.sensuCheckCmd nodes.gw "openvpn_pki_server"}")
+        # PKI cert expiry checks should be green (certs are valid for years).
+        # Run as the sensuclient user to exercise the actual sudo invocation
+        # path used in production.
+        gw.succeed("sudo -u sensuclient ${testlib.sensuCheckCmd nodes.gw "openvpn_pki_ca"}")
+        gw.succeed("sudo -u sensuclient ${testlib.sensuCheckCmd nodes.gw "openvpn_pki_server"}")
 
         gw.succeed("systemctl stop openvpn-access")
         gw.wait_until_fails("ip link show tun0")
