@@ -359,7 +359,6 @@ class KVMHostRescue:
     @step()
     def collect_locks(self) -> None:
         """Find the VM images the dead host still holds Ceph locks on."""
-        # - tote VMs anhand von Ceph Lock identifizieren:
         locked_images: dict[RbdImageSpec, list[RbdLock]] = {}
         # Listed up front so the bar below has a total: one `rbd ls` per pool is
         # cheap next to the `lock ls` per image that follows.
@@ -400,8 +399,8 @@ class KVMHostRescue:
             raise RescueDone(
                 f"Did not find any VM images locked by {self.kvmhostname}, nothing to rescue."
             )
-
-        print(locked_images)
+        else:
+            print(f"Found {len(locked_images)} locked VM images.")
 
     @step()
     def blocklist_lockers(self) -> None:
@@ -487,7 +486,7 @@ class KVMHostRescue:
 
     @step()
     def evacuate_vms(self) -> None:
-        """Hand the VMs over to the directory for evacuation."""
+        """Call directory to move VMs to remaining hosts."""
         # - finally evacuate all VMs away
         _ = subprocess.run(["fc-directory", f"d.evacuate_vms('{self.kvmhostname}')"], check=True)  # fmt: skip
 
@@ -597,8 +596,12 @@ def main(argv: list[str]) -> int:
     rescue = KVMHostRescue(args.kvmhostname)
 
     start: StepDef | None = None
+    skip = args.skip
     if args.step:
+        # run only this single step. We assume this is done deliberately, so no
+        # skipping
         start = STEPS_BY_NAME[args.step]
+        skip = False
         missing = missing_prerequisites(start, rescue.state.completed)
         if missing:
             print(
@@ -612,7 +615,7 @@ def main(argv: list[str]) -> int:
             return 1
 
     try:
-        for rstep in run(rescue, start, skip=args.skip):
+        for rstep in (stepgen := run(rescue, start, skip=skip)):
             if rstep.skipped:
                 print(f"[dim]skip {rstep.definition.name} (already done)[/dim]")
             else:
@@ -620,6 +623,11 @@ def main(argv: list[str]) -> int:
                 print(f"[b]{rstep.definition.name}[/b]: {rstep.definition.doc}")
             rstep()
             if args.step:
+                print(f"Finished step [b]{rstep.definition.name}[/b].")
+                if next_step := next(stepgen, None):
+                    print(
+                        f"Next step to invoke manually would be [b]{next_step.definition.name}[/b]"
+                    )
                 break
     except RescueDone as done:
         print(f"[green]{plain(str(done))}[/green]")
