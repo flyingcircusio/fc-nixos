@@ -465,14 +465,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.109",
+    "name": "linux-6.12.110",
     "pname": "linux",
-    "version": "6.12.109"
+    "version": "6.12.110"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.18.51",
+    "name": "linux-6.18.52",
     "pname": "linux",
-    "version": "6.18.51"
+    "version": "6.18.52"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
