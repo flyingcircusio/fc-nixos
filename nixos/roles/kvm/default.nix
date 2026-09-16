@@ -618,6 +618,12 @@ in
       enable = true;
       enableStructuredConfig = true;
 
+      defaults.extraConfig = ''
+        log global
+        retries 6
+        option redispatch 2
+      '';
+
       frontend = {
         http-in = {
           binds = [ "${head fclib.network.srv.v4.addresses}:7480" ];
@@ -633,7 +639,7 @@ in
               name = head (lib.splitString "." service.address);
               address = head (filter fclib.isIp4 service.ips);
             in
-            "s3-${name} ${address}:7480 check inter 10s rise 2 fall 1 maxconn 40"
+            "s3-${name} ${address}:7480 maxconn 1000 check inter 60s fastinter 10s downinter 5s rise 3 fall 1 observe layer4 error-limit 10 on-error mark-down"
           ) (fclib.findServices "ceph_rgw-internal-server");
           extraConfig = ''
             option httpchk GET /rgw-monitoring/probe
