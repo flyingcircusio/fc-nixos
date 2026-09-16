@@ -73,9 +73,12 @@ def plain(value: object) -> object:
     return escape(value) if isinstance(value, str) else value
 
 
+def rich_link(url: str) -> str:
+    return f"[link={url}]{url}[/link]"
+
+
 class Ipmitool:
-    # Implement mlock to avoid swapping as we store sensitive data (like encryption)
-    # keys.
+    # Implement mlock to avoid swapping as we store sensitive data (like IPMI credentials)
     # Constants defined by kernel, not dynamically accessible here:
     # https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/include/uapi/asm-generic/mman.h#n18
 
@@ -256,23 +259,43 @@ def fmt_blocklist_address(address: IPvAnyAddress) -> str:
 class KVMHostRescue:
     state: RescueState
 
-    def __init__(self, kvmhostname: str) -> None:
-        state, pre_existing = RescueState.ensure_statefile(
-            kvmhostname=kvmhostname
-        )
-        recreate = False
-        if pre_existing and state.kvmhostname != kvmhostname:
+    def __init__(self, yt_ticket: str | None) -> None:
+        while not yt_ticket:
+            if not Confirm.ask(
+                "Did you already create a ticket for this rescue?", default=True
+            ):
+                print("Create a new ticket from")
+                print(
+                    "   "
+                    + rich_link(
+                        "https://wiki.flyingcircus.io/Qemu/KVM_operations_manual#semi-automated_KVM_host_evacuation"
+                    )
+                )
+            yt_ticket = Prompt.ask("Enter ticket number")
+        state = RescueState.load(yt_ticket=yt_ticket)
+        pre_existing = bool(state)
+        if not state:
+            kvmhostname = Prompt.ask(
+                "Enter hostname of the KVM host to evacute"
+            )
+            state = RescueState.new_state(kvmhostname, yt_ticket)
+            print(f"Created new state file at [i]{state.path}[i]")
+        else:
+            print()
             print(
-                f"[orange1]Found existing rescue state file for host {state.kvmhostname} from {state.creation_date}. Starting over with new state."
+                f"This rescue operation is for host [b]{state.kvmhostname}[/b]."
             )
-            recreate = True
-        if pre_existing and state.kvmhostname == kvmhostname:
-            recreate = not Confirm.ask(
-                f"Found existing rescue-state from {state.creation_date}. Continue using that data?"
+
+        recreate = False
+        if pre_existing:
+            print(
+                f"Found existing rescue-state from {state.creation_date:%Y-%m-%d %H:%M %Z} at [i]{state.path}[i]."
             )
+            _ = list_steps(yt_ticket)
+            recreate = not Confirm.ask("Continue using that data?")
         if recreate:
             state.move_aside()
-            state = RescueState.new_state(kvmhostname=kvmhostname)
+            state = RescueState.new_state(state.kvmhostname, yt_ticket)
         self.state = state
 
     @property
@@ -298,9 +321,9 @@ class KVMHostRescue:
         url = f"https://directory.fcio.net/machine/list?search=name-{self.kvmhostname}"
         print(" > Set the host out of service in the directory:")
         # As an explicit OSC 8 hyperlink, so the terminal does not have to guess
-        # where the URL ends -- iTerm's own detection ran it into the following
-        # prompt. On its own line for terminals that lack OSC 8 and do guess.
-        print(f"   [link={url}]{url}[/link]")
+        # where the URL ends.
+        # On its own line for terminals that lack OSC 8 and do guess.
+        print(f"   {rich_link(url)}")
         print()
         while not Confirm.ask(
             f"[purple]Is host {self.kvmhostname} set out-of-service?"
@@ -500,17 +523,17 @@ def report_warnings(state: RescueState) -> None:
         print(f"  - {plain(warning)}")
 
 
-def list_steps(kvmhostname: str) -> int:
-    state = RescueState.load()
-    if state is not None and state.kvmhostname != kvmhostname:
-        print(
-            f"[orange1]The state file belongs to {state.kvmhostname}, not {kvmhostname}. Showing an empty run."
-        )
+def list_steps(yt_ticket: str | None) -> int:
+    state = RescueState.load(yt_ticket) if yt_ticket else None
+    if state is None and yt_ticket:
+        print("[orange1]Unable to load state file. Showing an empty run.")
         state = None
     completed = state.completed if state else []
+    title = "Rescue steps"
+    title += f" for {state.kvmhostname}" if state else ""
 
     table = Table(
-        title=f"Rescue steps for {kvmhostname}",
+        title,
         title_justify="left",
         box=box.SIMPLE,
     )
@@ -554,7 +577,7 @@ class Args(argparse.Namespace):
     argparse does the initialising.
     """
 
-    kvmhostname: str  # pyright: ignore[reportUninitializedInstanceVariable]
+    yt_ticket: str | None  # pyright: ignore[reportUninitializedInstanceVariable]
     step: str | None  # pyright: ignore[reportUninitializedInstanceVariable]
     list_steps: bool  # pyright: ignore[reportUninitializedInstanceVariable]
     skip: bool  # pyright: ignore[reportUninitializedInstanceVariable]
@@ -565,10 +588,13 @@ def parse_args(argv: list[str]) -> Args:
         description="Rescue the VMs of a dead KVM host.",
         epilog="Without a step, the whole sequence runs; steps already recorded as done skip themselves, so this doubles as resuming an interrupted rescue.",
     )
-    _ = parser.add_argument("kvmhostname", help="the dead KVM host")
     _ = parser.add_argument(
-        "step",
+        "yt_ticket",
         nargs="?",
+        help="ticket identifier of this particular rescue (asked for if omitted)",
+    )
+    _ = parser.add_argument(
+        "--step",
         choices=[definition.name for definition in STEPS],
         help="run only this step",
     )
@@ -591,9 +617,9 @@ def main(argv: list[str]) -> int:
     args = parse_args(argv)
 
     if args.list_steps:
-        return list_steps(args.kvmhostname)
+        return list_steps(args.yt_ticket)
 
-    rescue = KVMHostRescue(args.kvmhostname)
+    rescue = KVMHostRescue(args.yt_ticket)
 
     start: StepDef | None = None
     skip = args.skip
@@ -610,7 +636,7 @@ def main(argv: list[str]) -> int:
             for position, definition in enumerate(missing, start=1):
                 print(f"  {position}. {definition.name}")
             print(
-                f"Run `fc-kvmrescue {rescue.kvmhostname}` to work through the sequence from where it stopped."
+                f"Run `fc-kvmrescue {rescue.state.yt_ticket}` to work through the sequence from where it stopped."
             )
             return 1
 

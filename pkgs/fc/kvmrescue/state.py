@@ -22,7 +22,7 @@ from pydantic import (
 )
 from rich import print
 
-STATE_FILE_PATH = Path.home() / Path(".local/state/fc-kvmrescue/state.json")
+STATE_FILE_DIR = Path("/var/lib/fc-kvmrescue/")
 
 
 # frozen to stay hashable, so imagespecs can be collected in sets
@@ -138,6 +138,7 @@ class BlocklistEntry(BaseModel):
 class RescueState(BaseModel):
     creation_date: datetime
     kvmhostname: str
+    yt_ticket: str
     completed: list[str] = []
     # Every lock found on an image the dead host holds a lock on. Including foreign
     # locks as well, since those indicate an image wants a second look by an operator.
@@ -148,28 +149,27 @@ class RescueState(BaseModel):
     warnings: set[str] = set()
 
     @classmethod
-    def load(cls) -> Self | None:
+    def load(cls, yt_ticket: str) -> Self | None:
         """Read the state file without prompting, if there is one."""
         try:
-            return cls.model_validate_json(STATE_FILE_PATH.read_text())
+            return cls.model_validate_json(
+                (STATE_FILE_DIR / f"{yt_ticket}.json").read_text()
+            )
         except FileNotFoundError:
             return None
 
     @classmethod
-    def ensure_statefile(cls, kvmhostname: str) -> tuple[Self, bool]:
-        state = cls.load()
-        if state is None:
-            return (cls.new_state(kvmhostname=kvmhostname), False)
-        return (state, True)
-
-    @classmethod
-    def new_state(cls, kvmhostname: str) -> Self:
+    def new_state(cls, kvmhostname: str, yt_ticket: str) -> Self:
         # Only persisted with `save` once there is something worth saving.
-        return cls(kvmhostname=kvmhostname, creation_date=datetime.now(tz=UTC))
+        return cls(
+            kvmhostname=kvmhostname,
+            yt_ticket=yt_ticket,
+            creation_date=datetime.now(tz=UTC),
+        )
 
     def save(self) -> None:
-        STATE_FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        _ = STATE_FILE_PATH.write_text(self.model_dump_json(indent=2))
+        STATE_FILE_DIR.mkdir(parents=True, exist_ok=True)
+        _ = self.path.write_text(self.model_dump_json(indent=2))
 
     def mark_done(self, stepname: str) -> None:
         if stepname not in self.completed:
@@ -181,6 +181,10 @@ class RescueState(BaseModel):
         self.save()
 
     @property
+    def path(self) -> Path:
+        return STATE_FILE_DIR / f"{self.yt_ticket}.json"
+
+    @property
     def locker_addresses(self) -> set[IPvAnyAddress]:
         """The addresses the dead host locks from -- never a foreign locker's."""
         return {
@@ -189,8 +193,7 @@ class RescueState(BaseModel):
             for lock in locks_held_by(locks, self.kvmhostname)
         }
 
-    @staticmethod
-    def move_aside() -> None:
-        target = STATE_FILE_PATH.parent / "state.json.old"
+    def move_aside(self) -> None:
+        target = self.path.with_suffix(".old.json")
         print(f"Moving old state file to {target}.")
-        _ = STATE_FILE_PATH.rename(target=target)
+        _ = STATE_FILE_DIR.rename(target=target)
