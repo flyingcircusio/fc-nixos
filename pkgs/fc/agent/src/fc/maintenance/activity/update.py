@@ -89,7 +89,7 @@ class UpdateActivity(Activity):
         )
 
         if next_channel.is_local:
-            log.warn(
+            log.warning(
                 "update-from-enc-local-channel",
                 _replace_msg=(
                     "UpdateActivity is incompatible with local checkouts."

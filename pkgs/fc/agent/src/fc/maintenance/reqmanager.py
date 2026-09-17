@@ -40,7 +40,7 @@ def require_lock(func):
     """Decorator that asserts an open lockfile prior execution."""
 
     def assert_locked(self, *args, **kwargs):
-        assert self.lockfile, "method {} required lock".format(func)
+        assert self.lockfile, f"method {func} required lock"
         return func(self, *args, **kwargs)
 
     return assert_locked
@@ -164,7 +164,7 @@ class ReqManager:
                 )
                 self.config.read(self.config_file)
             else:
-                self.log.warn(
+                self.log.warning(
                     "reqmanager-enter-config-not-found",
                     config_file=str(config_file),
                 )
@@ -697,7 +697,7 @@ class ReqManager:
     def _runnable(self, run_all_now=False, force_run=False):
         """Generate due Requests in running order."""
         if run_all_now and force_run:
-            self.log.warn(
+            self.log.warning(
                 "execute-all-requests-now-force",
                 _replace_msg=(
                     "Run-all mode with force requested. "
@@ -706,7 +706,7 @@ class ReqManager:
             )
             runnable_requests = sorted(self.requests.values())
         elif run_all_now:
-            self.log.warn(
+            self.log.warning(
                 "execute-all-requests-now",
                 _replace_msg=(
                     "Run all mode requested, treating pending requests as runnable."
@@ -772,7 +772,7 @@ class ReqManager:
             return HandleEnterExceptionResult(exit=True)
 
         if not run_all_now and force_run:
-            self.log.warn(
+            self.log.warning(
                 "execute-requests-force",
                 _replace_msg=(
                     "Force mode activated: Activities will be executed "
@@ -782,7 +782,7 @@ class ReqManager:
             return HandleEnterExceptionResult()
 
         if run_all_now and force_run:
-            self.log.warn(
+            self.log.warning(
                 "run-all-now-force",
                 _replace_msg=(
                     "Run all mode requested and force mode activated: "
@@ -815,7 +815,7 @@ class ReqManager:
             return HandleEnterExceptionResult(exit=True)
 
         if not run_all_now and force_run:
-            self.log.warn(
+            self.log.warning(
                 "execute-requests-force",
                 _replace_msg=(
                     "Due requests will be executed regardless of the "
@@ -825,7 +825,7 @@ class ReqManager:
             return HandleEnterExceptionResult()
 
         if run_all_now and force_run:
-            self.log.warn(
+            self.log.warning(
                 "run-all-now-force",
                 _replace_msg=(
                     "Run all mode requested and force mode activated: "
