@@ -18,6 +18,7 @@ See `../README.md` for patch explanations and build troubleshooting.
 | `02-libbpf-bootstrap.patch` | Disable git/HTTP fetching (sandbox), suppress implicit-function-declaration |
 | `03-cstdint-include.patch` | Missing `#include <cstdint>` in `sqlite_wrapper.h` |
 | `04-snap-onerror-signature.patch` | GCC 15 lambda signature mismatch in `PostRequestParameters.onError` |
+| `05-bpf-helpers-libbpf-1_7.patch` | Remove dead skeleton function-pointer globals + drop wrapper_bpf.h sed in generated skeleton (libbpf ≥ 1.0) |
 
 ## Build Flow
 

@@ -131,6 +131,7 @@ stdenv.mkDerivation {
     ./02-libbpf-bootstrap.patch
     ./03-cstdint-include.patch
     ./04-snap-onerror-signature.patch
+    ./05-bpf-helpers-libbpf-1_7.patch
   ];
 
   postUnpack = ''
