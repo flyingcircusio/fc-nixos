@@ -139,6 +139,7 @@ class RescueState(BaseModel):
     creation_date: datetime
     kvmhostname: str
     yt_ticket: str
+    ipmi_user: str | None = None
     completed: list[str] = []
     # Every lock found on an image the dead host holds a lock on. Including foreign
     # locks as well, since those indicate an image wants a second look by an operator.

@@ -18,6 +18,7 @@ from functools import cached_property, wraps
 from ipaddress import IPv6Address
 from socket import gethostname
 from textwrap import dedent
+from time import sleep
 from typing import ClassVar, cast, overload
 
 from pydantic import IPvAnyAddress, TypeAdapter
@@ -78,11 +79,18 @@ def rich_link(url: str) -> str:
     return f"[link={url}]{url}[/link]"
 
 
-def rich_sep() -> None:
-    print("[purple]" + "=" * 80 + "[/purple]")
+def rich_sep(char: str = "=") -> None:
+    print("[purple]" + f"{char}" * 80 + "[/purple]")
 
 
 class Ipmitool:
+    """Wrapper for calling the fc-ipmitool command, implementing the following
+    supoporting features:
+    - user name / password caching
+    - mlock to avoid swapping these credentials
+    - I/O redirection: optionally redirect to a real tty, e.g. for SOL
+    """
+
     # Implement mlock to avoid swapping as we store sensitive data (like IPMI credentials)
     # Constants defined by kernel, not dynamically accessible here:
     # https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/include/uapi/asm-generic/mman.h#n18
@@ -93,12 +101,13 @@ class Ipmitool:
     hostname: str
 
     _ipmipw: str | None = None
-    _ipmiuser: str | None = None
+    _ipmiuser: str | None
 
     libc: ClassVar[ctypes.CDLL] = ctypes.CDLL("libc.so.6", use_errno=True)
 
-    def __init__(self, hostname: str) -> None:
+    def __init__(self, hostname: str, ipmiuser: str | None = None) -> None:
         self.hostname = hostname
+        self._ipmiuser = ipmiuser
 
     @classmethod
     def mlockall(cls) -> None:
@@ -108,14 +117,14 @@ class Ipmitool:
 
     @property
     def ipmipw(self) -> str:
-        if self._ipmipw is None:
+        while not self._ipmipw:
             # allows clearing a wrong password by resetting the cached value to None
             self._ipmipw = getpass.getpass("IPMI access password: ")
         return self._ipmipw
 
     @property
     def ipmiuser(self) -> str:
-        if self._ipmiuser is None:
+        while not self._ipmiuser:
             self._ipmiuser = input(f"IPMI user for {self.hostname}: ")
         return self._ipmiuser
 
@@ -147,6 +156,23 @@ class Ipmitool:
                 encoding="utf-8",
                 env=self.env,
             )
+
+    def check_is_power_off(self) -> bool:
+        """May raise a CalledProcessError, leaving handling of that to
+        consumers."""
+        power_status = self(
+            "power", "status", capture_output=True
+        ).stdout.strip()
+
+        if power_status == "Chassis Power is off":
+            # we can force-unlock all the collected images
+            print("Power is [green]off[/green].")
+            return True
+        else:
+            print(
+                f"Power status is [orange1]'{escape(power_status)}'[/orange1].",
+            )
+            return False
 
 
 class PoolMissing(Exception):
@@ -315,7 +341,7 @@ class KVMHostRescue:
 
     @cached_property
     def ipmi(self) -> Ipmitool:
-        return Ipmitool(self.kvmhostname)
+        return Ipmitool(self.kvmhostname, ipmiuser=self.state.ipmi_user)
 
     # -- steps, in the order they run --------------------------------------
 
@@ -357,29 +383,36 @@ class KVMHostRescue:
     @step(skip=False)
     def ensure_host_offline(self) -> None:
         """Establish that the host is really down before touching its locks."""
-        try:
-            power_status = self.ipmi(
-                "power", "status", capture_output=True
-            ).stdout.strip()
 
-            if power_status == "Chassis Power is off":
-                # we can force-unlock all the collected images
+        print(
+            f"Power status of {self.kvmhostname} should be [i]off[/i]. Checking…"
+        )
+        try:
+            if self.ipmi.check_is_power_off():
+                print("Host is [green]safe to evacuate[/green].")
                 return
         except subprocess.CalledProcessError as e:
             print(f"Error calling ipmitool: {escape(str(e))}")
-        else:
-            print(
-                f"{self.kvmhostname} status is '{escape(power_status)}', please ensure it is not running any VMs before continuing."
-            )
+        print(
+            "Ensure the host is really down. You can now interact with the host if necessary."
+        )
         while True:
             try:
                 match Prompt.ask(
-                    "Do you want to connect to the [green]SOL[/green] console, open an ipmitool [green]shell[/green], or [green]continue[/green] anyway?",
-                    choices=["SOL", "shell", "continue"],
+                    "Actions: Trigger a IPMI [b]power off[/b], connect to [b]SOL[/b] console, open an ipmitool [b]shell[/b], or [b]continue[/b] anyway?",
+                    choices=["power off", "SOL", "shell", "continue"],
                 ):
                     # In practice, BMC connections can turn out to be rather flaky.
                     # But retrying or deactivating-activating the SOL is left as a
                     # task to the operator.
+                    case "power off":
+                        print("[i]ipmitool power off")
+                        _ = self.ipmi("power", "off")
+                        sleep(5)
+                        if self.ipmi.check_is_power_off():
+                            return
+                        else:
+                            continue
                     case "SOL":
                         print(
                             "Opening a SOL console for your interactive investigations:"
@@ -390,16 +423,14 @@ class KVMHostRescue:
                         _ = self.ipmi("shell", tty=True)
                     case "continue":
                         print(
-                            f"[yellow]If {self.kvmhostname} is not reliably down, there is a danger of corrupting VM images. As a safeguard, we will blocklist the host's access to the Ceph cluster."
+                            f"[yellow]{self.kvmhostname} must not be reachable, otherwise its Consul will prevent machines from starting on other hosts. If the host cannot be set down reliably, consider manually disconneting its network."
                         )
                     case _:
                         print("[orange1]Invalid choice.")
                         continue
             except subprocess.CalledProcessError as e:
                 print(escape(str(e)))
-            if Confirm.ask(
-                f"Did you ensure that {self.kvmhostname} is reliably down?"
-            ):
+            if Confirm.ask("Continue the evacuation?"):
                 break
 
     @step()
@@ -700,6 +731,9 @@ def main(argv: list[str]) -> int:
         return list_steps(args.yt_ticket)
 
     rescue = KVMHostRescue(args.yt_ticket)
+    print(
+        "Progress is saved per step, re-run to continue. [b]^C[/b] to interrupt."
+    )
 
     start: StepDef | None = None
     skip = args.skip
@@ -735,11 +769,14 @@ def main(argv: list[str]) -> int:
                         f"Next step to invoke manually would be [b]{next_step.definition.name}[/b]"
                     )
                 break
+            print()
+            rich_sep("-")
+            print()
     except KeyboardInterrupt:
         print(
             f"Interrupted. Run `{argv[0]} {rescue.state.yt_ticket}` to continue."
         )
-        exitcode = 110
+        raise
     except RescueDone as done:
         print(f"[green]{plain(str(done))}[/green]")
         if "set_out_of_service" in rescue.state.completed:
@@ -763,4 +800,7 @@ def main(argv: list[str]) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv))
+    try:
+        sys.exit(main(sys.argv))
+    except KeyboardInterrupt:
+        sys.exit(110)
