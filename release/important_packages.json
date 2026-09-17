@@ -116,6 +116,7 @@
   "nginxStable",
   "nix",
   "nodejs",
+  "nodejs_20",
   "nodejs_22",
   "nodejs_24",
   "nspr",
