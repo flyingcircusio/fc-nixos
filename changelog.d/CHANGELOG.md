@@ -1,3 +1,14 @@
+# Release 2026_038
+
+## NixOS XX.XX platform
+
+- Central proxies for the object storage gateways now properly retry failed
+  requests due to refused connections. This is expected to happen regularly
+  due to scheduled maintenance and will reduce the visible impact when RGWs
+  are shut down to (almost perfectly) 0 observable failures. (PL-135661)
+
+
+
 # Release 2026_037
 
 
