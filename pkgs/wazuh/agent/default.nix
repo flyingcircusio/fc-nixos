@@ -85,7 +85,6 @@ stdenv.mkDerivation {
   };
 
   dontConfigure = true;
-  #dontFixup = true;
 
   hardeningDisable = [
     "zerocallusedregs"
@@ -105,7 +104,6 @@ stdenv.mkDerivation {
     python312
     python312.pkgs.setuptools
     zlib
-    #breakpointHook
   ];
 
   buildInputs = [
@@ -158,8 +156,6 @@ stdenv.mkDerivation {
     echo 'grabbing wazuh-http-request...'
     mkdir -p src/shared_modules/http-request
     cp -r --preserve=timestamps --reflink=auto -- ${wazuh-http-request}/* src/shared_modules/http-request
-
-    #chmod +x src/analysisd/compiled_rules/register_rule.sh
     popd
   '';
 
@@ -169,9 +165,6 @@ stdenv.mkDerivation {
 
     substituteInPlace src/external/audit-userspace/autogen.sh \
       --replace-fail "cp INSTALL.tmp INSTALL" ""
-
-    #substituteInPlace src/external/openssl/config \
-    #  --replace-fail "/usr/bin/env" "env"
 
     substituteInPlace src/init/inst-functions.sh \
       --replace-fail "WAZUH_GROUP='wazuh'" "WAZUH_GROUP='nixbld'" \
@@ -222,7 +215,6 @@ stdenv.mkDerivation {
       $out/lib/*
 
     ${getExe patchelf} --add-rpath ${systemd}/lib $out/bin/wazuh-logcollector
-    rm -rf $out/src
   '';
 
   meta = {

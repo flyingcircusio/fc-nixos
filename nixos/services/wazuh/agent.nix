@@ -22,7 +22,7 @@ let
   # Wazuh's XML parser doesn't handle <tag></tag> well for optional fields
   filterNulls = filterAttrsRecursive (_: v: v != null);
 
-  xmlValue = (pkgs.formats.xml { }).type;
+  format = pkgs.formats.xml { withHeader = false; };
 
   #TODO Make this an option either at the top level or under `settings`
   stateDir = "/var/ossec";
@@ -95,24 +95,12 @@ in
       config = mkOption {
         type = types.path;
         #TODO Should this be RO?
-        description = ''
-          Final `ossec.conf` configuration file used by wazuh
-        '';
-        # Generate XML without prolog - Wazuh's parser doesn't like <?xml...?>
-        default = pkgs.writeText "ossec.conf" (
-          let
-            xmlWithProlog = (pkgs.formats.xml { }).generate "ossec.conf" {
-              ossec_config = filterNulls cfg.settings;
-            };
-            xmlContent = builtins.readFile xmlWithProlog;
-            # Remove XML prolog line
-            xmlWithoutProlog = lib.removePrefix ''
-              <?xml version="1.0" encoding="utf-8"?>
-            '' xmlContent;
-          in
-          # Add Wazuh-style comment header
-          "<!--  Wazuh - Agent - NixOS generated configuration  -->${xmlWithoutProlog}"
-        );
+        description = "Final `ossec.conf` configuration file used by wazuh";
+        # Root element must be <ossec_config> — Wazuh's parser expects
+        # exactly this tag name (the attrset key becomes the XML root).
+        default = format.generate "ossec.conf" {
+          ossec_config = filterNulls cfg.settings;
+        };
         defaultText = "Generated XML configuration";
       };
 
@@ -128,18 +116,17 @@ in
           Not all possible configuration options are listed here - see the [config reference](https://documentation.wazuh.com/${cfg.package.version}/user-manual/reference/ossec-conf/index.html) for possible values
         '';
         type = types.submodule {
-          freeformType = types.attrsOf xmlValue;
+          freeformType = format.type;
 
           options = {
             client = {
               server = {
                 address = mkOption {
-                  type = types.nullOr types.nonEmptyStr;
+                  type = types.nonEmptyStr;
                   description = ''
                     Specifies the IP address or the hostname of the Wazuh manager.
                   '';
                   example = "192.168.1.2";
-                  default = null;
                 };
                 port = mkOption {
                   type = types.port;
@@ -150,14 +137,6 @@ in
                 };
               };
               enrollment = {
-                manager_address = mkOption {
-                  type = types.nullOr types.nonEmptyStr;
-                  description = ''
-                    Hostname or IP address of the manager where the agent will be enrolled. If no value is set, the agent will try enrolling to the same manager that was specified for connection.
-                  '';
-                  example = "192.168.1.2";
-                  default = null;
-                };
                 port = mkOption {
                   type = types.port;
                   description = ''
@@ -229,14 +208,6 @@ in
   };
 
   config = mkIf cfg.enable {
-    assertions = [
-      {
-        assertion = cfg.settings.client.server.address != null;
-        message = "services.wazuh.agent.settings.client.server.address must be set";
-      }
-
-    ];
-
     users.users.${cfg.user} = {
       isSystemUser = true;
       inherit (cfg) group;
@@ -284,9 +255,7 @@ in
 
           serviceConfig =
             let
-              enrollmentAddress = cfg.settings.client.enrollment.manager_address;
               serverAddress = cfg.settings.client.server.address;
-              ip = if enrollmentAddress != null then enrollmentAddress else serverAddress;
               port = cfg.settings.client.enrollment.port;
             in
             {
@@ -297,7 +266,7 @@ in
                 let
                   authCmd =
                     "${cfg.package}/bin/agent-auth"
-                    + " -m ${ip} -p ${toString port}"
+                    + " -m ${serverAddress} -p ${toString port}"
                     + lib.optionalString (cfg.agentAuthGroup != null) " -G ${cfg.agentAuthGroup}";
                 in
                 "${pkgs.writeShellScript "wazuh-agent-auth" ''

@@ -54,7 +54,7 @@ import ./make-test-python.nix (
             wantedBy = [ "wazuh-agent-auth.service" ];
             serviceConfig = {
               Type = "simple";
-              ExecStart = "${pkgs.python3}/bin/python3 ${pkgs.writeText "fake-manager.py" ''
+              ExecStart = pkgs.writers.writePython3 "fake-manager.py" { } ''
                 import socket
                 import ssl
                 import sys
@@ -65,6 +65,7 @@ import ./make-test-python.nix (
                   "/var/lib/wazuh-fake-manager/server.crt",
                   "/var/lib/wazuh-fake-manager/server.key",
                 )
+
 
                 def handle_enrollment(conn):
                     """Handle one enrollment connection."""
@@ -80,7 +81,13 @@ import ./make-test-python.nix (
                         # Send enrollment response: OSSEC K:'<id> <name> <ip> <key>'
                         # Key must pass OS_IsValidName: alnum/-/_ only, no '='
                         # 33 bytes base64 = 44 chars, no padding
-                        conn.sendall(b"OSSEC K:'001 configured 127.0.0.1 QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFB'\n")
+                        key = b"QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFB"
+                        response = (
+                            b"OSSEC K:'001 configured 127.0.0.1 "
+                            + key
+                            + b"'\n"
+                        )
+                        conn.sendall(response)
                         # Graceful shutdown: wait for client to read
                         conn.settimeout(5)
                         try:
@@ -96,25 +103,39 @@ import ./make-test-python.nix (
                             pass
                         conn.close()
 
+
                 def accept_loop(port):
                     """Accept connections on a port, handle enrollment on 1515."""
                     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                     s.bind(("0.0.0.0", port))
                     s.listen(5)
-                    print(f"Fake manager listening on port {port}", file=sys.stderr, flush=True)
+                    print(
+                        f"Fake manager listening on port {port}",
+                        file=sys.stderr,
+                        flush=True,
+                    )
                     while True:
                         conn_plain, addr = s.accept()
-                        print(f"Connection from {addr} on port {port}", file=sys.stderr, flush=True)
+                        print(
+                            f"Connection from {addr} on port {port}",
+                            file=sys.stderr,
+                            flush=True,
+                        )
                         if port == 1515:
                             try:
                                 conn = context.wrap_socket(conn_plain, server_side=True)
-                                threading.Thread(target=handle_enrollment, args=(conn,), daemon=True).start()
+                                threading.Thread(
+                                    target=handle_enrollment,
+                                    args=(conn,),
+                                    daemon=True,
+                                ).start()
                             except Exception as e:
                                 print(f"SSL wrap error: {e}", file=sys.stderr, flush=True)
                                 conn_plain.close()
                         else:
                             conn_plain.close()
+
 
                 threads = []
                 for port in [1514, 1515]:
@@ -128,7 +149,7 @@ import ./make-test-python.nix (
                         t.join()
                 except KeyboardInterrupt:
                     pass
-              ''}";
+              '';
             };
           };
 
@@ -191,14 +212,6 @@ import ./make-test-python.nix (
 
     testScript = ''
       import xml.etree.ElementTree as ET
-
-
-      def debug_print(machine, cmd):
-          rc, output = machine.execute(cmd)
-          print(f"=== {cmd} (rc={rc}) ===")
-          print(output)
-          return rc, output
-
 
       start_all()
 
