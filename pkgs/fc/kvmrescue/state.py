@@ -160,7 +160,6 @@ class RescueState(BaseModel):
 
     @classmethod
     def new_state(cls, kvmhostname: str, yt_ticket: str) -> Self:
-        # Only persisted with `save` once there is something worth saving.
         return cls(
             kvmhostname=kvmhostname,
             yt_ticket=yt_ticket,

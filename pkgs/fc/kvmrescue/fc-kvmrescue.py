@@ -17,6 +17,7 @@ from contextlib import nullcontext
 from functools import cached_property, wraps
 from ipaddress import IPv6Address
 from socket import gethostname
+from textwrap import dedent
 from typing import ClassVar, cast, overload
 
 from pydantic import IPvAnyAddress, TypeAdapter
@@ -75,6 +76,10 @@ def plain(value: object) -> object:
 
 def rich_link(url: str) -> str:
     return f"[link={url}]{url}[/link]"
+
+
+def rich_sep() -> None:
+    print("[purple]" + "=" * 80 + "[/purple]")
 
 
 class Ipmitool:
@@ -279,6 +284,7 @@ class KVMHostRescue:
                 "Enter hostname of the KVM host to evacute"
             )
             state = RescueState.new_state(kvmhostname, yt_ticket)
+            state.save()
             print(f"Created new state file at [i]{state.path}[i]")
         else:
             print()
@@ -314,6 +320,24 @@ class KVMHostRescue:
     # -- steps, in the order they run --------------------------------------
 
     @step()
+    def add_ticket_text(self) -> None:
+        """Add the rescue steps checklist to ticket."""
+
+        print(
+            f"Please extend the rescue ticket [b][link=https://yt.flyingcircus.io/issue/{self.state.yt_ticket}]{self.state.yt_ticket}[/link][/b] with the following:"
+        )
+        print()
+
+        rich_sep()
+        print(plain(self.ticket_template))
+        rich_sep()
+
+        while not Confirm.ask(
+            "Have you copied the checklist to the rescue ticket?"
+        ):
+            pass
+
+    @step()
     def set_out_of_service(self) -> None:
         """Have the operator take the host out of service in the directory."""
         # Setting a node permanently out of service is not possible via
@@ -326,7 +350,7 @@ class KVMHostRescue:
         print(f"   {rich_link(url)}")
         print()
         while not Confirm.ask(
-            f"[purple]Is host {self.kvmhostname} set out-of-service?"
+            f"Is host {self.kvmhostname} set out-of-service?"
         ):
             pass
 
@@ -347,7 +371,6 @@ class KVMHostRescue:
             print(
                 f"{self.kvmhostname} status is '{escape(power_status)}', please ensure it is not running any VMs before continuing."
             )
-        # - falls nicht:
         while True:
             try:
                 match Prompt.ask(
@@ -472,14 +495,14 @@ class KVMHostRescue:
             f"Blocklisted the current locker addresses of {self.kvmhostname}.\n"
             + "Once the dead host has recovered, execute the following script on a [b]ceph mon[/b] host of this cluster:"
         )
-        print("[purple]" + "=" * 80 + "[/purple]")
+        rich_sep()
         print(
             "\n".join(
                 plain(entry.cleanup_command)
                 for entry in self.state.blocklist_entries
             )
         )
-        print("[purple]" + "=" * 80 + "[/purple]")
+        rich_sep()
 
     @step()
     def break_locks(self) -> None:
@@ -513,13 +536,69 @@ class KVMHostRescue:
         # - finally evacuate all VMs away
         _ = subprocess.run(["fc-directory", f"d.evacuate_vms('{self.kvmhostname}')"], check=True)  # fmt: skip
 
+    # --- end of steps ---
+
+    @property
+    def ticket_template(self) -> str:
+        """Generate an instructional markdown representation of the current
+        rescue state, to be used as CommonMark text for a YT Ticket"""
+        ticket_segments = [f"- `fc-kvmrescue` run on `{gethostname()}`:"]
+        ticket_segments.extend(
+            [
+                common_mark_checkboxline(
+                    definition.name,
+                    checked=definition.name in self.state.completed,
+                    indent_level=1,
+                )
+                for definition in STEPS
+            ]
+        )
+        ticket_segments.append("\n")
+
+        if self.state.warnings:
+            ticket_segments.append("# Warnings")
+            ticket_segments.append(
+                "Things that looked off and should be investigated:"
+            )
+            ticket_segments.extend(
+                [
+                    common_mark_checkboxline(warning)
+                    for warning in sorted(self.state.warnings)
+                ]
+            )
+            ticket_segments.append("\n")
+
+        ticket_segments.append(
+            dedent("""\
+            # Cleanup steps
+
+            Once the failure reason for the host has been resolved, the following steps need to be taken to set it back in service:
+
+            - [ ] ensure machine is clean, reachable, and not running any VMs
+            - [ ] ceph blocklists cleaned up XXX: run interactively
+            - [ ] mark machine as *prefer nonproduction* or *nonproduction* until further investigation
+            - [ ] set machine back in service once ready
+            """)
+        )
+        return "\n".join(ticket_segments)
+
+
+def common_mark_checkboxline(
+    text: str, checked: bool = False, indent_level: int = 0
+) -> str:
+    """indent_level uses 2 spaces per level"""
+    indent = "  " * indent_level
+    # insert necessary indentation for multi-line text
+    body = text.strip().replace("\n", "\n" + indent)
+    return f"{indent}- [{'x' if checked else ' '}] {body}"
+
 
 def report_warnings(state: RescueState) -> None:
     if not state.warnings:
         return
     print()
     print("[yellow]Things that looked off and should be investigated:")
-    for warning in state.warnings:
+    for warning in sorted(state.warnings):
         print(f"  - {plain(warning)}")
 
 
@@ -533,7 +612,7 @@ def list_steps(yt_ticket: str | None) -> int:
     title += f" for {state.kvmhostname}" if state else ""
 
     table = Table(
-        title,
+        title=title,
         title_justify="left",
         box=box.SIMPLE,
     )
@@ -614,7 +693,8 @@ def parse_args(argv: list[str]) -> Args:
 
 
 def main(argv: list[str]) -> int:
-    args = parse_args(argv)
+    args = parse_args(argv[1:])
+    exitcode = 0
 
     if args.list_steps:
         return list_steps(args.yt_ticket)
@@ -636,7 +716,7 @@ def main(argv: list[str]) -> int:
             for position, definition in enumerate(missing, start=1):
                 print(f"  {position}. {definition.name}")
             print(
-                f"Run `fc-kvmrescue {rescue.state.yt_ticket}` to work through the sequence from where it stopped."
+                f"Run `{argv[0]} {rescue.state.yt_ticket}` to work through the sequence from where it stopped."
             )
             return 1
 
@@ -655,6 +735,11 @@ def main(argv: list[str]) -> int:
                         f"Next step to invoke manually would be [b]{next_step.definition.name}[/b]"
                     )
                 break
+    except KeyboardInterrupt:
+        print(
+            f"Interrupted. Run `{argv[0]} {rescue.state.yt_ticket}` to continue."
+        )
+        exitcode = 110
     except RescueDone as done:
         print(f"[green]{plain(str(done))}[/green]")
         if "set_out_of_service" in rescue.state.completed:
@@ -663,12 +748,19 @@ def main(argv: list[str]) -> int:
             print(
                 f"[yellow]Note: {rescue.kvmhostname} is still set out-of-service."
             )
+        exitcode = 2
+    finally:
         report_warnings(rescue.state)
-        return 2
+        print("\n")
 
-    report_warnings(rescue.state)
-    return 0
+        print(
+            f"Update the rescue ticket [b][link=https://yt.flyingcircus.io/issue/{rescue.state.yt_ticket}]{rescue.state.yt_ticket}[/link][/b] as follows:"
+        )
+        rich_sep()
+        print(plain(rescue.ticket_template))
+        rich_sep()
+    return exitcode
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    sys.exit(main(sys.argv))
