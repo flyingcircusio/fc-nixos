@@ -137,55 +137,82 @@ import ./make-test-python.nix (
         };
     };
 
-    testScript = ''
-      start_all()
-      # copy client config from gateway to client and set user/pass
-      (rc, ovpn) = gw.execute("cat /etc/local/openvpn/*.ovpn")
-      oclient.execute(f"echo '{ovpn}' > /tmp/gw.ovpn")
-      oclient.execute("echo 'test\ntest' > /tmp/user-pass; chmod 600 /tmp/user-pass")
+    testScript =
+      { nodes, ... }:
+      ''
+        start_all()
+        # copy client config from gateway to client and set user/pass
+        (rc, ovpn) = gw.execute("cat /etc/local/openvpn/*.ovpn")
+        oclient.execute(f"echo '{ovpn}' > /tmp/gw.ovpn")
+        oclient.execute("echo 'test\ntest' > /tmp/user-pass; chmod 600 /tmp/user-pass")
 
 
-      gw.wait_for_unit("network.target")
-      internal.wait_for_unit("network.target")
-      oclient.wait_for_unit("network.target")
+        gw.wait_for_unit("network.target")
+        internal.wait_for_unit("network.target")
+        oclient.wait_for_unit("network.target")
 
-      gw.wait_for_unit("openvpn-access.service")
-      gw.wait_until_succeeds("ip link show tun0")
+        gw.wait_for_unit("openvpn-access.service")
+        gw.wait_until_succeeds("ip link show tun0")
 
-      # openvpn gateway should be reachable from the client
-      oclient.succeed("ping -c1 ${gwFeFqdn}")
-      oclient.succeed("ping -6 -c1 ${gwFeFqdn}")
+        # openvpn gateway should be reachable from the client
+        oclient.succeed("ping -c1 ${gwFeFqdn}")
+        oclient.succeed("ping -6 -c1 ${gwFeFqdn}")
 
-      # start openvpn client and wait for tunnel device
-      oclient.succeed("openvpn --config /tmp/gw.ovpn --auth-user-pass /tmp/user-pass >&2 &")
-      oclient.wait_until_succeeds("ip link show tun0")
+        # start openvpn client and wait for tunnel device
+        oclient.succeed("openvpn --config /tmp/gw.ovpn --auth-user-pass /tmp/user-pass >&2 &")
+        oclient.wait_until_succeeds("ip link show tun0")
 
-      # internal machine should be reachable from client via vpn tunnel -> gateway -> internal machine
-      oclient.succeed("ping -c1 ${internal4Srv}")
-      oclient.succeed("ping -c1 ${internal6Srv}")
+        # internal machine should be reachable from client via vpn tunnel -> gateway -> internal machine
+        oclient.succeed("ping -c1 ${internal4Srv}")
+        oclient.succeed("ping -c1 ${internal6Srv}")
 
-      print("======= addresses =========\n")
-      print("=== gw:\n")
-      print(gw.execute("ip a"))
-      print("=== internal:\n")
-      print(internal.execute("ip a"))
-      print("=== client:\n")
-      print(oclient.execute("ip a"))
+        print("======= addresses =========\n")
+        print("=== gw:\n")
+        print(gw.execute("ip a"))
+        print("=== internal:\n")
+        print(internal.execute("ip a"))
+        print("=== client:\n")
+        print(oclient.execute("ip a"))
 
-      print("======= routing =========\n")
-      print("=== gw:\n")
-      print(gw.execute("ip r"))
-      print("=== client:\n")
-      print(oclient.execute("ip r"))
+        print("======= routing =========\n")
+        print("=== gw:\n")
+        print(gw.execute("ip r"))
+        print("=== client:\n")
+        print(oclient.execute("ip r"))
 
-      # sensu check for openvpn server should be green
-      gw.succeed("/etc/local/openvpn/check")
+        # sensu check for openvpn server should be green
+        gw.succeed("/etc/local/openvpn/check")
 
-      gw.succeed("systemctl stop openvpn-access")
-      gw.wait_until_fails("ip link show tun0")
+        # PKI cert expiry checks should be green (certs are valid for years).
+        # Run as the sensuclient user to exercise the actual sudo invocation
+        # path used in production.
+        gw.succeed("sudo -u sensuclient ${testlib.sensuCheckCmd nodes.gw "openvpn_pki_ca"}")
+        gw.succeed("sudo -u sensuclient ${testlib.sensuCheckCmd nodes.gw "openvpn_pki_server"}")
 
-      # sensu check should be red when service is stopped
-      gw.fail("/etc/local/openvpn/check")
-    '';
+        # PKI cert expiry checks should go red for certs within the warning
+        # (25d) and critical (14d) windows. Swap in short-lived certs and
+        # expect both checks to fail. The CA cert is made to warn (20 days
+        # left), the server cert to fail critically (10 days left).
+        gw.succeed(
+          "openssl req -x509 -newkey rsa:2048 -nodes -days 20"
+          + " -subj /CN=test-expiring-ca -keyout /tmp/test-ca.key"
+          + " -out /var/lib/openvpn-pki/pki/ca.crt"
+        )
+        gw.succeed(
+          "openssl req -x509 -newkey rsa:2048 -nodes -days 10"
+          + " -subj /CN=test-expiring-server -keyout /tmp/test-server.key"
+          + " -out /var/lib/openvpn-pki/server.crt"
+        )
+        ca_out = gw.fail("sudo -u sensuclient ${testlib.sensuCheckCmd nodes.gw "openvpn_pki_ca"}")
+        server_out = gw.fail("sudo -u sensuclient ${testlib.sensuCheckCmd nodes.gw "openvpn_pki_server"}")
+        assert "expires within warning time" in ca_out, ca_out
+        assert "expires within critical time" in server_out, server_out
+
+        gw.succeed("systemctl stop openvpn-access")
+        gw.wait_until_fails("ip link show tun0")
+
+        # sensu check should be red when service is stopped
+        gw.fail("/etc/local/openvpn/check")
+      '';
   }
 )

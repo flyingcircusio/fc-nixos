@@ -76,6 +76,7 @@ let
   pki = pkgs.callPackage ./generate-pki.nix {
     inherit resource_group location;
   };
+  checkCert = "${pkgs.fc.check-tls-cert}/bin/check_tls_cert";
 
   allNetworks = lib.zipAttrs (lib.catAttrs "networks" (attrValues interfaces));
 
@@ -244,6 +245,18 @@ in
         notification = "OpenVPN management interface";
         command = toString checkOpenVPN;
         interval = 300;
+      };
+      # Warn well before the long-lived OpenVPN PKI certs expire, so an
+      # expired CA does not break the VPN unexpectedly (see PL-135338).
+      openvpn_pki_ca = {
+        notification = "OpenVPN CA certificate will expire soon (${pki.caCrt})";
+        command = "sudo ${checkCert} ${pki.caCrt} openvpn-ca";
+        interval = 3600;
+      };
+      openvpn_pki_server = {
+        notification = "OpenVPN server certificate will expire soon (${pki.serverCrt})";
+        command = "sudo ${checkCert} ${pki.serverCrt} openvpn-server";
+        interval = 3600;
       };
     };
 
