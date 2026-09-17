@@ -1,11 +1,13 @@
 import textwrap
 from io import StringIO
-from unittest.mock import Mock, create_autospec
+from logging import Logger
 from pathlib import Path
+from unittest.mock import ANY, Mock, call, create_autospec
 
+import fc.util.nixos
+import pytest
 import responses
 import yaml
-import fc.util.nixos
 from fc.maintenance import Request, state
 from fc.maintenance.activity import Activity, RebootType
 from fc.maintenance.activity.update import UpdateActivity
@@ -14,9 +16,9 @@ from fc.util.nixos import (
     BuildFailed,
     ChannelException,
     ChannelUpdateFailed,
+    KernelIdentifier,
     RegisterFailed,
     SwitchFailed,
-    KernelIdentifier,
 )
 from pytest import fixture
 from rich.console import Console
@@ -436,9 +438,13 @@ def test_update_release_change_reboot_required(
     )
 
 
-def test_update_activity_run(log, nixos_mock, activity, logger):
+def test_update_activity_run_boot_only(
+    log, nixos_mock: Mock, activity: UpdateActivity, logger: Logger
+):
     activity.run()
 
+    assert activity.log
+    assert activity.reboot_needed == RebootType.WARM
     assert activity.returncode == 0
     nixos_mock.update_system_channel.assert_called_with(
         activity.next_channel_url, log=activity.log
@@ -449,10 +455,104 @@ def test_update_activity_run(log, nixos_mock, activity, logger):
     nixos_mock.register_system_profile.assert_called_with(
         NEXT_SYSTEM_PATH, log=activity.log
     )
-    nixos_mock.switch_to_system.assert_called_with(
-        NEXT_SYSTEM_PATH, lazy=False, switch_type="switch", log=activity.log
-    )
+    assert nixos_mock.switch_to_system.mock_calls == [
+        call(
+            NEXT_SYSTEM_PATH,
+            lazy=False,
+            switch_type="boot",
+            log=ANY,
+        )
+    ]
+    # assert_called_with(
+    #     NEXT_SYSTEM_PATH, lazy=False, switch_type="boot", log=activity.log
+    # )
     assert log.has("update-run-succeeded")
+
+
+def test_update_activity_run_boot_and_test(
+    log, nixos_mock: Mock, activity: UpdateActivity, logger: Logger
+):
+    activity.reboot_needed = None
+    activity.run()
+    assert activity.reboot_needed is None
+    assert activity.returncode == 0
+    assert nixos_mock.switch_to_system.mock_calls == [
+        call(
+            NEXT_SYSTEM_PATH,
+            lazy=False,
+            switch_type="boot",
+            log=ANY,
+        ),
+        call(
+            NEXT_SYSTEM_PATH,
+            lazy=False,
+            switch_type="test",
+            log=ANY,
+        ),
+    ]
+    assert log.has("update-run-succeeded")
+
+
+def test_update_activity_run_failed_boot_fails(
+    log, nixos_mock: Mock, activity: UpdateActivity, logger: Logger
+):
+    # This is a regression test for the change we made due to FC-57632.
+    #
+    # The assumption is that when the `test` phase fails, we see
+    # an immediate propagation to a WARM boot requirement.
+    nixos_mock.switch_to_system.side_effect = [Exception('Boom')]
+
+    with pytest.raises(Exception):
+        activity.run()
+
+    # But the result is OK as we want the manager to keep progressing.
+    assert activity.returncode == None
+    assert nixos_mock.switch_to_system.mock_calls == [
+        call(
+            NEXT_SYSTEM_PATH,
+            lazy=False,
+            switch_type="boot",
+            log=ANY,
+        ),
+    ]
+    assert not log.has("update-run-succeeded")
+
+
+
+def test_update_activity_run_boot_and_failed_test(
+    log, nixos_mock: Mock, activity: UpdateActivity, logger: Logger
+):
+    # This is a regression test for the change we made due to FC-57632.
+    #
+    # The assumption is that when the `test` phase fails, we see
+    # an immediate propagation to a WARM boot requirement.
+    nixos_mock.switch_to_system.side_effect = [None, Exception('Boom')]
+
+    # We don't explicitly WANT a reboot, but the exception should trigger it.
+    activity.reboot_needed = None
+    # The exception must not bubble up here.
+    activity.run()
+
+    # Now we need a warm reboot
+    assert activity.reboot_needed is RebootType.WARM
+    # But the result is OK as we want the manager to keep progressing.
+    assert activity.returncode == 0
+    assert nixos_mock.switch_to_system.mock_calls == [
+        call(
+            NEXT_SYSTEM_PATH,
+            lazy=False,
+            switch_type="boot",
+            log=ANY,
+        ),
+        call(
+            NEXT_SYSTEM_PATH,
+            lazy=False,
+            switch_type="test",
+            log=ANY,
+        ),
+    ]
+    assert log.has("update-run-succeeded")
+
 
 
 def test_update_activity_run_unchanged(log, nixos_mock, activity):
@@ -523,12 +623,12 @@ def test_update_activity_switch_if_no_release_change(log, nixos_mock, activity):
     activity.next_version = "24.11.9999"
     activity.run()
 
-    nixos_mock.switch_to_system.assert_called_once_with(
+    nixos_mock.switch_to_system.mock_calls = [call(
         NEXT_SYSTEM_PATH,
         lazy=False,
-        switch_type="switch",
+        switch_type="boot",
         log=activity.log,
-    )
+    )]
 
 
 def test_update_activity_boot_if_release_change(log, nixos_mock, activity):
