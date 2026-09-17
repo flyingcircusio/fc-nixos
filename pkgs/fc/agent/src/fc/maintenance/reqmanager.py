@@ -866,30 +866,33 @@ class ReqManager:
 
     def _reboot_and_exit(self, requested_reboots):
         if RebootType.COLD in requested_reboots:
-            self.log.info(
-                "maintenance-poweroff",
-                _replace_msg=(
-                    "Doing a cold boot in five seconds to finish maintenance "
-                    "activities."
-                ),
+            cmd = "poweroff"
+            message = (
+                "Doing a cold boot in five seconds to finish maintenance "
+                "activities."
             )
-            time.sleep(5)
-            subprocess.run(
-                "poweroff", check=True, capture_output=True, text=True
-            )
-            sys.exit(0)
-
         elif RebootType.WARM in requested_reboots:
-            self.log.info(
-                "maintenance-reboot",
-                _replace_msg=(
-                    "Rebooting in five seconds to finish maintenance "
-                    "activities."
-                ),
+            cmd = "reboot"
+            message = (
+                "Rebooting in five seconds to finish maintenance activities."
             )
-            time.sleep(5)
-            subprocess.run("reboot", check=True, capture_output=True, text=True)
-            sys.exit(0)
+        else:
+            return
+
+        self.log.info(f"maintenance-{cmd}", _replace_msg=message)
+        time.sleep(5)
+        try:
+            # Ensure we have at least 15 minutes of maintenance left from now
+            # on - we know we're rebooting, so avoid waking people even
+            # if we might have run out of the original estimated maintenance.
+            # It's an ESTIMATION, not a guarantee that requires us to
+            # get up at night just to watch a machine boot cleanly.
+            self._mark_directory_service_status(False, 15 * 60)
+        except Exception:
+            self.log.error("refresh-maintenance-timer-failed", exc_info=True)
+
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+        sys.exit(0)
 
     @require_lock
     def execute(
