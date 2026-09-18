@@ -227,9 +227,9 @@ in
       tmpfiles.rules = [
         "d ${stateDir}/tmp 0750 ${cfg.user} ${cfg.group} 1d"
       ];
-      targets = {
-        multi-user.wants = [ "wazuh.target" ];
-        wazuh.wants = forEach daemons (d: "${d}.service") ++ [ "wazuh-agent-auth.service" ];
+      targets.wazuh = {
+        wantedBy = [ "multi-user.target" ];
+        wants = forEach daemons (d: "${d}.service") ++ [ "wazuh-agent-auth.service" ];
       };
 
       services = listToAttrs (map (daemon: nameValuePair daemon (mkService daemon)) daemons) // {
