@@ -232,7 +232,7 @@ in
         wants = forEach daemons (d: "${d}.service") ++ [ "wazuh-agent-auth.service" ];
       };
 
-      services = listToAttrs (map (daemon: nameValuePair daemon (mkService daemon)) daemons) // {
+      services = (lib.genAttrs daemons (daemon: mkService daemon)) // {
         wazuh-agent-auth = {
           description = "Sets up wazuh agent auth";
           after = [
