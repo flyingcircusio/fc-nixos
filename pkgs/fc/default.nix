@@ -39,6 +39,7 @@ rec {
   ipmitool = callPackage ./ipmitool { };
   install = callPackage ./install { };
 
+  kvmrescue = callPackage ./kvmrescue { };
   ledtool = pkgs.writers.writePython3Bin "fc-ledtool" { } (builtins.readFile ./ledtool/led.py);
   lldp-to-altname = callPackage ./lldp-to-altname { };
   logcheckhelper = callPackage ./logcheckhelper { };

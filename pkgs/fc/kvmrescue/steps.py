@@ -77,9 +77,9 @@ def step[StepMethod: Callable[..., None]](
 class StepRun:
     """One step, handed to the caller to invoke.
 
-    The runner yields these; the loop in `main` decides how to announce a step
-    and then calls it. Invoking a skipped run is a no-op, so the reporting of
-    skips lives in the same place as all the other output.
+    The runner yields these; the loop in `run_rescue` decides how to announce
+    a step and then calls it. Invoking a skipped run is a no-op, so the
+    reporting of skips lives in the same place as all the other output.
     """
 
     host: StepHost

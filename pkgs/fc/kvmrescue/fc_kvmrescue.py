@@ -5,6 +5,9 @@
 # requires-python = ">=3.12"
 # dependencies = ["rich", "pydantic"]
 # ///
+#
+# ⬆ keep in sync with pyproject.toml, to allow copying this as a standalone
+# quick-edit script for quick changes.
 
 import argparse
 import ctypes
@@ -17,7 +20,6 @@ from contextlib import nullcontext
 from functools import cached_property, wraps
 from ipaddress import IPv6Address
 from socket import gethostname
-from textwrap import dedent
 from time import sleep
 from typing import ClassVar, cast, overload
 
@@ -820,7 +822,7 @@ def parse_args(argv: list[str]) -> Args:
     return parser.parse_args(argv, namespace=Args())
 
 
-def main(argv: list[str]) -> int:
+def run_rescue(argv: list[str]) -> int:
     args = parse_args(argv[1:])
     exitcode = 0
 
@@ -899,8 +901,13 @@ def main(argv: list[str]) -> int:
     return exitcode
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Entry point of both the uv script and the installed `fc-kvmrescue`."""
     try:
-        sys.exit(main(sys.argv))
+        sys.exit(run_rescue(sys.argv))
     except KeyboardInterrupt:
         sys.exit(110)
+
+
+if __name__ == "__main__":
+    main()
