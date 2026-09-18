@@ -38,7 +38,7 @@ class StepHost(Protocol):
 class StepDef:
     name: str
     index: int
-    doc: str  # first docstring line, for --list and progress output
+    doc: str  # first docstring line, for --list and progress output; may be empty
     skip: bool  # may this step skip itself once recorded as done?
 
 
@@ -57,10 +57,13 @@ def step[StepMethod: Callable[..., None]](
     """
 
     def register(fn: StepMethod) -> StepMethod:
+        # A step without a docstring is merely undocumented, not a reason to
+        # take the whole tool down at import time.
+        doclines = (fn.__doc__ or "").strip().splitlines()
         definition = StepDef(
             name=fn.__name__,
             index=len(STEPS),
-            doc=(fn.__doc__ or "").strip().splitlines()[0],
+            doc=doclines[0] if doclines else "",
             skip=skip,
         )
         STEPS.append(definition)

@@ -79,6 +79,14 @@ def rich_link(url: str) -> str:
     return f"[link={url}]{url}[/link]"
 
 
+def print_directory_link(hostname: str) -> None:
+    url = f"https://directory.fcio.net/machine/list?search=name-{hostname}"
+    # As an explicit OSC 8 hyperlink, so the terminal does not have to guess
+    # where the URL ends.
+    # On its own line for terminals that lack OSC 8 and do guess.
+    print(f"   {rich_link(url)}")
+
+
 def rich_sep(char: str = "=") -> None:
     print("[purple]" + f"{char}" * 80 + "[/purple]")
 
@@ -368,12 +376,8 @@ class KVMHostRescue:
         """Have the operator take the host out of service in the directory."""
         # Setting a node permanently out of service is not possible via
         # directory API for now
-        url = f"https://directory.fcio.net/machine/list?search=name-{self.kvmhostname}"
         print(" > Set the host out of service in the directory:")
-        # As an explicit OSC 8 hyperlink, so the terminal does not have to guess
-        # where the URL ends.
-        # On its own line for terminals that lack OSC 8 and do guess.
-        print(f"   {rich_link(url)}")
+        print_directory_link(self.kvmhostname)
         print()
         while not Confirm.ask(
             f"Is host {self.kvmhostname} set out-of-service?"
@@ -383,6 +387,10 @@ class KVMHostRescue:
     @step(skip=False)
     def ensure_host_offline(self) -> None:
         """Establish that the host is really down before touching its locks."""
+
+        if "cleanup_start" in self.state.completed:
+            print("Main rescue is finished, continuing…")
+            return
 
         print(
             f"Power status of {self.kvmhostname} should be [i]off[/i]. Checking…"
@@ -516,25 +524,6 @@ class KVMHostRescue:
                 self.state.save()
                 progress.advance(task)
 
-    @step(skip=False)
-    def report_blocklist_cleanup(self) -> None:
-        """Print the script that removes those blocklist entries again."""
-        # Not skippable: it only reads persisted state, and wanting the script
-        # back is a perfectly good reason to re-run the tool.
-        print()
-        print(
-            f"Blocklisted the current locker addresses of {self.kvmhostname}.\n"
-            + "Once the dead host has recovered, execute the following script on a [b]ceph mon[/b] host of this cluster:"
-        )
-        rich_sep()
-        print(
-            "\n".join(
-                plain(entry.cleanup_command)
-                for entry in self.state.blocklist_entries
-            )
-        )
-        rich_sep()
-
     @step()
     def break_locks(self) -> None:
         """Remove the dead host's locks from the collected images."""
@@ -567,19 +556,141 @@ class KVMHostRescue:
         # - finally evacuate all VMs away
         _ = subprocess.run(["fc-directory", f"d.evacuate_vms('{self.kvmhostname}')"], check=True)  # fmt: skip
 
+    @step()
+    def cleanup_start(self) -> None:
+        """Evacuation is done, start cleanup."""
+
+        print(
+            "Host evacuation is done. The remaining steps are cleanup.",
+            "To handle the immediate emergency, feel free to interrupt and continue later.",
+            sep="\n",
+        )
+
+        if not Confirm.ask("Continue with cleanup?"):
+            raise KeyboardInterrupt()
+
+    @step()
+    def investigate_warnings(self) -> None:
+        """Acknowledge the warnings discovered during the rescue process."""
+        if not self.state.warnings:
+            return
+        report_warnings(self.state)
+
+        print()
+        while not Confirm.ask("Did you investigate all warnings above?"):
+            self.state.warnings = set()
+
+    @step(skip=False)
+    def cleanup_check_machine_is_clean(self) -> None:
+        """Verify the machine is clean before removing its blocklist entries."""
+
+        while True:
+            if Confirm.ask(
+                "Do you want to start the host and set it back in service?"
+            ):
+                print("Starting the host via IPMI.")
+                _ = self.ipmi("power", "on")
+                # XXX: we could print an SOL or wait for the host to ping successfully
+                if Confirm.ask(f"Is {self.kvmhostname} clean and reachable?"):
+                    print(
+                        "Please ensure that the host is not running any VMs (`fc-qemu ls`)."
+                    )
+                    # XXX: We could additionally check for the servicing status via directory API
+                    if Confirm.ask("Is the host running any VMs?"):
+                        print(
+                            "As the host has been successfully evacuated, we need to get rid of these stale processes."
+                        )
+                        print("Please reboot the host.")
+                    else:
+                        break
+                else:
+                    print(
+                        "Host needs to either be properly down, or up and confirmed to hold no VMs."
+                    )
+            else:
+                print(
+                    "You can decide to leave the host down for now. It is still important that the host is properly down."
+                )
+                if Confirm.ask("Is the host set properly down?"):
+                    self.state.cleanup_stay_down = True
+                    break
+
+    @step()
+    def blocklist_cleanup(self) -> None:
+        """Remove ceph blocklist entries again."""
+        try:
+            with item_progress() as progress:
+                task = progress.add_task(
+                    "Removing block for",
+                    total=len(self.state.blocklist_entries),
+                    item="",
+                )
+                for entry in self.state.blocklist_entries:
+                    progress.update(task, item=" ".join(entry.cleanup_command))
+                    _ = subprocess.run(
+                        entry.cleanup_command,
+                        check=True,
+                        capture_output=True,
+                        text=True,
+                    )
+
+                    progress.advance(task)
+
+        except subprocess.CalledProcessError:
+            print(
+                "[red]Error:[/red] Error running the commands below.",
+                "Try executing the following script manually on a [b]ceph mon[/b] host of this cluster:",
+                sep="\n",
+            )
+            rich_sep()
+            print(
+                "\n".join(
+                    plain(" ".join(entry.cleanup_command))
+                    for entry in self.state.blocklist_entries
+                )
+            )
+            rich_sep()
+            print()
+
+            if not Confirm.ask("Did the script succeed?"):
+                raise
+
+    @step()
+    def mark_nonprod(self) -> None:
+        """Mark host usage as non-production until observed to be stable again."""
+        if self.state.cleanup_stay_down:
+            raise RescueDone(
+                "You earlier decided the host should stay down. We are done here."
+            )
+        print(
+            f" > Set the [b]KVM production use[/b] of {self.kvmhostname} to [i]non-production[/i] (if cluster capacity allows) or [i]prefer non-production[/i]. "
+        )
+        print_directory_link(self.kvmhostname)
+        while not Confirm.ask("Did you adjust the [b]KVM production use[/b]?"):
+            pass
+
+    @step()
+    def set_back_in_service(self) -> None:
+        """Set machine back in service."""
+        print(" > Set machine back in service in directory:")
+        print_directory_link(self.kvmhostname)
+        while not Confirm.ask(
+            "Did you set the machine back in service in the directory?"
+        ):
+            pass
+
     # --- end of steps ---
 
     @property
     def ticket_template(self) -> str:
         """Generate an instructional markdown representation of the current
         rescue state, to be used as CommonMark text for a YT Ticket"""
-        ticket_segments = [f"- `fc-kvmrescue` run on `{gethostname()}`:"]
+        ticket_segments = [f"## `fc-kvmrescue` run on `{gethostname()}`:", ""]
         ticket_segments.extend(
             [
                 common_mark_checkboxline(
                     definition.name,
                     checked=definition.name in self.state.completed,
-                    indent_level=1,
                 )
                 for definition in STEPS
             ]
@@ -587,7 +698,7 @@ class KVMHostRescue:
         ticket_segments.append("\n")
 
         if self.state.warnings:
-            ticket_segments.append("# Warnings")
+            ticket_segments.extend(["### Warnings", ""])
             ticket_segments.append(
                 "Things that looked off and should be investigated:"
             )
@@ -599,18 +710,6 @@ class KVMHostRescue:
             )
             ticket_segments.append("\n")
 
-        ticket_segments.append(
-            dedent("""\
-            # Cleanup steps
-
-            Once the failure reason for the host has been resolved, the following steps need to be taken to set it back in service:
-
-            - [ ] ensure machine is clean, reachable, and not running any VMs
-            - [ ] ceph blocklists cleaned up XXX: run interactively
-            - [ ] mark machine as *prefer nonproduction* or *nonproduction* until further investigation
-            - [ ] set machine back in service once ready
-            """)
-        )
         return "\n".join(ticket_segments)
 
 
@@ -760,7 +859,10 @@ def main(argv: list[str]) -> int:
                 print(f"[dim]skip {rstep.definition.name} (already done)[/dim]")
             else:
                 print()
-                print(f"[b]{rstep.definition.name}[/b]: {rstep.definition.doc}")
+                headline = f"[b]{rstep.definition.name}[/b]"
+                if rstep.definition.doc:
+                    headline += f": {rstep.definition.doc}"
+                print(headline)
             rstep()
             if args.step:
                 print(f"Finished step [b]{rstep.definition.name}[/b].")

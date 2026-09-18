@@ -131,8 +131,8 @@ class BlocklistEntry(BaseModel):
     address: str  # already in the `<addr>:0/0` blocklist form
 
     @property
-    def cleanup_command(self) -> str:
-        return f"ceph osd blocklist rm {self.address}"
+    def cleanup_command(self) -> list[str]:
+        return ["ceph", "osd", "blocklist", "rm", self.address]
 
 
 class RescueState(BaseModel):
@@ -148,6 +148,7 @@ class RescueState(BaseModel):
     # Anything that looked off while stepping through, to be presented to the
     # operator as a check list at the end instead of scrolling back.
     warnings: set[str] = set()
+    cleanup_stay_down: bool = False  # decision: leave the host down
 
     @classmethod
     def load(cls, yt_ticket: str) -> Self | None:
@@ -196,4 +197,4 @@ class RescueState(BaseModel):
     def move_aside(self) -> None:
         target = self.path.with_suffix(".old.json")
         print(f"Moving old state file to {target}.")
-        _ = STATE_FILE_DIR.rename(target=target)
+        _ = self.path.rename(target=target)
