@@ -95,8 +95,9 @@ def rich_sep(char: str = "=") -> None:
 
 class Ipmitool:
     """Wrapper for calling the fc-ipmitool command, implementing the following
-    supoporting features:
-    - user name / password caching
+    supporting features:
+    - password prompting and caching -- the user name is passed in, as only
+      that one may be persisted between runs
     - mlock to avoid swapping these credentials
     - I/O redirection: optionally redirect to a real tty, e.g. for SOL
     """
@@ -111,13 +112,13 @@ class Ipmitool:
     hostname: str
 
     _ipmipw: str | None = None
-    _ipmiuser: str | None
+    ipmiuser: str
 
     libc: ClassVar[ctypes.CDLL] = ctypes.CDLL("libc.so.6", use_errno=True)
 
-    def __init__(self, hostname: str, ipmiuser: str | None = None) -> None:
+    def __init__(self, hostname: str, ipmiuser: str) -> None:
         self.hostname = hostname
-        self._ipmiuser = ipmiuser
+        self.ipmiuser = ipmiuser
 
     @classmethod
     def mlockall(cls) -> None:
@@ -131,12 +132,6 @@ class Ipmitool:
             # allows clearing a wrong password by resetting the cached value to None
             self._ipmipw = getpass.getpass("IPMI access password: ")
         return self._ipmipw
-
-    @property
-    def ipmiuser(self) -> str:
-        while not self._ipmiuser:
-            self._ipmiuser = input(f"IPMI user for {self.hostname}: ")
-        return self._ipmiuser
 
     @property
     def env(self) -> dict[str, str]:
@@ -351,7 +346,12 @@ class KVMHostRescue:
 
     @cached_property
     def ipmi(self) -> Ipmitool:
-        return Ipmitool(self.kvmhostname, ipmiuser=self.state.ipmi_user)
+        if not self.state.ipmi_user:
+            while not (user := Prompt.ask(f"IPMI user for {self.kvmhostname}")):
+                pass
+            self.state.ipmi_user = user
+            self.state.save()
+        return Ipmitool(self.kvmhostname, self.state.ipmi_user)
 
     # -- steps, in the order they run --------------------------------------
 
