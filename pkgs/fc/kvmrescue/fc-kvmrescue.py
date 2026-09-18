@@ -585,9 +585,7 @@ class KVMHostRescue:
         """Verify the machine is clean before removing its blocklist entries."""
 
         while True:
-            if Confirm.ask(
-                "Do you want to start the host and set it back in service?"
-            ):
+            if Confirm.ask("Start the host and set it back in service?"):
                 print("Starting the host via IPMI.")
                 _ = self.ipmi("power", "on")
                 # XXX: we could print an SOL or wait for the host to ping successfully
@@ -611,7 +609,7 @@ class KVMHostRescue:
                 print(
                     "You can decide to leave the host down for now. It is still important that the host is properly down."
                 )
-                if Confirm.ask("Is the host set properly down?"):
+                if Confirm.ask("Is host set properly down?"):
                     self.state.cleanup_stay_down = True
                     break
 
@@ -621,7 +619,7 @@ class KVMHostRescue:
         try:
             with item_progress() as progress:
                 task = progress.add_task(
-                    "Removing block for",
+                    "Removing block",
                     total=len(self.state.blocklist_entries),
                     item="",
                 )
