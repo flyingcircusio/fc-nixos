@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-153.0.8010.36",
+    "name": "chromedriver-unwrapped-153.0.8010.47",
     "pname": "chromedriver-unwrapped",
-    "version": "153.0.8010.36"
+    "version": "153.0.8010.47"
   },
   "chromium": {
-    "name": "chromium-153.0.8010.36",
+    "name": "chromium-153.0.8010.47",
     "pname": "chromium",
-    "version": "153.0.8010.36"
+    "version": "153.0.8010.47"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.5",
@@ -160,9 +160,9 @@
     "version": "2.93"
   },
   "docker": {
-    "name": "docker-29.7.2",
+    "name": "docker-29.8.0",
     "pname": "docker",
-    "version": "29.7.2"
+    "version": "29.8.0"
   },
   "docker-compose": {
     "name": "docker-compose-5.4.0",
@@ -210,9 +210,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-155.0.1",
+    "name": "firefox-156.0",
     "pname": "firefox",
-    "version": "155.0.1"
+    "version": "156.0"
   },
   "gcc": {
     "name": "gcc-wrapper-15.2.0",
@@ -395,9 +395,9 @@
     "version": "1.36.3+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.7.3",
+    "name": "keycloak-26.7.4",
     "pname": "keycloak",
-    "version": "26.7.3"
+    "version": "26.7.4"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.20.2",
@@ -465,14 +465,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.109",
+    "name": "linux-6.12.110",
     "pname": "linux",
-    "version": "6.12.109"
+    "version": "6.12.110"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.18.51",
+    "name": "linux-6.18.52",
     "pname": "linux",
-    "version": "6.18.51"
+    "version": "6.18.52"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -500,9 +500,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.6.7",
+    "name": "mastodon-4.6.8",
     "pname": "mastodon",
-    "version": "4.6.7"
+    "version": "4.6.8"
   },
   "matomo": {
     "name": "matomo-5.12.0",
@@ -525,9 +525,9 @@
     "version": "1.6.42"
   },
   "mongodb": {
-    "name": "mongodb-7.0.40",
+    "name": "mongodb-7.0.43",
     "pname": "mongodb",
-    "version": "7.0.40"
+    "version": "7.0.43"
   },
   "monitoring-plugins": {
     "name": "monitoring-plugins-2.4.0",
