@@ -17,6 +17,8 @@ import shlex
 import subprocess
 import sys
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from socket import gethostname
@@ -26,7 +28,9 @@ from typing import overload
 
 from pydantic import BaseModel, TypeAdapter
 from rich import box
-from rich.console import Console
+from rich.columns import Columns
+from rich.console import Console, Group
+from rich.live import Live
 from rich.progress import (
     BarColumn,
     MofNCompleteColumn,
@@ -37,6 +41,7 @@ from rich.progress import (
 )
 from rich.prompt import Confirm, Prompt
 from rich.table import Table
+from rich.text import Text
 
 STATE_DIR = Path("/var/lib/fc-kvmrescue")
 
@@ -50,6 +55,13 @@ DRY_RUN = False
 BLOCKLIST_TTL = 24 * 60 * 60
 
 MANUAL_URL = "https://wiki.flyingcircus.io/Qemu/KVM_operations_manual#semi-automated_KVM_host_evacuation"
+
+# How monitor_affected_vms watches the VMs come back.
+PING_TIMEOUT = 2  # seconds a VM gets to answer a single ping
+POLL_INTERVAL = 10  # seconds between rounds
+# A host can hold 200 VMs, and each one costs an `rbd lock ls` plus a ping.
+# Checked one after the other a single round would take minutes.
+CHECK_WORKERS = 32
 
 # The rescue runs the steps in this order, and ALWAYS_RUN holds the subset that
 # runs again on every pass even once recorded as done. Both are filled by @step
@@ -277,6 +289,76 @@ def vm_name(image: str) -> str:
     """
     _, _, volume = image.partition("/")
     return volume.rsplit(".", 1)[0]
+
+
+@dataclass
+class VmStatus:
+    """What the last poll found out about one VM."""
+
+    name: str
+    locker: str = ""  # host holding its root lock, empty when nobody does
+    pings: bool = False
+    healthy: bool = False
+
+
+def check_vm(name: str, root_image: str, dead_host: str) -> VmStatus:
+    """Poll one VM: who holds its root lock, and does it answer a ping.
+
+    Healthy means another host has taken the root lock and the VM is back on
+    the network. A lock still held by the dead host means it has not moved.
+    """
+    locker = ""
+    if root_image:
+        try:
+            locks = list_locks(root_image)
+            locker = locks[0].id if locks else ""
+        except (subprocess.CalledProcessError, RuntimeError):
+            # Image gone or the cluster busy -- treat as unlocked and retry
+            # next round rather than tearing down the whole watch.
+            locker = ""
+    pings = (
+        subprocess.run(  # noqa: PLW1510
+            ["ping", "-n", "-c", "1", "-W", str(PING_TIMEOUT), name],
+            capture_output=True,
+        ).returncode
+        == 0
+    )
+    # Without a known root image there is nothing to go on but the ping.
+    moved = locker not in ("", dead_host)
+    return VmStatus(name, locker, pings, pings and (moved or not root_image))
+
+
+VM_LEGEND = "✓ back · P not answering to ping · L no root volume lock · name@host = lock holder"
+
+
+def vm_cell(status: VmStatus) -> Text:
+    """One VM in as few characters as 200 of them allow."""
+    if status.healthy:
+        return Text(f"✓ {status.name}", style="green")
+    if status.locker:
+        # Locked elsewhere already, so it is most likely still booting -- and
+        # naming the holder is what spots a lock the dead host took back.
+        return Text(
+            f"P {status.name}[grey]@{status.locker}[/grey]", style="yellow"
+        )
+    return Text(f"{'L' if status.pings else 'LP'} {status.name}", style="red")
+
+
+def vm_overview(statuses: list[VmStatus]) -> Columns:
+    """Every VM as a compact cell, the ones still pending first.
+
+    Trimmed to what fits on the screen. Pending VMs sort first, so a long list
+    loses healthy ones off the end -- the ones nobody needs to look at.
+    """
+    ordered = sorted(statuses, key=lambda status: (status.healthy, status.name))
+    cells = [vm_cell(status) for status in ordered]
+    width = max((len(cell.plain) for cell in cells), default=1) + 2
+    fits = max(1, console.width // width) * max(1, console.height - 8)
+    if len(cells) > fits:
+        hidden = len(cells) - fits + 1
+        cells = cells[: fits - 1]
+        cells.append(Text(f"… {hidden} more", style="dim"))
+    return Columns(cells, equal=True, padding=(0, 1))
 
 
 # --- talking to ceph and the BMC --------------------------------------------
@@ -685,16 +767,59 @@ class Rescue:
         # Output is not captured: the operator wants to watch directory work.
         subprocess.run(cmd, check=True)
 
-    @step
-    def list_affected_vms(self) -> None:
-        """List affected VMs"""
+    @step(always=True)
+    def monitor_affected_vms(self) -> None:
+        """Monitor evacuated VM status"""
         vms = sorted({vm_name(image) for image in self.state.locked_images})
         if not vms:
-            say("No volumes were locked, so no VMs were affected.")
+            say(
+                "No volumes were locked -> no VMs were affected -> no monitoring necessary."
+            )
             return
-        say(f"{len(vms)} VMs were running on {self.hostname}:")
-        for name in vms:
-            say(f"  - {name}")
+        say(f"{len(vms)} VMs were running on {self.hostname}.")
+
+        # Pick the root volume for every VM to monitor lock status and
+        # locker.
+        roots = {
+            vm_name(image): image
+            for image in self.state.locked_images
+            if image.endswith(".root")
+        }
+
+        def poll(status: VmStatus) -> VmStatus:
+            return check_vm(
+                status.name, roots.get(status.name, ""), self.hostname
+            )
+
+        statuses = {name: VmStatus(name) for name in vms}
+        progress = Progress(
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            MofNCompleteColumn(),
+            TimeElapsedColumn(),
+        )
+        task = progress.add_task(" Healthy VMs", total=len(vms))
+        say(VM_LEGEND, style="dim")
+
+        # Live keeps the whole list in one redrawing block instead of
+        # scrolling a screenful of VMs past the operator every round.
+        with Live(console=console, refresh_per_second=4) as live:
+            while True:
+                with ThreadPoolExecutor(max_workers=CHECK_WORKERS) as pool:
+                    for status in pool.map(poll, statuses.values()):
+                        statuses[status.name] = status
+                # Healthy VMs drop out: later rounds only re-check what is
+                # still missing, so the watch gets cheaper as it goes.
+                healthy = [s for s in statuses.values() if s.healthy]
+                progress.update(task, completed=len(healthy))
+                live.update(
+                    Group(progress, vm_overview(list(statuses.values())))
+                )
+                if len(healthy) == len(statuses):
+                    break
+                sleep(POLL_INTERVAL)
+
+        say(f"\n All {len(vms)} VMs are back.", style="green")
 
     @step
     def cleanup_start(self) -> None:
