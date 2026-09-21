@@ -188,7 +188,6 @@
   "python3Packages.supervisor",
   "python3Packages.systemd-python",
   "python3Packages.urllib3",
-  "qemu-ceph-nautilus",
   "qemu-ceph-pacific",
   "rabbitmq-server",
   "rclone",

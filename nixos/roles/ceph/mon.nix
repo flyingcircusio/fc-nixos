@@ -21,20 +21,6 @@ let
 
   # default definitions for the mgr.* options:
   mgrEnabledModules = {
-    nautilus = [
-      # always_on_modules for reference:
-      # balancer
-      # crash
-      # devicehealth
-      # orchestrator_cli
-      # progress
-      # rbd_support
-      # status
-      # volumes
-
-      "telemetry"
-      "iostat"
-    ];
     pacific = [
       # always_on_modules for reference:
       # balancer
@@ -52,9 +38,6 @@ let
     ];
   };
   mgrDisabledModules = {
-    nautilus = [
-      "restful"
-    ];
     pacific = [
       "restful"
     ];
