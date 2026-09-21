@@ -142,9 +142,10 @@ class UpdateActivity(Activity):
         else:
             out_link = NEXT_SYSTEM
 
+        next_channel = Channel(self.log, self.next_channel_url)
         try:
-            self.next_system = nixos.build_system(
-                self.next_channel_url, out_link=out_link, log=self.log
+            self.next_system = nixos.build(
+                next_channel, out_link=out_link, log=self.log
             )
         except nixos.ChannelException:
             self.log.error(
@@ -280,9 +281,8 @@ class UpdateActivity(Activity):
 
             init_command_logging(self.log)
 
-            system_path = nixos.build_system(
-                self.next_channel_url, log=self.log
-            )
+            next_channel = Channel(self.log, self.next_channel_url)
+            system_path = nixos.build(next_channel, log=self.log)
             # System path may have changed since preparing the system because of
             # configuration changes, so update it here.
             self.next_system = system_path
