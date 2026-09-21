@@ -157,11 +157,11 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") (
         '';
       };
 
-      services.journald.extraConfig = ''
-        SystemMaxUse=8G
-        MaxLevelConsole=err
-        ForwardToWall=no
-      '';
+      services.journald.settings.Journal = {
+        SystemMaxUse = "8G";
+        MaxLevelConsole = "err";
+        ForwardToWall = true;
+      };
 
       systemd.services.lvm-upgrade-metadata = {
         wantedBy = [ "multi-user.target" ];
