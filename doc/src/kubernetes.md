@@ -492,10 +492,10 @@ configured by setting the `services.k3s.package` NixOS option, for example:
 {
 
   # Each minor version of k3s is available as a separate versioned package,
-  # e.g. k3s_1_33 provides the latest patch release of 1.33.x, k3s_1_34
-  # provides 1.34.x, etc.
+  # e.g. k3s_1_34 provides the latest patch release of 1.34.x, k3s_1_35
+  # provides 1.35.x, etc.
 
-  services.k3s.package = pkgs.k3s_1_33;
+  services.k3s.package = pkgs.k3s_1_34;
 }
 ```
 
