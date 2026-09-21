@@ -10,268 +10,155 @@
 # quick-edit script for quick changes.
 
 import argparse
-import ctypes
 import getpass
 import os
+import re
+import shlex
 import subprocess
 import sys
 from collections.abc import Callable
-from contextlib import nullcontext
-from functools import cached_property, wraps
-from ipaddress import IPv6Address
+from datetime import UTC, datetime
+from pathlib import Path
 from socket import gethostname
+from textwrap import dedent
 from time import sleep
-from typing import ClassVar, cast, overload
+from typing import overload
 
-from pydantic import IPvAnyAddress, TypeAdapter
-from rich import box, print
-from rich.markup import escape
+from pydantic import BaseModel, TypeAdapter
+from rich import box
+from rich.console import Console
 from rich.progress import (
     BarColumn,
     MofNCompleteColumn,
     Progress,
     TextColumn,
     TimeElapsedColumn,
+    TimeRemainingColumn,
 )
 from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
-from state import (
-    BlocklistEntry,
-    RbdImageSpec,
-    RbdLock,
-    RescueState,
-    foreign_locks,
-    locks_held_by,
-)
-from steps import (
-    STEPS,
-    STEPS_BY_NAME,
-    RescueDone,
-    StepDef,
-    missing_prerequisites,
-    run,
-    step,
-)
+STATE_DIR = Path("/var/lib/fc-kvmrescue")
 
-# we *could* extract them somewhere from the platform, but let's not do this for now.
-RBD_POOLS = ["rbd.hdd", "rbd.ssd"]
+# Set once from `--dry-run`. Every callout that would change the cluster, the
+# host or the state file checks it -- `grep DRY_RUN` lists them all.
+DRY_RUN = False
 
-# Lifetime of the host-global `ceph osd blocklist` entries we add in
-# @blocklist_lockers. Plenty of time to handle a broken host, but short enough
-# to recover on its own should we miss cleaning them up.
+# Lifetime of the host-global `ceph osd blocklist` entries added in
+# blocklist_lockers. Plenty of time to handle a broken host, but short enough to
+# recover on its own should we miss cleaning them up.
 BLOCKLIST_TTL = 24 * 60 * 60
 
+MANUAL_URL = "https://wiki.flyingcircus.io/Qemu/KVM_operations_manual#semi-automated_KVM_host_evacuation"
 
-@overload
-def plain(value: str) -> str: ...
-@overload
-def plain[T](value: T) -> T: ...
-def plain(value: object) -> object:
-    """Keep rich from swallowing `[...]` in data as console markup.
+# The rescue runs the steps in this order, and ALWAYS_RUN holds the subset that
+# runs again on every pass even once recorded as done. Both are filled by @step
+# in definition order, see the Rescue class below.
+STEPS: list[str] = []
+ALWAYS_RUN: set[str] = set()
 
-    Bracketed data is common here: IPv6 EntityAddrs (`[dead::1]:0/0`) and the
-    repr'd argv in subprocess error messages. Only strings are affected, other
-    objects go through rich's pretty printer untouched.
+
+# --- talking to the operator ------------------------------------------------
+
+console = Console(highlight=False)
+
+
+def say(message: str = "", style: str = "") -> None:
+    """Print a line, taking any `[...]` in it literally.
+
+    Nearly everything here interpolates data, and rich reads `[` followed by a
+    letter as console markup and drops it: `[fe80::1]:0/0` would print as
+    `:0/0`, a `- [x]` checklist line as `- `. Colour goes through `style`, so no
+    call site has to remember to escape anything.
+
+    The `Prompt`/`Confirm` questions below are the exception that proves it:
+    those are fixed strings with no data in them, so they may use markup.
     """
-    return escape(value) if isinstance(value, str) else value
+    console.print(message, style=style, markup=False)
 
 
-def rich_link(url: str) -> str:
-    return f"[link={url}]{url}[/link]"
+def show_link(url: str) -> None:
+    """Print a URL as an explicit OSC 8 hyperlink, on its own line.
 
-
-def print_directory_link(hostname: str) -> None:
-    url = f"https://directory.fcio.net/machine/list?search=name-{hostname}"
-    # As an explicit OSC 8 hyperlink, so the terminal does not have to guess
-    # where the URL ends.
-    # On its own line for terminals that lack OSC 8 and do guess.
-    print(f"   {rich_link(url)}")
-
-
-def rich_sep(char: str = "=") -> None:
-    print("[purple]" + f"{char}" * 80 + "[/purple]")
-
-
-class Ipmitool:
-    """Wrapper for calling the fc-ipmitool command, implementing the following
-    supporting features:
-    - password prompting and caching -- the user name is passed in, as only
-      that one may be persisted between runs
-    - mlock to avoid swapping these credentials
-    - I/O redirection: optionally redirect to a real tty, e.g. for SOL
+    Explicit, so the terminal does not have to guess where the URL ends -- and
+    on its own line for the terminals that lack OSC 8 and do guess.
     """
-
-    # Implement mlock to avoid swapping as we store sensitive data (like IPMI credentials)
-    # Constants defined by kernel, not dynamically accessible here:
-    # https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/include/uapi/asm-generic/mman.h#n18
-
-    MCL_CURRENT: ClassVar[int] = 1
-    MCL_FUTURE: ClassVar[int] = 2
-
-    hostname: str
-
-    _ipmipw: str | None = None
-    ipmiuser: str
-
-    libc: ClassVar[ctypes.CDLL] = ctypes.CDLL("libc.so.6", use_errno=True)
-
-    def __init__(self, hostname: str, ipmiuser: str) -> None:
-        self.hostname = hostname
-        self.ipmiuser = ipmiuser
-
-    @classmethod
-    def mlockall(cls) -> None:
-        result = cast(int, cls.libc.mlockall(cls.MCL_CURRENT | cls.MCL_FUTURE))
-        if result != 0:
-            raise Exception("cannot lock memory, errno=%s" % ctypes.get_errno())
-
-    @property
-    def ipmipw(self) -> str:
-        while not self._ipmipw:
-            # allows clearing a wrong password by resetting the cached value to None
-            self._ipmipw = getpass.getpass("IPMI access password: ")
-        return self._ipmipw
-
-    @property
-    def env(self) -> dict[str, str]:
-        # Passed via env (and fc-ipmitool's -E) rather than argv, so the
-        # password doesn't show up in `ps`. Build a copy per call instead of
-        # mutating os.environ, so it doesn't leak into unrelated subprocess
-        # calls or outlive this invocation.
-        return {**os.environ, "IPMI_PASSWORD": self.ipmipw}
-
-    def __call__(
-        self,
-        *args: str,
-        capture_output: bool = False,
-        tty: bool = False,
-    ) -> subprocess.CompletedProcess[str]:
-        cmd = ["fc-ipmitool", "-U", self.ipmiuser, self.hostname, *args]
-        ctx = open("/dev/tty", "r+b", buffering=0) if tty else nullcontext()
-        with ctx as f:
-            return subprocess.run(
-                cmd,
-                stdin=f,
-                stdout=f,
-                stderr=f,
-                capture_output=capture_output,
-                text=True,
-                errors="replace",
-                encoding="utf-8",
-                env=self.env,
-            )
-
-    def check_is_power_off(self) -> bool:
-        """May raise a CalledProcessError, leaving handling of that to
-        consumers."""
-        power_status = self(
-            "power", "status", capture_output=True
-        ).stdout.strip()
-
-        if power_status == "Chassis Power is off":
-            # we can force-unlock all the collected images
-            print("Power is [green]off[/green].")
-            return True
-        else:
-            print(
-                f"Power status is [orange1]'{escape(power_status)}'[/orange1].",
-            )
-            return False
+    console.print(f"    [link={url}]{url}[/link]")
 
 
-class PoolMissing(Exception):
-    """This cluster has no such pool.
+def show_command(cmd: list[str]) -> None:
+    """Report a callout a dry run is making instead of it."""
+    say(f"\n $ {shlex.join(cmd)}", style="dim")
 
-    Expected: RBD_POOLS lists what a cluster *may* have, and not every cluster
-    has every pool.
+
+def separator(char: str = "=") -> None:
+    say(char * 80, style="dim")
+
+
+# The three helpers below own the blank lines around what they print, so no
+# caller has to space its output by hand.
+
+
+def heading(text: str, style: str = "") -> None:
+    """Open a new block of output."""
+    say()
+    say(text, style=style)
+
+
+def framed(text: str) -> None:
+    """Print a block that is meant to be copied out, between separators."""
+    say()
+    separator()
+    say(text)
+    separator()
+
+
+def divider() -> None:
+    """Close off a finished step."""
+    say()
+    separator("-")
+    say()
+
+
+def confirm(question: str, default: bool | None = None) -> bool:
+    """Ask a yes/no question, set off from the output above it.
+
+    Without a `default` there is no answer but an explicit yes or no, which is
+    what anything that discards state or moves the rescue on wants.
     """
+    say()
+    if default is None:
+        return Confirm.ask(question)
+    return Confirm.ask(question, default=default)
 
 
-def handle_image_gone[**P, R](f: Callable[P, R]) -> Callable[P, R]:
-    """Wrap around any `rbd` call and provide an actionable message for the case
-    of a missing image. Apply this at places where we can expect images to be
-    gone due to non-atomicites.
-    """
-
-    @wraps(f)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-        try:
-            return f(*args, **kwargs)
-        except subprocess.CalledProcessError as e:
-            # typeshed types `stderr` as Any because it depends on the flags
-            # `run` was called with; ours captures it as text.
-            if (
-                "error opening image" in (errmsg := cast(str, e.stderr) or "")
-                and "No such file or directory" in errmsg
-            ):
-                raise RuntimeError(
-                    f"Did not find image: {e}\n"
-                    + "Try re-running the `collect_locks` step and continue step-wise from there."
-                ) from e
-            else:
-                raise
-
-    return wrapper
+def acknowledge(question: str) -> None:
+    """Ask until the operator confirms. Nothing but "yes" gets past this."""
+    while not confirm(question):
+        pass
 
 
-class Rbd:
-    ceph_client_name: str
-    # for now assuming default ceph conf location, while fc.qemu handles this explicitly
-
-    def __init__(self) -> None:
-        self.ceph_client_name = f"client.{gethostname()}"
-
-    def validate_json_cmd[V](self, tp: type[V], *args: str) -> V:
-        # `tp` may be any type pydantic can validate: a BaseModel subclass just
-        # as well as a plain container like `list[str]`.
-        return TypeAdapter(tp).validate_json(self.rbd_(*args))
-
-    def pool_ls(self, pool: str) -> set[RbdImageSpec]:
-        try:
-            imgnames = self.validate_json_cmd(list[str], "ls", pool)
-        except subprocess.CalledProcessError as e:
-            # `rbd ls` exits 2 both for a missing pool and for other failures,
-            # so go by the message to avoid swallowing anything else.
-            # typeshed types `stderr` as Any because it depends on the flags
-            # `run` was called with; ours captures it as text.
-            stderr = cast(str, e.stderr)
-            if "error opening pool" in stderr:
-                raise PoolMissing(pool) from e
-            raise
-        return {RbdImageSpec(pool, imgname) for imgname in imgnames}
-
-    def lock_ls(self, imgspec: RbdImageSpec) -> list[RbdLock]:
-        return self.validate_json_cmd(list[RbdLock], "lock", "ls", str(imgspec))
-
-    def rbd_(
-        self,
-        *args: str,
-        use_json: bool = True,
-        verbose: bool = False,
-    ) -> str:
-        """Run an `rbd` subcommand and hand back its raw output.
-
-        Callers that want structured data go through `validate_json_cmd`, which
-        lets pydantic parse the JSON straight into the target type.
-        """
-        format_arg = ["--format", "json"] if use_json else []
-        cmd = ["rbd", "--name", self.ceph_client_name, *format_arg, *args]
-        if verbose:
-            print(cmd)
-        result = subprocess.run(
-            cmd, check=True, capture_output=True, text=True
-        ).stdout
-        if verbose:
-            print(plain(result))
-        return result
+def operator_task(instruction: str, question: str, url: str = "") -> None:
+    """Hand a task to the operator to do by hand, then wait for them."""
+    say(f" 👩‍💻 {instruction}")
+    if url:
+        show_link(url)
+    acknowledge(" " + question)
 
 
-def item_progress() -> Progress:
+def directory_url(hostname: str) -> str:
+    return f"https://directory.fcio.net/machine/list?search=name-{hostname}"
+
+
+def ticket_url(yt_ticket: str) -> str:
+    return f"https://yt.flyingcircus.io/issue/{yt_ticket}"
+
+
+def progress_bar() -> Progress:
     """Progress bar that names the item currently being worked on.
 
-    The steps below walk one Ceph call per image or address, which is slow
-    enough on a full pool that an operator wants to see it move -- and see what
+    The steps below make one Ceph call per image or address, which is slow
+    enough on a full pool that an opserator wants to see it move -- and see what
     it is stuck on if it stops moving.
     """
     return Progress(
@@ -279,634 +166,885 @@ def item_progress() -> Progress:
         BarColumn(),
         MofNCompleteColumn(),
         TimeElapsedColumn(),
-        TextColumn("[dim]{task.fields[item]}"),
+        TimeRemainingColumn(),
+        # markup off: the item is an image spec or a Ceph address.
+        TextColumn("{task.fields[item]}", style="dim", markup=False),
     )
 
 
-def fmt_blocklist_address(address: IPvAnyAddress) -> str:
-    if isinstance(address, IPv6Address):
-        addresspart = f"[{address}]"
-    else:
-        addresspart = str(address)
-    # `<IPAddr>:0/0` is a special EntityAddr that covers all ports and nonces as well
-    return f"{addresspart}:0/0"
+# --- persisted state --------------------------------------------------------
 
 
-class KVMHostRescue:
-    state: RescueState
+class RbdLock(BaseModel):
+    """One entry of `rbd lock ls`."""
 
-    def __init__(self, yt_ticket: str | None) -> None:
-        while not yt_ticket:
-            if not Confirm.ask(
-                "Did you already create a ticket for this rescue?", default=True
-            ):
-                print("Create a new ticket from")
-                print(
-                    "   "
-                    + rich_link(
-                        "https://wiki.flyingcircus.io/Qemu/KVM_operations_manual#semi-automated_KVM_host_evacuation"
-                    )
-                )
-            yt_ticket = Prompt.ask("Enter ticket number")
-        state = RescueState.load(yt_ticket=yt_ticket)
-        pre_existing = bool(state)
-        if not state:
-            kvmhostname = Prompt.ask(
-                "Enter hostname of the KVM host to evacute"
-            )
-            state = RescueState.new_state(kvmhostname, yt_ticket)
-            state.save()
-            print(f"Created new state file at [i]{state.path}[i]")
-        else:
-            print()
-            print(
-                f"This rescue operation is for host [b]{state.kvmhostname}[/b]."
-            )
+    id: str  # the name the locking host registered, i.e. its hostname
+    locker: str  # the Ceph client holding it, e.g. `client.14612`
+    address: str  # Ceph EntityAddr, e.g. `172.20.4.101:0/3733721661`
 
-        recreate = False
-        if pre_existing:
-            print(
-                f"Found existing rescue-state from {state.creation_date:%Y-%m-%d %H:%M %Z} at [i]{state.path}[i]."
-            )
-            _ = list_steps(yt_ticket)
-            recreate = not Confirm.ask("Continue using that data?")
-        if recreate:
-            state.move_aside()
-            state = RescueState.new_state(state.kvmhostname, yt_ticket)
-        self.state = state
+
+class RescueState(BaseModel):
+    """Everything the steps gather, written out after each one so an
+    interrupted rescue can be resumed."""
+
+    yt_ticket: str
+    kvmhostname: str
+    created: datetime
+    ipmi_user: str = ""
+    completed: list[str] = []
+    # The locks on every `pool/image` the dead host holds a lock on. Foreign
+    # locks are kept alongside ours, so break_locks can tell them apart and the
+    # state file shows the operator what was actually there.
+    locked_images: dict[str, list[RbdLock]] = {}
+    # The `ceph osd blocklist` entries we added, in `<addr>:0/0` form.
+    blocklist: list[str] = []
+    # Anything that looked off while stepping through, presented to the operator
+    # as a checklist at the end instead of making them scroll back.
+    warnings: list[str] = []
+
+    @classmethod
+    def load(cls, yt_ticket: str) -> "RescueState | None":
+        """Read the state file without prompting, if there is one."""
+        try:
+            return cls.model_validate_json(state_path(yt_ticket).read_text())
+        except FileNotFoundError:
+            return None
 
     @property
-    def kvmhostname(self) -> str:
-        return self.state.kvmhostname
+    def path(self) -> Path:
+        return state_path(self.yt_ticket)
 
-    # lazy singletons
-    @cached_property
-    def rbd(self) -> Rbd:
-        return Rbd()
+    def save(self) -> None:
+        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        self.path.write_text(self.model_dump_json(indent=2))
 
-    @cached_property
-    def ipmi(self) -> Ipmitool:
-        if not self.state.ipmi_user:
-            while not (user := Prompt.ask(f"IPMI user for {self.kvmhostname}")):
-                pass
-            self.state.ipmi_user = user
-            self.state.save()
-        return Ipmitool(self.kvmhostname, self.state.ipmi_user)
+    def mark_done(self, stepname: str) -> None:
+        if stepname not in self.completed:
+            self.completed.append(stepname)
+        self.save()
 
-    # -- steps, in the order they run --------------------------------------
+    def warn(self, message: str) -> None:
+        if message not in self.warnings:
+            self.warnings.append(message)
+        self.save()
 
-    @step()
-    def add_ticket_text(self) -> None:
-        """Add the rescue steps checklist to ticket."""
+    @property
+    def locker_addresses(self) -> list[str]:
+        """Blocklist entries for the addresses the dead host locks from.
 
-        print(
-            f"Please extend the rescue ticket [b][link=https://yt.flyingcircus.io/issue/{self.state.yt_ticket}]{self.state.yt_ticket}[/link][/b] with the following:"
+        Never a foreign locker's: we only ever break our dead host's locks.
+        """
+        return sorted(
+            {
+                blocklist_address(lock.address)
+                for locks in self.locked_images.values()
+                for lock in locks
+                if lock.id == self.kvmhostname
+            }
         )
-        print()
 
-        rich_sep()
-        print(plain(self.ticket_template))
-        rich_sep()
 
-        while not Confirm.ask(
-            "Have you copied the checklist to the rescue ticket?"
+def state_path(yt_ticket: str) -> Path:
+    return STATE_DIR / f"{yt_ticket}.json"
+
+
+# Ceph EntityAddrs look like `172.20.4.101:0/3733721661` or `[dead::1]:0/0`,
+# optionally prefixed with the messenger protocol version (`v1:`/`v2:`).
+ENTITY_ADDR = re.compile(
+    r"^(?:v[12]:)?(?P<addr>\[[0-9a-fA-F:.]+\]|[0-9.]+):\d+/\d+$"
+)
+
+
+def blocklist_address(entity_addr: str) -> str:
+    """Turn a locker's EntityAddr into a blocklist entry for the whole client.
+
+    `<addr>:0/0` is the special form covering all ports and nonces, so one entry
+    per address is enough. The address part is taken verbatim, to avoid a
+    mismatch from re-formatting an IPv6 address.
+    """
+    match = ENTITY_ADDR.match(entity_addr)
+    if not match:
+        raise ValueError(f"not a Ceph EntityAddr: {entity_addr!r}")
+    return f"{match['addr']}:0/0"
+
+
+def vm_name(image: str) -> str:
+    """The VM an image belongs to: `rbd.hdd/test00.root` -> `test00`.
+
+    fc.qemu gives a VM one volume per purpose (`.root`, `.swap`, `.tmp`), so
+    several images fold back onto the same VM. Only the last suffix is dropped,
+    leaving a dotted VM name intact.
+    """
+    _, _, volume = image.partition("/")
+    return volume.rsplit(".", 1)[0]
+
+
+# --- talking to ceph and the BMC --------------------------------------------
+
+
+def rbd(*args: str, changes: bool = False) -> str:
+    """Run an `rbd` subcommand as this host's client and return its output.
+
+    `changes` marks a subcommand that modifies the cluster, so a dry run shows
+    it rather than running it.
+    """
+    cmd = ["rbd", "--name", f"client.{gethostname()}", *args]
+    if changes and DRY_RUN:
+        show_command(cmd)
+        return ""
+    try:
+        return subprocess.run(
+            cmd, check=True, capture_output=True, text=True
+        ).stdout
+    except subprocess.CalledProcessError as e:
+        # Images can disappear between collecting and breaking their locks.
+        if (
+            "error opening image" in e.stderr
+            and "No such file or directory" in e.stderr
         ):
-            pass
+            raise RuntimeError(
+                f"Did not find image: {e}\n"
+                "Re-run the `collect_locks` step and continue step-wise from there."
+            ) from e
+        raise
 
-    @step()
+
+def list_images(pool: str) -> list[str]:
+    """The `pool/image` specs of every image in the pool."""
+    names = TypeAdapter(list[str]).validate_json(
+        rbd("ls", "--format", "json", pool)
+    )
+    return [f"{pool}/{name}" for name in names]
+
+
+def list_locks(image: str) -> list[RbdLock]:
+    return TypeAdapter(list[RbdLock]).validate_json(
+        rbd("lock", "ls", "--format", "json", image)
+    )
+
+
+def ceph(*args: str, changes: bool = False) -> str:
+    """Run a `ceph` command as this host's client and return its output.
+
+    `changes` marks a command that modifies the cluster, so a dry run shows it
+    rather than running it.
+    """
+    cmd = ["ceph", "--id", gethostname(), *args]
+    if changes and DRY_RUN:
+        show_command(cmd)
+        return ""
+    return subprocess.run(
+        cmd,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+
+
+def rbd_pools() -> list[str]:
+    """The pools of this cluster that have the `rbd` application enabled.
+
+    Asked of the cluster rather than hard-coded, so a cluster that does not have
+    every pool -- or gains one -- needs no change here.
+    """
+    # Without a pool name, `application get` dumps them all:
+    # {"rbd.hdd": {"rbd": {}}, "cephfs_data": {"cephfs": {...}}}
+    applications = TypeAdapter(dict[str, dict[str, object]]).validate_json(
+        ceph("osd", "pool", "application", "get", "--format", "json")
+    )
+    return sorted(name for name, apps in applications.items() if "rbd" in apps)
+
+
+def blocklist_rm_command(address: str) -> list[str]:
+    """How to drop a blocklist entry again.
+
+    A command rather than a call, because blocklist_cleanup also prints it for
+    the operator to run by hand should we fail to.
+
+    """
+    return ["ceph", "osd", "blocklist", "rm", address]
+
+
+class Ipmi:
+    """Runs `fc-ipmitool` against the host being rescued.
+
+    The password is asked for once and then kept for the rest of the run. It is
+    handed over through the environment (which is what fc-ipmitool's `-E`
+    reads) rather than through argv, so it does not show up in `ps`.
+    """
+
+    def __init__(self, hostname: str, user: str) -> None:
+        self.hostname = hostname
+        self.user = user
+        self.password = ""
+
+    def _command(self, args: tuple[str, ...]) -> list[str]:
+        return ["fc-ipmitool", "-U", self.user, self.hostname, *args]
+
+    def _env(self) -> dict[str, str]:
+        while not self.password:
+            self.password = getpass.getpass("IPMI access password: ")
+        # A copy per call, so the password neither leaks into unrelated
+        # subprocesses nor outlives this invocation.
+        return {**os.environ, "IPMI_PASSWORD": self.password}
+
+    def run(self, *args: str) -> str:
+        """Run a command and return its output."""
+        return subprocess.run(
+            self._command(args),
+            check=True,
+            env=self._env(),
+            capture_output=True,
+            text=True,
+            errors="replace",
+        ).stdout
+
+    def interactive(self, *args: str) -> None:
+        """Run a command on the real terminal, for SOL and the ipmitool shell."""
+        show_command(self._command(args))
+        with open("/dev/tty", "r+b", buffering=0) as terminal:
+            subprocess.run(
+                self._command(args),
+                check=True,
+                env=self._env(),
+                stdin=terminal,
+                stdout=terminal,
+                stderr=terminal,
+            )
+
+    def change(self, *args: str) -> None:
+        """Run a command that changes the host, and show what it said.
+
+        Only power control goes through here. `sol`/`shell` stay live in a dry
+        run: they hand the operator a console but change nothing themselves.
+        """
+        show_command(self._command(args))
+        if DRY_RUN:
+            return
+        say(self.run(*args).strip())
+        sleep(5)
+
+    def is_powered_off(self) -> bool:
+        """Raises CalledProcessError when the BMC cannot be reached."""
+        try:
+            status = self.run("power", "status").strip()
+        except subprocess.CalledProcessError as e:
+            say(f"Error calling ipmitool: {e}", style="orange1")
+            return False
+        if status == "Chassis Power is off":
+            say("Power is off.", style="green")
+            return True
+        say(f"Power status is '{status}'.", style="orange1")
+        return False
+
+
+# --- the rescue itself ------------------------------------------------------
+
+
+StepMethod = Callable[["Rescue"], None]
+
+
+# Spelled out as overloads, so a checker can tell the two call shapes apart.
+@overload
+def step(fn: StepMethod) -> StepMethod: ...
+@overload
+def step(*, always: bool) -> Callable[[StepMethod], StepMethod]: ...
+
+
+def step(fn: StepMethod | None = None, *, always: bool = False):
+    """Register a method as a rescue step. Definition order is run order.
+
+    A step's prerequisites are simply every step defined above it, which is what
+    lets an interrupted rescue resume and `--list` tell the truth without
+    running anything.
+
+    `@step(always=True)` marks a step that runs again on every pass even once
+    recorded as done: a safety gate that wants re-confirming.
+    """
+
+    # Positional-only (`/`), so it matches the plain `Callable` that the
+    # second overload above promises to hand back.
+    def register(method: StepMethod, /) -> StepMethod:
+        STEPS.append(method.__name__)
+        if always:
+            ALWAYS_RUN.add(method.__name__)
+        return method
+
+    # Bare `@step` passes the method straight in; `@step(...)` passes nothing
+    # and wants the registering decorator back.
+    return register(fn) if fn else register
+
+
+def step_doc(name: str) -> str:
+    """First docstring line of a step, for `--list` and the run headline."""
+    lines = (getattr(Rescue, name).__doc__ or "").strip().splitlines()
+    return lines[0] if lines else ""
+
+
+class Rescue:
+    """The steps, in the order they run."""
+
+    def __init__(self, state: RescueState) -> None:
+        self.state = state
+        self.hostname = state.kvmhostname
+        self._ipmi: Ipmi | None = None
+
+    @property
+    def ipmi(self) -> Ipmi:
+        """Set up on first use: most steps never talk to the BMC."""
+        if self._ipmi is None:
+            while not self.state.ipmi_user:
+                self.state.ipmi_user = Prompt.ask(
+                    f"IPMI user for {self.hostname}"
+                )
+            self.state.save()
+            self._ipmi = Ipmi(self.hostname, self.state.ipmi_user)
+        return self._ipmi
+
+    @step
+    def add_ticket_text(self) -> None:
+        """Ensure ticket checklist"""
+        say("Please extend the rescue ticket with the following:")
+        show_link(ticket_url(self.state.yt_ticket))
+        framed(ticket_template(self.state))
+        acknowledge("Have you copied the checklist to the rescue ticket?")
+
+    @step
     def set_out_of_service(self) -> None:
-        """Have the operator take the host out of service in the directory."""
-        # Setting a node permanently out of service is not possible via
-        # directory API for now
-        print(" > Set the host out of service in the directory:")
-        print_directory_link(self.kvmhostname)
-        print()
-        while not Confirm.ask(
-            f"Is host {self.kvmhostname} set out-of-service?"
-        ):
-            pass
+        """Set host out of service"""
+        # Setting a node permanently out of service is not possible via the
+        # directory API for now.
+        operator_task(
+            "You need to manually set the host `out of service` in the directory:",
+            f"Did you set {self.hostname} out-of-service?",
+            directory_url(self.hostname),
+        )
 
-    @step(skip=False)
+    @step(always=True)
     def ensure_host_offline(self) -> None:
-        """Establish that the host is really down before touching its locks."""
-
+        """Fence off host"""
         if "cleanup_start" in self.state.completed:
-            print("Main rescue is finished, continuing…")
+            say("Main rescue is already finished, continuing…")
             return
 
-        print(
-            f"Power status of {self.kvmhostname} should be [i]off[/i]. Checking…"
-        )
-        try:
-            if self.ipmi.check_is_power_off():
-                print("Host is [green]safe to evacuate[/green].")
-                return
-        except subprocess.CalledProcessError as e:
-            print(f"Error calling ipmitool: {escape(str(e))}")
-        print(
-            "Ensure the host is really down. You can now interact with the host if necessary."
-        )
         while True:
+            if self.ipmi.is_powered_off():
+                say("Host is safe to evacuate.", style="green")
+                return
+
+            say(f"""
+ 👩‍💻 You need to manually ensure the host is really down and/or cut off from the network.
+
+ 🚨 {self.hostname} MUST NOT BE REACHABLE 🚨
+
+ Ideally you will now trigger a POWER OFF.
+
+ If that does't work, you can still continue, because we will block pending Ceph connections
+ in the next steps, but if Consul is still reachable, this will block VM evacuations.
+
+ If the host is still visible in Consul and you can't power it down but
+ can somehow SSH into it, then `systemctl stop consul` may help here.
+""")
+
+            # In practice, BMC connections can turn out to be rather flaky. But
+            # retrying or deactivating-activating the SOL is left to the
+            # operator.
             try:
                 match Prompt.ask(
-                    "Actions: Trigger a IPMI [b]power off[/b], connect to [b]SOL[/b] console, open an ipmitool [b]shell[/b], or [b]continue[/b] anyway?",
-                    choices=["power off", "SOL", "shell", "continue"],
-                ):
-                    # In practice, BMC connections can turn out to be rather flaky.
-                    # But retrying or deactivating-activating the SOL is left as a
-                    # task to the operator.
-                    case "power off":
-                        print("[i]ipmitool power off")
-                        _ = self.ipmi("power", "off")
-                        sleep(5)
-                        if self.ipmi.check_is_power_off():
-                            return
-                        else:
-                            continue
-                    case "SOL":
-                        print(
-                            "Opening a SOL console for your interactive investigations:"
-                        )
-                        _ = self.ipmi("sol", "activate", tty=True)
-                    case "shell":
-                        print("Opening an [i]ipmitool shell[/i]")
-                        _ = self.ipmi("shell", tty=True)
-                    case "continue":
-                        print(
-                            f"[yellow]{self.kvmhostname} must not be reachable, otherwise its Consul will prevent machines from starting on other hosts. If the host cannot be set down reliably, consider manually disconneting its network."
-                        )
-                    case _:
-                        print("[orange1]Invalid choice.")
-                        continue
-            except subprocess.CalledProcessError as e:
-                print(escape(str(e)))
-            if Confirm.ask("Continue the evacuation?"):
-                break
+                    dedent("""
+                    Actions:
+                        1. Trigger IPMI [b]POWER OFF[/b]
+                        2. Connect to [b]SOL[/b] console
+                        3. Open ipmitool [b]shell[/b]
+                        [dim]------------------------------------[/dim]
+                        0. [b]continue[/b] anyway?
 
-    @step()
+                    """),
+                    choices=[
+                        "1",
+                        "power off",
+                        "POWER OFF",
+                        "2",
+                        "SOL",
+                        "3",
+                        "shell",
+                        "0",
+                        "continue",
+                    ],
+                ):
+                    case "1" | "power off":
+                        self.ipmi.change("power", "off")
+                    case "2" | "SOL":
+                        self.ipmi.interactive("sol", "activate")
+                    case "3" | "shell":
+                        self.ipmi.interactive("shell")
+                    case "4" | "continue" | _:
+                        return
+            except subprocess.CalledProcessError as e:
+                say(str(e))
+
+    @step
     def collect_locks(self) -> None:
-        """Find the VM images the dead host still holds Ceph locks on."""
-        locked_images: dict[RbdImageSpec, list[RbdLock]] = {}
+        """Find affected RBD images"""
+        pools = rbd_pools()
+        say(f"Searching RBD pools: {', '.join(pools)}")
         # Listed up front so the bar below has a total: one `rbd ls` per pool is
         # cheap next to the `lock ls` per image that follows.
-        imgspecs: list[RbdImageSpec] = []
-        for pool in RBD_POOLS:
-            try:
-                imgspecs.extend(self.rbd.pool_ls(pool))
-            except PoolMissing:
-                # not adding a state warning: some clusters normally do not have all pools
-                print(
-                    f"[dim]No pool {pool} in this cluster, skipping it.[/dim]"
-                )
+        images = [image for pool in pools for image in list_images(pool)]
 
-        with item_progress() as progress:
+        locked_images: dict[str, list[RbdLock]] = {}
+        with progress_bar() as progress:
             task = progress.add_task(
-                "Checking locks", total=len(imgspecs), item=""
+                "Checking locks", total=len(images), item=""
             )
-            for imgspec in imgspecs:
-                progress.update(task, item=str(imgspec))
-                lockers = handle_image_gone(self.rbd.lock_ls)(imgspec)
+            for image in images:
+                progress.update(task, item=image)
+                locks = list_locks(image)
                 progress.advance(task)
-                if not any(lock.id == self.kvmhostname for lock in lockers):
+                if not any(lock.id == self.hostname for lock in locks):
                     continue
-                if len(lockers) > 1:
-                    held_by = ", ".join(sorted(lock.id for lock in lockers))
+                if len(locks) > 1:
+                    held_by = ", ".join(sorted(lock.id for lock in locks))
                     self.state.warn(
-                        f"{imgspec} is locked by {held_by}, but locking is expected to be exclusive."
+                        f"{image} is locked by {held_by}, but locking is expected to be exclusive."
                     )
-                # Foreign locks are kept alongside ours, so break_locks can tell
-                # them apart and the state file shows the operator what was
-                # actually there.
-                locked_images[imgspec] = lockers
+                locked_images[image] = locks
 
         self.state.locked_images = locked_images
         self.state.save()
 
-        if not locked_images:
-            raise RescueDone(
-                f"Did not find any VM images locked by {self.kvmhostname}, nothing to rescue."
-            )
-        else:
-            print(f"Found {len(locked_images)} locked VM images.")
+        say(f"Found {len(locked_images)} locked VM images.")
 
-    @step()
+    @step
     def blocklist_lockers(self) -> None:
-        """Blocklist the dead host's Ceph client addresses ahead of time."""
-        # By default, breaking a lock causes the address of the broken client
-        # to be osd-blocklisted. We do want that, but with a larger blocklist
-        # entry TTL, and for the full host. So adding that entry explicitly
-        # ahead of time.
-        ceph_auth_id = gethostname()
-        locker_addresses = self.state.locker_addresses
-        with item_progress() as progress:
+        """Blocklist current lockers"""
+        # Breaking a lock blocklists the broken client by default. We do want
+        # that, but with a longer TTL and for the full host, so we add the
+        # entries explicitly beforehand.
+        addresses = self.state.locker_addresses
+        if not addresses:
+            say("No known lockers, nothing to blocklist.")
+        with progress_bar() as progress:
             task = progress.add_task(
-                "Blocklisting", total=len(locker_addresses), item=""
+                "Blocklisting", total=len(addresses), item=""
             )
-            for locker_address in locker_addresses:
-                address = fmt_blocklist_address(locker_address)
+            for address in addresses:
                 progress.update(task, item=address)
-                _ = subprocess.run(
-                   [
-                    "ceph", "--id", ceph_auth_id,
-                    "osd", "blocklist", "add",
-                    address, f"{BLOCKLIST_TTL}",
-                   ],
-                   check=True,
-                   capture_output=True,
-                   text=True,
-               )  # fmt: skip
-
-                # continually persist the blocklist state, such that already blocked
-                # hosts do not get lost when a single loop iteration fails.
-                self.state.blocklist_entries.add(
-                    BlocklistEntry(
-                        address=address,
-                    )
+                ceph(
+                    "osd",
+                    "blocklist",
+                    "add",
+                    address,
+                    str(BLOCKLIST_TTL),
+                    changes=True,
                 )
-                self.state.save()
+                # Persisted one at a time, so entries already added do not get
+                # lost when a later iteration fails.
+                if address not in self.state.blocklist:
+                    self.state.blocklist.append(address)
+                    self.state.save()
                 progress.advance(task)
 
-    @step()
+    @step
     def break_locks(self) -> None:
-        """Remove the dead host's locks from the collected images."""
-        with item_progress() as progress:
+        """Break affected locks"""
+        if not self.state.locked_images:
+            say("No known locked images, no locks to break.")
+        with progress_bar() as progress:
             task = progress.add_task(
                 "Breaking locks", total=len(self.state.locked_images), item=""
             )
-            for imgspec, locks in self.state.locked_images.items():
-                progress.update(task, item=str(imgspec))
-                for foreign in foreign_locks(locks, self.kvmhostname):
-                    self.state.warn(
-                        f"{imgspec} is also locked by {foreign.id}; left that lock alone, please check afterwards."
-                    )
-                for lockinfo in locks_held_by(locks, self.kvmhostname):
-                    _ = handle_image_gone(self.rbd.rbd_)(
+            for image, locks in self.state.locked_images.items():
+                progress.update(task, item=image)
+                for lock in locks:
+                    if lock.id != self.hostname:
+                        self.state.warn(
+                            f"{image} is also locked by {lock.id}; left that lock alone, please check afterwards."
+                        )
+                        continue
+                    rbd(
                         "lock",
                         "remove",
-                        # speeds up the process and is okay due to us having created a blocklist entry earlier
+                        # Speeds up the process, and is fine because
+                        # blocklist_lockers already added an entry.
                         "--rbd_blocklist_on_break_lock=false",
-                        str(imgspec),
-                        lockinfo.id,
-                        lockinfo.locker,
-                        use_json=False,
+                        image,
+                        lock.id,
+                        lock.locker,
+                        changes=True,
                     )
                 progress.advance(task)
 
-    @step()
+    @step
     def evacuate_vms(self) -> None:
-        """Call directory to move VMs to remaining hosts."""
-        # - finally evacuate all VMs away
-        _ = subprocess.run(["fc-directory", f"d.evacuate_vms('{self.kvmhostname}')"], check=True)  # fmt: skip
+        """Evacuate VMs to other hosts"""
+        cmd = ["fc-directory", f"d.evacuate_vms('{self.hostname}')"]
+        if DRY_RUN:
+            show_command(cmd)
+            return
+        # Output is not captured: the operator wants to watch directory work.
+        subprocess.run(cmd, check=True)
 
-    @step()
+    @step
+    def list_affected_vms(self) -> None:
+        """List affected VMs"""
+        vms = sorted({vm_name(image) for image in self.state.locked_images})
+        if not vms:
+            say("No volumes were locked, so no VMs were affected.")
+            return
+        say(f"{len(vms)} VMs were running on {self.hostname}:")
+        for name in vms:
+            say(f"  - {name}")
+
+    @step
     def cleanup_start(self) -> None:
-        """Evacuation is done, start cleanup."""
+        """Initiate cleanup"""
+        say(
+            dedent("""
+            Host evacuation is done. The remaining steps are cleanup.
 
-        print(
-            "Host evacuation is done. The remaining steps are cleanup.",
-            "To handle the immediate emergency, feel free to interrupt and continue later.",
-            sep="\n",
+            To handle the immediate emergency, feel free to exit here and
+            continue later.""")
         )
-
-        if not Confirm.ask("Continue with cleanup?"):
+        self.state.save()  # for good measure
+        if not confirm("Continue with cleanup?"):
             raise KeyboardInterrupt()
 
-    @step()
+    @step
     def investigate_warnings(self) -> None:
-        """Acknowledge the warnings discovered during the rescue process."""
+        """Investigate warnings"""
         if not self.state.warnings:
+            say("No warnings found.")
             return
         report_warnings(self.state)
+        acknowledge("Did you investigate all warnings above?")
 
-        print()
-        while not Confirm.ask("Did you investigate all warnings above?"):
-            self.state.warnings = set()
-
-    @step(skip=False)
+    @step(always=True)
     def cleanup_check_machine_is_clean(self) -> None:
-        """Verify the machine is clean before removing its blocklist entries."""
+        """Double-check host fence or VM absence"""
 
         while True:
-            if Confirm.ask("Start the host and set it back in service?"):
-                print("Starting the host via IPMI.")
-                _ = self.ipmi("power", "on")
-                # XXX: we could print an SOL or wait for the host to ping successfully
-                if Confirm.ask(f"Is {self.kvmhostname} clean and reachable?"):
-                    print(
-                        "Please ensure that the host is not running any VMs (`fc-qemu ls`)."
-                    )
-                    # XXX: We could additionally check for the servicing status via directory API
-                    if Confirm.ask("Is the host running any VMs?"):
-                        print(
-                            "As the host has been successfully evacuated, we need to get rid of these stale processes."
-                        )
-                        print("Please reboot the host.")
-                    else:
-                        break
-                else:
-                    print(
-                        "Host needs to either be properly down, or up and confirmed to hold no VMs."
-                    )
-            else:
-                print(
-                    "You can decide to leave the host down for now. It is still important that the host is properly down."
+            if self.ipmi.is_powered_off():
+                say(
+                    "Host is powered off, so it's safe to clean the blocklist.",
+                    style="green",
                 )
-                if Confirm.ask("Is host set properly down?"):
-                    self.state.cleanup_stay_down = True
-                    break
+                return
 
-    @step()
+            say("""
+ 🚨 POTENTIAL DISK CORRUPTION AHEAD 🚨
+
+ 👩‍💻 You need to manually ensure the host will not reconnect with old
+    Qemu processes still running.
+
+    Your options:
+
+    1. Ensure the host is powered down (via IPMI POWER OFF)
+    2. Connect to the host via SSH and ensure no VMs are running (`fc-qemu ls`)
+""")
+            console.print(
+                "    [red]DO NOT CONTINUE IF YOU DID NOT VERIFY EITHER[/red]"
+            )
+
+            # In practice, BMC connections can turn out to be rather flaky. But
+            # retrying or deactivating-activating the SOL is left to the
+            # operator.
+            try:
+                match Prompt.ask(
+                    dedent("""
+                    Actions:
+                        1. Trigger IPMI [b]POWER OFF[/b]
+                        [dim]------------------------------------[/dim]
+                        0. I checked that no VMs are running - [b]continue [orange1]on my risk[/orange1][/b]!
+
+                    """),
+                    choices=[
+                        "1",
+                        "power off",
+                        "POWER OFF",
+                        "0",
+                        "continue",
+                    ],
+                ):
+                    case "1" | "power off":
+                        self.ipmi.change("power", "off")
+                    case "0" | "continue" | _:
+                        if confirm(
+                            "Confirm that you have double checked that NO VMs are running on the host?"
+                        ):
+                            return
+            except subprocess.CalledProcessError as e:
+                say(str(e))
+
+    @step
     def blocklist_cleanup(self) -> None:
-        """Remove ceph blocklist entries again."""
+        """Remove Ceph blocklist entries"""
         try:
-            with item_progress() as progress:
+            with progress_bar() as progress:
                 task = progress.add_task(
                     "Removing block",
-                    total=len(self.state.blocklist_entries),
+                    total=len(self.state.blocklist),
                     item="",
                 )
-                for entry in self.state.blocklist_entries:
-                    progress.update(task, item=" ".join(entry.cleanup_command))
-                    _ = subprocess.run(
-                        entry.cleanup_command,
-                        check=True,
-                        capture_output=True,
-                        text=True,
-                    )
-
+                for address in self.state.blocklist:
+                    progress.update(task, item=address)
+                    cmd = blocklist_rm_command(address)
+                    show_command(cmd)
+                    if not DRY_RUN:
+                        subprocess.run(
+                            cmd, check=True, capture_output=True, text=True
+                        )
                     progress.advance(task)
-
         except subprocess.CalledProcessError:
-            print(
-                "[red]Error:[/red] Error running the commands below.",
-                "Try executing the following script manually on a [b]ceph mon[/b] host of this cluster:",
-                sep="\n",
+            say("Error running last command.", style="red")
+            say(
+                "Try executing them manually on a ceph mon host of this cluster."
             )
-            rich_sep()
-            print(
-                "\n".join(
-                    plain(" ".join(entry.cleanup_command))
-                    for entry in self.state.blocklist_entries
-                )
-            )
-            rich_sep()
-            print()
-
-            if not Confirm.ask("Did the script succeed?"):
+            if not confirm("Did you execute the command successfully?"):
                 raise
 
-    @step()
+    @step
     def mark_nonprod(self) -> None:
-        """Mark host usage as non-production until observed to be stable again."""
-        if self.state.cleanup_stay_down:
-            raise RescueDone(
-                "You earlier decided the host should stay down. We are done here."
-            )
-        print(
-            f" > Set the [b]KVM production use[/b] of {self.kvmhostname} to [i]non-production[/i] (if cluster capacity allows) or [i]prefer non-production[/i]. "
+        """Mark host as non-production"""
+        operator_task(
+            f"Consider setting the KVM production use of {self.hostname} to `non-production`.",
+            "Ready to continue?",
+            directory_url(self.hostname),
         )
-        print_directory_link(self.kvmhostname)
-        while not Confirm.ask("Did you adjust the [b]KVM production use[/b]?"):
-            pass
 
-    @step()
+    @step
     def set_back_in_service(self) -> None:
-        """Set machine back in service."""
-        print(" > Set machine back in service in directory:")
-        print_directory_link(self.kvmhostname)
-        while not Confirm.ask(
-            "Did you set the machine back in service in the directory?"
-        ):
-            pass
-
-    # --- end of steps ---
-
-    @property
-    def ticket_template(self) -> str:
-        """Generate an instructional markdown representation of the current
-        rescue state, to be used as CommonMark text for a YT Ticket"""
-        ticket_segments = [f"## `fc-kvmrescue` run on `{gethostname()}`:", ""]
-        ticket_segments.extend(
-            [
-                common_mark_checkboxline(
-                    definition.name,
-                    checked=definition.name in self.state.completed,
-                )
-                for definition in STEPS
-            ]
+        """Set host back in service"""
+        operator_task(
+            "You need to manually set the machine back in service in the directory.",
+            "Did you set the machine back in service in the directory?",
+            directory_url(self.hostname),
         )
-        ticket_segments.append("\n")
-
-        if self.state.warnings:
-            ticket_segments.extend(["### Warnings", ""])
-            ticket_segments.append(
-                "Things that looked off and should be investigated:"
-            )
-            ticket_segments.extend(
-                [
-                    common_mark_checkboxline(warning)
-                    for warning in sorted(self.state.warnings)
-                ]
-            )
-            ticket_segments.append("\n")
-
-        return "\n".join(ticket_segments)
 
 
-def common_mark_checkboxline(
-    text: str, checked: bool = False, indent_level: int = 0
-) -> str:
-    """indent_level uses 2 spaces per level"""
-    indent = "  " * indent_level
-    # insert necessary indentation for multi-line text
-    body = text.strip().replace("\n", "\n" + indent)
-    return f"{indent}- [{'x' if checked else ' '}] {body}"
+# --- reporting --------------------------------------------------------------
+
+
+def checkbox(text: str, checked: bool = False) -> str:
+    return f"- [{'x' if checked else ' '}] {text.strip()}"
+
+
+def ticket_template(state: RescueState) -> str:
+    """The current rescue state as CommonMark, to paste into the YT ticket."""
+    lines = [f"## `fc-kvmrescue` run on `{gethostname()}`:", ""]
+    lines += [
+        checkbox(step_doc(name), checked=name in state.completed)
+        for name in STEPS
+    ]
+    lines.append("\n")
+
+    if state.warnings:
+        lines += [
+            "### Warnings",
+            "",
+            "Things that looked off and should be investigated:",
+        ]
+        lines += [checkbox(warning) for warning in sorted(state.warnings)]
+        lines.append("\n")
+
+    return "\n".join(lines)
 
 
 def report_warnings(state: RescueState) -> None:
     if not state.warnings:
         return
-    print()
-    print("[yellow]Things that looked off and should be investigated:")
+    heading(
+        "Things that looked off and should be investigated:", style="yellow"
+    )
     for warning in sorted(state.warnings):
-        print(f"  - {plain(warning)}")
+        say(f"  - {warning}")
 
 
-def list_steps(yt_ticket: str | None) -> int:
-    state = RescueState.load(yt_ticket) if yt_ticket else None
-    if state is None and yt_ticket:
-        print("[orange1]Unable to load state file. Showing an empty run.")
-        state = None
+def list_steps(state: RescueState | None) -> None:
     completed = state.completed if state else []
-    title = "Rescue steps"
-    title += f" for {state.kvmhostname}" if state else ""
-
     table = Table(
-        title=title,
+        title=f"[yellow]Rescue steps for [b]{state.kvmhostname if state else ''}[/b][/yellow]",
         title_justify="left",
         box=box.SIMPLE,
     )
     table.add_column("#", justify="right", style="dim")
-    # the first two columns get whatever they need, the docs absorb the squeeze
-    table.add_column("step", no_wrap=True)
-    table.add_column("status", no_wrap=True)
-    table.add_column("description")
+    # The first columns get whatever they need, the docs absorb the squeeze.
+    table.add_column("Description")
+    table.add_column("Status", no_wrap=True)
 
-    for definition in STEPS:
-        if definition.name in completed:
+    for position, name in enumerate(STEPS, start=1):
+        if name in ALWAYS_RUN:
+            status = "[yellow]pending[/yellow] [dim](always runs)[/dim]"
+        elif name in completed:
             status = "[green]done[/green]"
         else:
             status = "[yellow]pending[/yellow]"
-        if not definition.skip:
-            # runs again on every pass, done or not
-            status += " [dim](always runs)[/dim]"
-        table.add_row(
-            str(definition.index + 1),
-            definition.name,
-            status,
-            definition.doc,
-        )
+        table.add_row(str(position), step_doc(name), status)
 
-    print(table)
-
+    console.print(table)
     if state:
         report_warnings(state)
-    return 0
 
 
-class Args(argparse.Namespace):
-    """The parsed command line.
-
-    Declared so the attributes are typed: `Namespace` hands them back as `Any`.
-
-    They are deliberately left without defaults -- argparse populates every one
-    of them from the parser below, and a default repeated here would take effect
-    whenever its flag is absent, silently overriding the action it belongs to if
-    the two ever drifted apart. Hence the ignores: the checker cannot see that
-    argparse does the initialising.
-    """
-
-    yt_ticket: str | None  # pyright: ignore[reportUninitializedInstanceVariable]
-    step: str | None  # pyright: ignore[reportUninitializedInstanceVariable]
-    list_steps: bool  # pyright: ignore[reportUninitializedInstanceVariable]
-    skip: bool  # pyright: ignore[reportUninitializedInstanceVariable]
+# --- command line -----------------------------------------------------------
 
 
-def parse_args(argv: list[str]) -> Args:
+def open_state(yt_ticket: str | None) -> RescueState:
+    """Find or start the state file for this rescue, asking as needed."""
+    while not yt_ticket:
+        if not confirm(
+            "Did you already create a ticket for this rescue?", default=True
+        ):
+            say("Create a new ticket from")
+            show_link(MANUAL_URL)
+        yt_ticket = Prompt.ask("Enter ticket number")
+
+    state = RescueState.load(yt_ticket)
+    if state is None:
+        kvmhostname = Prompt.ask("Enter hostname of the KVM host to evacuate")
+        return new_state(kvmhostname, yt_ticket)
+
+    console.print(
+        f"Found existing rescue state from {state.created:%Y-%m-%d %H:%M %Z} at {state.path}.\n",
+        style="dim",
+    )
+    list_steps(state)
+    if confirm(f"Continue rescue for [b]{state.kvmhostname}[/b]?"):
+        return state
+
+    target = state.path.with_suffix(".old.json")
+    state.path.rename(target)
+    return new_state(state.kvmhostname, yt_ticket)
+
+
+def new_state(kvmhostname: str, yt_ticket: str) -> RescueState:
+    state = RescueState(
+        kvmhostname=kvmhostname,
+        yt_ticket=yt_ticket,
+        created=datetime.now(tz=UTC),
+    )
+    state.save()
+    say(f"Created new state file at {state.path}")
+    return state
+
+
+def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Rescue the VMs of a dead KVM host.",
         epilog="Without a step, the whole sequence runs; steps already recorded as done skip themselves, so this doubles as resuming an interrupted rescue.",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "yt_ticket",
         nargs="?",
         help="ticket identifier of this particular rescue (asked for if omitted)",
     )
-    _ = parser.add_argument(
-        "--step",
-        choices=[definition.name for definition in STEPS],
-        help="run only this step",
-    )
-    _ = parser.add_argument(
+    parser.add_argument("--step", choices=STEPS, help="run only this step")
+    parser.add_argument(
         "--list",
         action="store_true",
         dest="list_steps",
         help="show the steps and what has already run, then exit",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="show the commands that would change the cluster or the host"
+        " instead of running them, and write no state file",
+    )
+    parser.add_argument(
         "--no-skip",
         action="store_false",
         dest="skip",
         help="run steps even if they are already recorded as done",
     )
-    return parser.parse_args(argv, namespace=Args())
+    return parser.parse_args(argv)
 
 
-def run_rescue(argv: list[str]) -> int:
+def run_rescue(argv: list[str]):
+    global DRY_RUN
     args = parse_args(argv[1:])
-    exitcode = 0
+    DRY_RUN = args.dry_run
 
     if args.list_steps:
-        return list_steps(args.yt_ticket)
+        state = RescueState.load(args.yt_ticket) if args.yt_ticket else None
+        if args.yt_ticket and state is None:
+            say(
+                "Unable to load state file. Showing an empty run.",
+                style="orange1",
+            )
+        list_steps(state)
+        return 0
 
-    rescue = KVMHostRescue(args.yt_ticket)
-    print(
-        "Progress is saved per step, re-run to continue. [b]^C[/b] to interrupt."
-    )
+    state = open_state(args.yt_ticket)
+    rescue = Rescue(state)
+    resume = f"Run `{argv[0]} {state.yt_ticket}` to continue."
+    if DRY_RUN:
+        say(
+            dedent("""
+            Dry run: nothing is changed and no state is written.
 
-    start: StepDef | None = None
+            The operator prompts still run, so you can walk the whole
+            sequence.
+            """),
+            style="cyan",
+        )
+
+    todo = STEPS
     skip = args.skip
     if args.step:
-        # run only this single step. We assume this is done deliberately, so no
-        # skipping
-        start = STEPS_BY_NAME[args.step]
-        skip = False
-        missing = missing_prerequisites(start, rescue.state.completed)
+        # A single step is always run deliberately, so nothing is skipped.
+        todo, skip = [args.step], False
+        missing = [
+            name
+            for name in STEPS[: STEPS.index(args.step)]
+            if name not in state.completed
+        ]
         if missing:
-            print(
-                f"[red]{start.name} requires steps that have not run yet:[/red]"
+            say(
+                f"{args.step} requires steps that have not run yet:",
+                style="red",
             )
-            for position, definition in enumerate(missing, start=1):
-                print(f"  {position}. {definition.name}")
-            print(
-                f"Run `{argv[0]} {rescue.state.yt_ticket}` to work through the sequence from where it stopped."
-            )
+            for position, name in enumerate(missing, start=1):
+                say(f"  {position}. {name}")
+            say(resume)
             return 1
 
-    try:
-        for rstep in (stepgen := run(rescue, start, skip=skip)):
-            if rstep.skipped:
-                print(f"[dim]skip {rstep.definition.name} (already done)[/dim]")
-            else:
-                print()
-                headline = f"[b]{rstep.definition.name}[/b]"
-                if rstep.definition.doc:
-                    headline += f": {rstep.definition.doc}"
-                print(headline)
-            rstep()
-            if args.step:
-                print(f"Finished step [b]{rstep.definition.name}[/b].")
-                if next_step := next(stepgen, None):
-                    print(
-                        f"Next step to invoke manually would be [b]{next_step.definition.name}[/b]"
-                    )
-                break
-            print()
-            rich_sep("-")
-            print()
-    except KeyboardInterrupt:
-        print(
-            f"Interrupted. Run `{argv[0]} {rescue.state.yt_ticket}` to continue."
-        )
-        raise
-    except RescueDone as done:
-        print(f"[green]{plain(str(done))}[/green]")
-        if "set_out_of_service" in rescue.state.completed:
-            # Ending early leaves that first step's effect in place, and nothing
-            # later undoes it.
-            print(
-                f"[yellow]Note: {rescue.kvmhostname} is still set out-of-service."
-            )
-        exitcode = 2
-    finally:
-        report_warnings(rescue.state)
-        print("\n")
+    divider()
 
-        print(
-            f"Update the rescue ticket [b][link=https://yt.flyingcircus.io/issue/{rescue.state.yt_ticket}]{rescue.state.yt_ticket}[/link][/b] as follows:"
-        )
-        rich_sep()
-        print(plain(rescue.ticket_template))
-        rich_sep()
-    return exitcode
+    try:
+        for name in todo:
+            step_id = STEPS.index(name) + 1
+            if skip and name in state.completed and name not in ALWAYS_RUN:
+                console.print(
+                    f"✅ [b][green]Step {step_id}/{len(STEPS)} {step_doc(name)}[/green][/b] (skipped, already done)"
+                )
+                divider()
+                continue
+            console.print(
+                f"📋 [b]Step {step_id}/{len(STEPS)} {step_doc(name)}\n",
+            )
+            getattr(rescue, name)()
+            # Only reached when the step returned normally, so a step that
+            # raised stays unrecorded and a later run picks it up again.
+            state.mark_done(name)
+            divider()
+        if args.step:
+            say(f"Finished step {args.step}.")
+            following = STEPS[STEPS.index(args.step) + 1 :]
+            if following:
+                say(f"Next step to invoke manually would be {following[0]}.")
+    except KeyboardInterrupt:
+        say(f"Interrupted. {resume}")
+    finally:
+        report_warnings(state)
+        heading("Update the rescue ticket as follows:")
+        show_link(ticket_url(state.yt_ticket))
+        framed(ticket_template(state))
 
 
 def main() -> None:
     """Entry point of both the uv script and the installed `fc-kvmrescue`."""
-    try:
-        sys.exit(run_rescue(sys.argv))
-    except KeyboardInterrupt:
-        sys.exit(110)
+    run_rescue(sys.argv)
 
 
 if __name__ == "__main__":

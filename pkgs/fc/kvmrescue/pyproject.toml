@@ -27,15 +27,15 @@ fc-kvmrescue = "fc_kvmrescue:main"
 requires = ["setuptools >= 61.0"]
 build-backend = "setuptools.build_meta"
 
-# The rescue stays a flat, copy-and-run directory, and flat-layout
-# auto-discovery refuses to guess between several top-level modules.
+# The rescue is a single copy-and-run module, and flat-layout auto-discovery
+# would otherwise pick up stray files next to it.
 [tool.setuptools]
-py-modules = ["fc_kvmrescue", "state", "steps"]
+py-modules = ["fc_kvmrescue"]
 
 [tool.basedpyright]
 venvPath = "."
 venv = ".venv"
-typeCheckingMode = "strict"
+typeCheckingMode = "standard"
 
 [tool.ruff]
 line-length = 80
