@@ -434,7 +434,10 @@ def vm_cell(status: VmStatus) -> Text:
     text += styled("L", status.new_locker, status.checking)
     text += styled("P", status.pings, status.checking)
     text += " "
-    text += styled(status.name, status.healthy, status.checking)
+    url = directory_url(status.name)
+    text += styled(
+        f"[link={url}]{status.name}[/link]", status.healthy, status.checking
+    )
     if status.locker:
         text += styled(f"@{status.locker}", False, status.checking, "grey50")
     return Text.from_markup(text)
