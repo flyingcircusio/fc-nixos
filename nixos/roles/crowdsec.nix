@@ -8,19 +8,38 @@ in
       enable = lib.mkEnableOption "CrowdSec support";
       enrollKeyFile = lib.mkOption {
         type = lib.types.externalPath;
+        description = ''
+          The Console Token file to use. The file should just contain the token in the first line of the file like this:
+
+          ```
+          hiIamAToken
+          ```
+
+          The token is available by clicking the "Enroll command" button at <https://app.crowdsec.net/security-engines?distribution=linux>
+          In other installation types, it is used as `cscli enroll <token>`.
+        '';
       };
 
-      nginx = {
-        enabledVirtualHosts = lib.mkOption {
-          type = lib.types.listOf lib.types.str;
+      waf = {
+        enable = lib.mkEnableOption "CrowdSec WAF using NGINX";
+        appSecPort = lib.mkOption {
+          type = lib.types.port;
+          default = 7422;
           description = ''
-            NGINX virutal hosts to include in log analysis of crowdstrike.
-            The values of this option need to be identical to the attrset key in
-            services.nginx.virtualHosts.
-
-            This implies that the full IPs of visitors get stored for 2 days.
+            Port where the AppSec component of CrowdSec listens on.
           '';
         };
+      };
+
+      nginxLogAnalysisVirtualHosts = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        description = ''
+          Nginx virtual hosts to include in log analysis of CrowdSec.
+          The values of this option need to be identical to the attrset key in
+          services.nginx.virtualHosts.
+
+          This implies that the full IPs of visitors get stored for 2 days.
+        '';
       };
 
       remediations = {
@@ -57,6 +76,16 @@ in
               type = "nginx";
             };
           }
+        ]
+        ++ lib.optionals (cfg.waf.enable) [
+          {
+            appsec_configs = [ "crowdsecurity/appsec-default" ];
+            labels = {
+              "type" = "appsec";
+            };
+            listen_addr = "127.0.0.1:${toString cfg.waf.appSecPort}";
+            source = "appsec";
+          }
         ];
         profiles = [
           {
@@ -88,6 +117,10 @@ in
           "crowdsecurity/linux"
           "crowdsecurity/nginx"
           "crowdsecurity/base-http-scenarios"
+        ]
+        ++ lib.optionals (cfg.waf.enable) [
+          "crowdsecurity/appsec-virtual-patching"
+          "crowdsecurity/appsec-generic-rules"
         ];
       };
     };
@@ -106,10 +139,16 @@ in
       postrotate = "[ ! -f /var/run/nginx/nginx.pid ] || kill -USR1 `cat /var/run/nginx/nginx.pid`";
     };
 
-    services.nginx.virtualHosts = lib.genAttrs cfg.nginx.enabledVirtualHosts (vHostName: {
+    services.nginx.virtualHosts = lib.genAttrs cfg.nginxLogAnalysisVirtualHosts (vHostName: {
       extraConfig = ''
         access_log /var/log/nginx/crowdsec.log nonanonymized;
       '';
     });
+    services.crowdsec-nginx-bouncer = {
+      enable = cfg.waf.enable;
+      settings = {
+        APPSEC_URL = "http://127.0.0.1:${toString cfg.waf.appSecPort}";
+      };
+    };
   };
 }

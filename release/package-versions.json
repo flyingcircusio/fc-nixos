@@ -134,6 +134,11 @@
     "pname": "coturn",
     "version": "4.16.0"
   },
+  "crowdsec": {
+    "name": "crowdsec-1.8.1",
+    "pname": "crowdsec",
+    "version": "1.8.1"
+  },
   "cuda-merged": {},
   "cuda_cccl": {},
   "cuda_cudart": {},

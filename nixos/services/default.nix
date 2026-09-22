@@ -18,6 +18,7 @@ in
     ./consul
     ./crowdsec
     ./crowdsec/firewall-bouncer.nix
+    ./crowdsec/nginx-bouncer.nix
     ./ferretdb.nix
     ./graylog
     ./haproxy
