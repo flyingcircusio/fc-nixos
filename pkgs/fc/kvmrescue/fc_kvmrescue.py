@@ -1134,15 +1134,9 @@ def list_steps(state: RescueState | None) -> None:
 
 
 def known_rescues() -> list[RescueState]:
-    """Every rescue that still has a state file, most recent first.
-
-    The archived `<host>.old.json` halves of a restarted rescue are left out:
-    they are not something to resume.
-    """
+    """Every rescue that still has a state file, most recent first."""
     states: list[RescueState] = []
     for path in sorted(STATE_DIR.glob("*.json")):
-        if path.name.endswith(".old.json"):
-            continue
         try:
             states.append(RescueState.model_validate_json(path.read_text()))
         except (OSError, ValueError):
@@ -1203,8 +1197,6 @@ def open_state(kvmhostname: str | None) -> RescueState:
     if confirm(f"Continue rescue for [b]{state.kvmhostname}[/b]?"):
         return state
 
-    target = state.path.with_suffix(".old.json")
-    state.path.rename(target)
     return new_state(kvmhostname)
 
 

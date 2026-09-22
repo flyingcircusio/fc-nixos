@@ -82,16 +82,19 @@ class TestOneRescuePerHost:
             "kvm09.json",
         ]
 
-    def test_declining_archives_and_reuses_the_host_name(
-        self, monkeypatch, state_dir
-    ):
-        rescue.new_state("kvm05").save()
+    def test_declining_starts_the_host_over(self, monkeypatch, state_dir):
+        """The old state is replaced: one file per host, and only ever one."""
+        first = rescue.new_state("kvm05")
+        first.yt_ticket = "PL-135552"
+        first.completed = ["register_ticket"]
+        first.save()
 
         fresh = self._resume(monkeypatch, "kvm05", answer=False)
 
         assert fresh.path == state_dir / "kvm05.json"
         assert fresh.yt_ticket == ""
-        assert (state_dir / "kvm05.old.json").exists()
+        assert fresh.completed == []
+        assert [p.name for p in state_dir.glob("*")] == ["kvm05.json"]
 
 
 class TestRegisterTicket:
@@ -164,15 +167,12 @@ class TestKnownRescues:
             "kvm01",
         ]
 
-    def test_skips_the_archived_half_of_a_restarted_rescue(
-        self, monkeypatch, state_dir
-    ):
+    def test_a_restarted_rescue_leaves_one_entry(self, monkeypatch, state_dir):
         self._rescue("kvm05")
         monkeypatch.setattr(rescue, "confirm", lambda *a, **k: False)
         monkeypatch.setattr(rescue, "list_steps", lambda state: None)
-        rescue.open_state("kvm05")  # archives the old one
+        rescue.open_state("kvm05")
 
-        assert (state_dir / "kvm05.old.json").exists()
         assert [s.kvmhostname for s in rescue.known_rescues()] == ["kvm05"]
 
     def test_an_unreadable_file_does_not_block_a_new_rescue(
