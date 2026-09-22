@@ -89,13 +89,11 @@ def say(message: str = "", style: str = "") -> None:
     console.print(message, style=style, markup=False)
 
 
-def show_link(url: str) -> None:
-    """Print a URL as an explicit OSC 8 hyperlink, on its own line.
-
-    Explicit, so the terminal does not have to guess where the URL ends -- and
-    on its own line for the terminals that lack OSC 8 and do guess.
-    """
-    console.print(f"    [link={url}]{url}[/link]")
+def show_link(url: str):
+    "A stand-out link"
+    console.print()
+    console.print(f" 🔗 {url}")
+    console.print()
 
 
 def show_command(cmd: list[str]) -> None:
@@ -119,7 +117,6 @@ def heading(text: str, style: str = "") -> None:
 
 def framed(text: str) -> None:
     """Print a block that is meant to be copied out, between separators."""
-    say()
     separator()
     say(text)
     separator()
@@ -154,7 +151,8 @@ def operator_task(instruction: str, question: str, url: str = "") -> None:
     """Hand a task to the operator to do by hand, then wait for them."""
     say(f" 👩‍💻 {instruction}")
     if url:
-        show_link(url)
+        console.print()
+        console.print(f"   {url}")
     acknowledge(" " + question)
 
 
@@ -199,8 +197,10 @@ class RescueState(BaseModel):
     """Everything the steps gather, written out after each one so an
     interrupted rescue can be resumed."""
 
-    yt_ticket: str
+    # The host identifies the rescue: one state file per host, so a second run
+    # for the same host resumes it instead of opening a rival rescue.
     kvmhostname: str
+    yt_ticket: str = ""  # filled in by the register_ticket step
     created: datetime
     ipmi_user: str = ""
     completed: list[str] = []
@@ -215,16 +215,16 @@ class RescueState(BaseModel):
     warnings: list[str] = []
 
     @classmethod
-    def load(cls, yt_ticket: str) -> "RescueState | None":
+    def load(cls, kvmhostname: str) -> "RescueState | None":
         """Read the state file without prompting, if there is one."""
         try:
-            return cls.model_validate_json(state_path(yt_ticket).read_text())
+            return cls.model_validate_json(state_path(kvmhostname).read_text())
         except FileNotFoundError:
             return None
 
     @property
     def path(self) -> Path:
-        return state_path(self.yt_ticket)
+        return state_path(self.kvmhostname)
 
     def save(self) -> None:
         STATE_DIR.mkdir(parents=True, exist_ok=True)
@@ -256,8 +256,8 @@ class RescueState(BaseModel):
         )
 
 
-def state_path(yt_ticket: str) -> Path:
-    return STATE_DIR / f"{yt_ticket}.json"
+def state_path(kvmhostname: str) -> Path:
+    return STATE_DIR / f"{kvmhostname}.json"
 
 
 # Ceph EntityAddrs look like `172.20.4.101:0/3733721661` or `[dead::1]:0/0`,
@@ -334,12 +334,14 @@ VM_LEGEND = "✓ back · P not answering to ping · L no root volume lock · nam
 def vm_cell(status: VmStatus) -> Text:
     """One VM in as few characters as 200 of them allow."""
     if status.healthy:
-        return Text(f"✓ {status.name}", style="green")
+        return Text.from_markup(
+            f"✓ {status.name}[grey50]@{status.locker}[/grey50]", style="green"
+        )
     if status.locker:
         # Locked elsewhere already, so it is most likely still booting -- and
         # naming the holder is what spots a lock the dead host took back.
-        return Text(
-            f"P {status.name}[grey]@{status.locker}[/grey]", style="yellow"
+        return Text.from_markup(
+            f"P {status.name}[grey50]@{status.locker}[/grey50]", style="yellow"
         )
     return Text(f"{'L' if status.pings else 'LP'} {status.name}", style="red")
 
@@ -584,9 +586,21 @@ class Rescue:
         return self._ipmi
 
     @step
+    def register_ticket(self) -> None:
+        """Register rescue ticket"""
+        if self.state.yt_ticket:
+            say(f" Rescue ticket is {self.state.yt_ticket}.")
+            return
+        say(" 👩‍💻 You need to manually create a new ticket for this rescue: ")
+        show_link(MANUAL_URL)
+        while not self.state.yt_ticket:
+            self.state.yt_ticket = Prompt.ask(" Ticket number")
+        self.state.save()
+
+    @step
     def add_ticket_text(self) -> None:
         """Ensure ticket checklist"""
-        say("Please extend the rescue ticket with the following:")
+        say(" Please put this check list into the ticket description:")
         show_link(ticket_url(self.state.yt_ticket))
         framed(ticket_template(self.state))
         acknowledge("Have you copied the checklist to the rescue ticket?")
@@ -770,6 +784,8 @@ class Rescue:
     @step(always=True)
     def monitor_affected_vms(self) -> None:
         """Monitor evacuated VM status"""
+        if DRY_RUN:
+            return
         vms = sorted({vm_name(image) for image in self.state.locked_images})
         if not vms:
             say(
@@ -808,8 +824,6 @@ class Rescue:
                 with ThreadPoolExecutor(max_workers=CHECK_WORKERS) as pool:
                     for status in pool.map(poll, statuses.values()):
                         statuses[status.name] = status
-                # Healthy VMs drop out: later rounds only re-check what is
-                # still missing, so the watch gets cheaper as it goes.
                 healthy = [s for s in statuses.values() if s.healthy]
                 progress.update(task, completed=len(healthy))
                 live.update(
@@ -1014,20 +1028,14 @@ def list_steps(state: RescueState | None) -> None:
 # --- command line -----------------------------------------------------------
 
 
-def open_state(yt_ticket: str | None) -> RescueState:
-    """Find or start the state file for this rescue, asking as needed."""
-    while not yt_ticket:
-        if not confirm(
-            "Did you already create a ticket for this rescue?", default=True
-        ):
-            say("Create a new ticket from")
-            show_link(MANUAL_URL)
-        yt_ticket = Prompt.ask("Enter ticket number")
-
-    state = RescueState.load(yt_ticket)
-    if state is None:
+def open_state(kvmhostname: str | None) -> RescueState:
+    """Find or start the state file for the host being rescued."""
+    while not kvmhostname:
         kvmhostname = Prompt.ask("Enter hostname of the KVM host to evacuate")
-        return new_state(kvmhostname, yt_ticket)
+
+    state = RescueState.load(kvmhostname)
+    if state is None:
+        return new_state(kvmhostname)
 
     console.print(
         f"Found existing rescue state from {state.created:%Y-%m-%d %H:%M %Z} at {state.path}.\n",
@@ -1039,13 +1047,12 @@ def open_state(yt_ticket: str | None) -> RescueState:
 
     target = state.path.with_suffix(".old.json")
     state.path.rename(target)
-    return new_state(state.kvmhostname, yt_ticket)
+    return new_state(kvmhostname)
 
 
-def new_state(kvmhostname: str, yt_ticket: str) -> RescueState:
+def new_state(kvmhostname: str) -> RescueState:
     state = RescueState(
         kvmhostname=kvmhostname,
-        yt_ticket=yt_ticket,
         created=datetime.now(tz=UTC),
     )
     state.save()
@@ -1059,9 +1066,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         epilog="Without a step, the whole sequence runs; steps already recorded as done skip themselves, so this doubles as resuming an interrupted rescue.",
     )
     parser.add_argument(
-        "yt_ticket",
+        "kvmhostname",
         nargs="?",
-        help="ticket identifier of this particular rescue (asked for if omitted)",
+        help="hostname of the KVM host to evacuate (asked for if omitted)",
     )
     parser.add_argument("--step", choices=STEPS, help="run only this step")
     parser.add_argument(
@@ -1088,11 +1095,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 def run_rescue(argv: list[str]):
     global DRY_RUN
     args = parse_args(argv[1:])
-    DRY_RUN = args.dry_run
+    DRY_RUN = args.dry_run  # pyright: ignore[reportConstantRedefinition]
 
     if args.list_steps:
-        state = RescueState.load(args.yt_ticket) if args.yt_ticket else None
-        if args.yt_ticket and state is None:
+        state = RescueState.load(args.kvmhostname) if args.kvmhostname else None
+        if args.kvmhostname and state is None:
             say(
                 "Unable to load state file. Showing an empty run.",
                 style="orange1",
@@ -1100,9 +1107,9 @@ def run_rescue(argv: list[str]):
         list_steps(state)
         return 0
 
-    state = open_state(args.yt_ticket)
+    state = open_state(args.kvmhostname)
     rescue = Rescue(state)
-    resume = f"Run `{argv[0]} {state.yt_ticket}` to continue."
+    resume = f"Run `{argv[0]} {state.kvmhostname}` to continue."
     if DRY_RUN:
         say(
             dedent("""
@@ -1163,7 +1170,8 @@ def run_rescue(argv: list[str]):
     finally:
         report_warnings(state)
         heading("Update the rescue ticket as follows:")
-        show_link(ticket_url(state.yt_ticket))
+        if state.yt_ticket:
+            show_link(ticket_url(state.yt_ticket))
         framed(ticket_template(state))
 
 

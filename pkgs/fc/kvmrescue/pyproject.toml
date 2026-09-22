@@ -32,6 +32,33 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 py-modules = ["fc_kvmrescue"]
 
+# Tests are not part of the shipped module, so they stay out of `dependencies`
+# and out of the nix build, which only builds `workspace.deps.default`.
+#
+#     uv run --group dev pytest
+[dependency-groups]
+dev = ["pytest", "pytest-cov"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+# Coverage is on by default; `--no-cov` turns it off for a quick run.
+addopts = "-q --cov --cov-report=html"
+
+[tool.coverage.run]
+source = ["fc_kvmrescue"]
+branch = true
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.report]
+show_missing = true
+exclude_also = [
+    # The entry point only exists for the shebang and the console script.
+    "if __name__ == .__main__.:",
+]
+
 [tool.basedpyright]
 venvPath = "."
 venv = ".venv"
@@ -39,3 +66,8 @@ typeCheckingMode = "standard"
 
 [tool.ruff]
 line-length = 80
+
+[tool.ruff.lint]
+# EXE005: the script opens with a two-line `nix-shell` shebang, so the second
+# line is meant to sit below `#!/usr/bin/env nix-shell`.
+ignore = ["EXE005"]
