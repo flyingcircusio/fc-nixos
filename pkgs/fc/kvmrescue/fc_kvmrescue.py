@@ -17,14 +17,14 @@ import shlex
 import subprocess
 import sys
 from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from socket import gethostname
 from textwrap import dedent
-from time import sleep
-from typing import overload
+from time import monotonic, sleep
+from typing import Self, overload
 
 from pydantic import BaseModel, TypeAdapter
 from rich import box
@@ -58,9 +58,10 @@ MANUAL_URL = "https://wiki.flyingcircus.io/Qemu/KVM_operations_manual#semi-autom
 
 # How monitor_affected_vms watches the VMs come back.
 PING_TIMEOUT = 2  # seconds a VM gets to answer a single ping
-POLL_INTERVAL = 10  # seconds between rounds
+POLL_INTERVAL = 10  # seconds before a VM's state counts as outdated
+TICK_INTERVAL = 0.2  # seconds between servicing the queue and redrawing
 # A host can hold 200 VMs, and each one costs an `rbd lock ls` plus a ping.
-# Checked one after the other a single round would take minutes.
+# Checked one after the other a single pass would take minutes.
 CHECK_WORKERS = 32
 
 # The rescue runs the steps in this order, and ALWAYS_RUN holds the subset that
@@ -293,12 +294,21 @@ def vm_name(image: str) -> str:
 
 @dataclass
 class VmStatus:
-    """What the last poll found out about one VM."""
+    """What the last completed check found out about one VM."""
 
     name: str
     locker: str = ""  # host holding its root lock, empty when nobody does
+    new_locker: bool = False
     pings: bool = False
-    healthy: bool = False
+    checked_at: float = 0.0  # monotonic clock, 0 while never checked
+    checking: bool = False  # a check for it is running right now
+
+    def outdated(self, now: float) -> bool:
+        return not self.checking and now - self.checked_at >= POLL_INTERVAL
+
+    @property
+    def healthy(self):
+        return self.pings and self.new_locker
 
 
 def check_vm(name: str, root_image: str, dead_host: str) -> VmStatus:
@@ -308,14 +318,13 @@ def check_vm(name: str, root_image: str, dead_host: str) -> VmStatus:
     the network. A lock still held by the dead host means it has not moved.
     """
     locker = ""
-    if root_image:
-        try:
-            locks = list_locks(root_image)
-            locker = locks[0].id if locks else ""
-        except (subprocess.CalledProcessError, RuntimeError):
-            # Image gone or the cluster busy -- treat as unlocked and retry
-            # next round rather than tearing down the whole watch.
-            locker = ""
+    try:
+        locks = list_locks(root_image)
+        locker = locks[0].id if locks else ""
+    except (subprocess.CalledProcessError, RuntimeError):
+        # Image gone or the cluster busy -- treat as unlocked and retry
+        # next round rather than tearing down the whole watch.
+        locker = ""
     pings = (
         subprocess.run(  # noqa: PLW1510
             ["ping", "-n", "-c", "1", "-W", str(PING_TIMEOUT), name],
@@ -323,27 +332,112 @@ def check_vm(name: str, root_image: str, dead_host: str) -> VmStatus:
         ).returncode
         == 0
     )
-    # Without a known root image there is nothing to go on but the ping.
-    moved = locker not in ("", dead_host)
-    return VmStatus(name, locker, pings, pings and (moved or not root_image))
+    return VmStatus(name, locker, locker not in ("", dead_host), pings)
 
 
-VM_LEGEND = "✓ back · P not answering to ping · L no root volume lock · name@host = lock holder"
+VM_LEGEND = "⟳ checking · P pingable · L lock status · name@host = lock holder"
+
+
+class VmMonitor:
+    """Keeps the check workers busy and the VM states fresh.
+
+    `tick()` reaps whatever finished and refills the pool; it never blocks, so
+    the caller is free to redraw between ticks. That is the difference from
+    checking every VM in lockstep: a slow `rbd lock ls` on one VM no longer
+    holds up the results for all the others.
+
+    Only `tick()` touches `statuses`, and it runs in the caller's thread, so
+    the workers share nothing and no locking is needed.
+    """
+
+    def __init__(
+        self, names: list[str], roots: dict[str, str], dead_host: str
+    ) -> None:
+        self.statuses = {name: VmStatus(name) for name in names}
+        self.roots = roots
+        self.dead_host = dead_host
+        self.pool = ThreadPoolExecutor(max_workers=CHECK_WORKERS)
+        self.running: dict[Future[VmStatus], str] = {}
+
+    @property
+    def all_healthy(self) -> bool:
+        """Every VM has been seen back. The loop waits on nothing else."""
+        return all(status.healthy for status in self.statuses.values())
+
+    @property
+    def healthy_count(self) -> int:
+        return sum(status.healthy for status in self.statuses.values())
+
+    @property
+    def checking(self) -> list[str]:
+        return sorted(self.running.values())
+
+    def tick(self) -> None:
+        """Collect finished checks and start as many new ones as will fit."""
+        for future in [f for f in self.running if f.done()]:
+            name = self.running.pop(future)
+            try:
+                self.statuses[name] = future.result()
+            except Exception as error:  # noqa: BLE001
+                # One unhappy VM must not end a watch over 200 of them; hold
+                # the old state and let the next round try again.
+                say(f"Checking {name} failed: {error}", style="orange1")
+                self.statuses[name].checked_at = monotonic()
+                self.statuses[name].checking = False
+
+        now = monotonic()
+        # Oldest information first, so nothing starves while the pool is busy.
+        outdated = sorted(
+            (s for s in self.statuses.values() if s.outdated(now)),
+            key=lambda status: status.checked_at,
+        )
+        for status in outdated[: CHECK_WORKERS - len(self.running)]:
+            status.checking = True
+            self.running[self.pool.submit(self.check, status.name)] = (
+                status.name
+            )
+
+    def check(self, name: str) -> VmStatus:
+        """Runs in a worker thread, and touches nothing the others touch."""
+        status = check_vm(name, self.roots[name], self.dead_host)
+        status.checked_at = monotonic()
+        return status
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, *exception: object) -> None:
+        self.pool.shutdown(wait=False, cancel_futures=True)
 
 
 def vm_cell(status: VmStatus) -> Text:
-    """One VM in as few characters as 200 of them allow."""
-    if status.healthy:
-        return Text.from_markup(
-            f"✓ {status.name}[grey50]@{status.locker}[/grey50]", style="green"
-        )
+    """One VM in as few characters as 200 of them allow.
+
+    `⟳` marks a check that is running right now. The colour keeps reporting
+    what the last completed check found, so a VM in flight still shows whether
+    it was last seen back or missing.
+    """
+
+    def styled(text: str, status: bool, checking: bool, style: str = "") -> str:
+        if checking:
+            style = "deep_sky_blue1 blink2"
+        elif style:
+            # Allow manual style override but indicate WIP
+            pass
+        elif status:
+            style = "green"
+        else:
+            style = "yellow"
+        return f"[{style}]{text}[/{style}]"
+
+    text = ""
+    text += styled("L", status.new_locker, status.checking)
+    text += styled("P", status.pings, status.checking)
+    text += " "
+    text += styled(status.name, status.healthy, status.checking)
     if status.locker:
-        # Locked elsewhere already, so it is most likely still booting -- and
-        # naming the holder is what spots a lock the dead host took back.
-        return Text.from_markup(
-            f"P {status.name}[grey50]@{status.locker}[/grey50]", style="yellow"
-        )
-    return Text(f"{'L' if status.pings else 'LP'} {status.name}", style="red")
+        text += styled(f"@{status.locker}", False, status.checking, "grey50")
+    return Text.from_markup(text)
 
 
 def vm_overview(statuses: list[VmStatus]) -> Columns:
@@ -786,28 +880,40 @@ class Rescue:
         """Monitor evacuated VM status"""
         if DRY_RUN:
             return
-        vms = sorted({vm_name(image) for image in self.state.locked_images})
-        if not vms:
+        affected = sorted(
+            {vm_name(image) for image in self.state.locked_images}
+        )
+        if not affected:
             say(
                 "No volumes were locked -> no VMs were affected -> no monitoring necessary."
             )
             return
-        say(f"{len(vms)} VMs were running on {self.hostname}.")
+        say(f"{len(affected)} VMs were running on {self.hostname}.")
+        say()
 
-        # Pick the root volume for every VM to monitor lock status and
-        # locker.
+        # The root volume is what says where a VM now lives, so it is also
+        # what makes a VM watchable.
         roots = {
             vm_name(image): image
             for image in self.state.locked_images
             if image.endswith(".root")
         }
+        vms = [name for name in affected if name in roots]
+        for name in affected:
+            if name not in roots:
+                # A VM with no root volume should not exist, and would never
+                # answer a ping either. Flag it for an operator instead of
+                # waiting for it forever.
+                self.state.warn(
+                    f"{name} has no root volume among the locked images;"
+                    " left it out of the monitoring, please check it by hand."
+                )
+        if not vms:
+            say("No VM has a root volume to watch.", style="orange1")
+            return
 
-        def poll(status: VmStatus) -> VmStatus:
-            return check_vm(
-                status.name, roots.get(status.name, ""), self.hostname
-            )
+        say(VM_LEGEND, style="dim")
 
-        statuses = {name: VmStatus(name) for name in vms}
         progress = Progress(
             TextColumn("[progress.description]{task.description}"),
             BarColumn(),
@@ -815,23 +921,22 @@ class Rescue:
             TimeElapsedColumn(),
         )
         task = progress.add_task(" Healthy VMs", total=len(vms))
-        say(VM_LEGEND, style="dim")
 
         # Live keeps the whole list in one redrawing block instead of
         # scrolling a screenful of VMs past the operator every round.
-        with Live(console=console, refresh_per_second=4) as live:
-            while True:
-                with ThreadPoolExecutor(max_workers=CHECK_WORKERS) as pool:
-                    for status in pool.map(poll, statuses.values()):
-                        statuses[status.name] = status
-                healthy = [s for s in statuses.values() if s.healthy]
-                progress.update(task, completed=len(healthy))
+        with (
+            VmMonitor(vms, roots, self.hostname) as monitor,
+            Live(console=console, refresh_per_second=4) as live,
+        ):
+            while not monitor.all_healthy:
+                monitor.tick()
+                progress.update(task, completed=monitor.healthy_count)
                 live.update(
-                    Group(progress, vm_overview(list(statuses.values())))
+                    Group(
+                        progress, vm_overview(list(monitor.statuses.values()))
+                    )
                 )
-                if len(healthy) == len(statuses):
-                    break
-                sleep(POLL_INTERVAL)
+                sleep(TICK_INTERVAL)
 
         say(f"\n All {len(vms)} VMs are back.", style="green")
 
@@ -1028,8 +1133,61 @@ def list_steps(state: RescueState | None) -> None:
 # --- command line -----------------------------------------------------------
 
 
+def known_rescues() -> list[RescueState]:
+    """Every rescue that still has a state file, most recent first.
+
+    The archived `<host>.old.json` halves of a restarted rescue are left out:
+    they are not something to resume.
+    """
+    states: list[RescueState] = []
+    for path in sorted(STATE_DIR.glob("*.json")):
+        if path.name.endswith(".old.json"):
+            continue
+        try:
+            states.append(RescueState.model_validate_json(path.read_text()))
+        except (OSError, ValueError):
+            # A half-written or outdated file must not stand between the
+            # operator and a new rescue.
+            say(f"Ignoring unreadable state file {path}.", style="orange1")
+    return sorted(states, key=lambda state: state.created, reverse=True)
+
+
+def show_known_rescues() -> None:
+    """Remind the operator which rescues are already under way.
+
+    Shown before asking for a hostname, so an interrupted rescue gets resumed
+    by name instead of being started again from the top.
+    """
+    states = known_rescues()
+    if not states:
+        return
+    table = Table(
+        title="[yellow]Rescues in progress[/yellow]",
+        title_justify="left",
+        box=box.SIMPLE,
+    )
+    table.add_column("Host", no_wrap=True)
+    table.add_column("Ticket", no_wrap=True)
+    table.add_column("Started", no_wrap=True)
+    table.add_column("Last completed step")
+    for state in states:
+        if state.completed:
+            last = step_doc(state.completed[-1])
+        else:
+            last = "[dim]nothing yet[/dim]"
+        table.add_row(
+            state.kvmhostname,
+            state.yt_ticket or "[dim]none[/dim]",
+            f"{state.created:%Y-%m-%d %H:%M}",
+            last,
+        )
+    console.print(table)
+
+
 def open_state(kvmhostname: str | None) -> RescueState:
     """Find or start the state file for the host being rescued."""
+    if not kvmhostname:
+        show_known_rescues()
     while not kvmhostname:
         kvmhostname = Prompt.ask("Enter hostname of the KVM host to evacuate")
 

@@ -65,34 +65,72 @@ def test_progress_bar_keeps_ipv6_addresses(output):
     assert "[fe80::1]:0/0" in output.getvalue()
 
 
+def spans(cell):
+    """Every styled run of a cell, as (substring, style)."""
+    return [(cell.plain[s.start : s.end], str(s.style)) for s in cell.spans]
+
+
+def status(name="a", **fields):
+    return rescue.VmStatus(name, **fields)
+
+
 @pytest.mark.parametrize(
-    ("status", "expected"),
+    ("locker", "expected"),
+    [("kvm02", "LP a@kvm02"), ("", "LP a")],
+)
+def test_a_cell_reads_lock_ping_name_holder(locker, expected):
+    """Both checks are always shown; the colour is what reports them."""
+    assert rescue.vm_cell(status(locker=locker)).plain == expected
+
+
+@pytest.mark.parametrize(
+    ("new_locker", "pings", "lock_style", "ping_style"),
     [
-        (("kvm02", True, True), "✓ a@kvm02"),
-        (("kvm02", False, False), "P a@kvm02"),
-        (("", True, False), "L a"),
-        (("", False, False), "LP a"),
+        (True, True, "green", "green"),
+        (True, False, "green", "yellow"),
+        (False, True, "yellow", "green"),
+        (False, False, "yellow", "yellow"),
     ],
 )
-def test_vm_cell_shapes(status, expected):
-    locker, pings, healthy = status
-    cell = rescue.vm_cell(rescue.VmStatus("a", locker, pings, healthy))
-    assert cell.plain == expected
+def test_lock_and_ping_are_coloured_apart(
+    new_locker, pings, lock_style, ping_style
+):
+    """Which of the two checks is missing has to be readable at a glance."""
+    cell = rescue.vm_cell(status(new_locker=new_locker, pings=pings))
+    assert spans(cell)[:2] == [("L", lock_style), ("P", ping_style)]
 
 
-def test_vm_cell_marks_up_the_lock_holder():
-    """`Text()` would print the tags; only `from_markup` styles them."""
-    cell = rescue.vm_cell(rescue.VmStatus("a", "kvm02", True, True))
-    assert "[grey50]" not in cell.plain
-    assert [str(span.style) for span in cell.spans] == ["grey50"]
+@pytest.mark.parametrize(
+    ("new_locker", "pings", "expected"),
+    [(True, True, "green"), (True, False, "yellow"), (False, True, "yellow")],
+)
+def test_the_name_is_green_only_when_the_vm_is_back(
+    new_locker, pings, expected
+):
+    cell = rescue.vm_cell(status(new_locker=new_locker, pings=pings))
+    assert ("a", expected) in spans(cell)
+
+
+def test_the_lock_holder_is_dimmed():
+    """It is context, not status, so it must not compete with the colours."""
+    cell = rescue.vm_cell(status(locker="kvm02"))
+    assert ("@kvm02", "grey50") in spans(cell)
+
+
+def test_a_check_in_flight_overrides_every_colour():
+    cell = rescue.vm_cell(
+        status(locker="kvm02", new_locker=True, pings=True, checking=True)
+    )
+    assert {style for _, style in spans(cell)} == {"blink2 deep_sky_blue1"}
 
 
 def vm_fleet(size=200, unhealthy=(7, 150)):
     fleet = [
-        rescue.VmStatus(f"vm{i:03}", "kvm02", True, True) for i in range(size)
+        rescue.VmStatus(f"vm{i:03}", "kvm02", new_locker=True, pings=True)
+        for i in range(size)
     ]
     for index in unhealthy:
-        fleet[index] = rescue.VmStatus(f"vm{index:03}", "", False, False)
+        fleet[index] = rescue.VmStatus(f"vm{index:03}")
     return fleet
 
 

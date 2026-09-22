@@ -139,3 +139,95 @@ def test_ticket_template_lists_every_step(make_state):
     assert "- [x] Register rescue ticket" in template
     assert "- [ ] Find affected RBD images" in template
     assert "- [ ] look at this" in template
+
+
+class TestKnownRescues:
+    def _rescue(self, host, *, ticket="", completed=(), minute=0):
+        state = rescue.new_state(host)
+        state.yt_ticket = ticket
+        state.completed = list(completed)
+        state.created = state.created.replace(minute=minute)
+        state.save()
+        return state
+
+    def test_lists_nothing_when_there_is_nothing(self):
+        assert rescue.known_rescues() == []
+
+    def test_most_recent_first(self):
+        self._rescue("kvm01", minute=1)
+        self._rescue("kvm09", minute=9)
+        self._rescue("kvm05", minute=5)
+
+        assert [s.kvmhostname for s in rescue.known_rescues()] == [
+            "kvm09",
+            "kvm05",
+            "kvm01",
+        ]
+
+    def test_skips_the_archived_half_of_a_restarted_rescue(
+        self, monkeypatch, state_dir
+    ):
+        self._rescue("kvm05")
+        monkeypatch.setattr(rescue, "confirm", lambda *a, **k: False)
+        monkeypatch.setattr(rescue, "list_steps", lambda state: None)
+        rescue.open_state("kvm05")  # archives the old one
+
+        assert (state_dir / "kvm05.old.json").exists()
+        assert [s.kvmhostname for s in rescue.known_rescues()] == ["kvm05"]
+
+    def test_an_unreadable_file_does_not_block_a_new_rescue(
+        self, state_dir, output
+    ):
+        self._rescue("kvm01")
+        (state_dir / "broken.json").write_text("{not json")
+
+        hosts = [s.kvmhostname for s in rescue.known_rescues()]
+
+        assert hosts == ["kvm01"]
+        assert "Ignoring unreadable state file" in output.getvalue()
+
+    def test_shows_the_last_completed_step(self, output):
+        self._rescue(
+            "kvm05",
+            ticket="PL-135552",
+            completed=["register_ticket", "collect_locks"],
+        )
+
+        rescue.show_known_rescues()
+
+        printed = output.getvalue()
+        assert "kvm05" in printed
+        assert "PL-135552" in printed
+        assert rescue.step_doc("collect_locks") in printed
+
+    def test_marks_a_rescue_that_has_not_started(self, output):
+        self._rescue("kvm05")
+
+        rescue.show_known_rescues()
+
+        assert "nothing yet" in output.getvalue()
+
+    def test_stays_quiet_with_no_state_files(self, output):
+        rescue.show_known_rescues()
+        assert output.getvalue() == ""
+
+
+class TestOpenStatePrompting:
+    def test_lists_what_is_running_before_asking(self, monkeypatch, output):
+        rescue.new_state("kvm09").save()
+        monkeypatch.setattr(rescue.Prompt, "ask", lambda *a, **k: "kvm05")
+
+        rescue.open_state(None)
+
+        assert "Rescues in progress" in output.getvalue()
+        assert "kvm09" in output.getvalue()
+
+    def test_does_not_list_when_the_host_was_given(self, monkeypatch, output):
+        """Naming a host is unambiguous, so the table would only be noise."""
+        rescue.new_state("kvm09").save()
+        output.truncate(0)
+        output.seek(0)
+
+        rescue.open_state("kvm05")
+
+        assert "Rescues in progress" not in output.getvalue()
