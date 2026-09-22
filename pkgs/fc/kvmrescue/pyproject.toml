@@ -43,7 +43,7 @@ dev = ["pytest", "pytest-cov"]
 testpaths = ["tests"]
 pythonpath = ["."]
 # Coverage is on by default; `--no-cov` turns it off for a quick run.
-addopts = "-q --cov --cov-report=html"
+addopts = "--cov --cov-report=html"
 
 [tool.coverage.run]
 source = ["fc_kvmrescue"]
