@@ -132,18 +132,6 @@ class TestRegisterTicket:
         assert linked == [rescue.MANUAL_URL]
 
 
-def test_ticket_template_lists_every_step(make_state):
-    state = make_state()
-    state.completed = ["register_ticket"]
-    state.warnings = ["look at this"]
-
-    template = rescue.ticket_template(state)
-
-    assert "- [x] Register rescue ticket" in template
-    assert "- [ ] Find affected RBD images" in template
-    assert "- [ ] look at this" in template
-
-
 class TestKnownRescues:
     def _rescue(self, host, *, ticket="", completed=(), minute=0):
         state = rescue.new_state(host)
@@ -198,7 +186,7 @@ class TestKnownRescues:
         printed = output.getvalue()
         assert "kvm05" in printed
         assert "PL-135552" in printed
-        assert rescue.step_doc("collect_locks") in printed
+        assert rescue.Rescue.all_steps()["collect_locks"].description in printed
 
     def test_marks_a_rescue_that_has_not_started(self, output):
         self._rescue("kvm05")

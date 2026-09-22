@@ -16,15 +16,16 @@ import re
 import shlex
 import subprocess
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from functools import partial
 from pathlib import Path
 from socket import gethostname
 from textwrap import dedent
 from time import monotonic, sleep
-from typing import Self, overload
+from typing import Self, overload, override
 
 from pydantic import BaseModel, TypeAdapter
 from rich import box
@@ -63,13 +64,6 @@ TICK_INTERVAL = 0.2  # seconds between servicing the queue and redrawing
 # A host can hold 200 VMs, and each one costs an `rbd lock ls` plus a ping.
 # Checked one after the other a single pass would take minutes.
 CHECK_WORKERS = 32
-
-# The rescue runs the steps in this order, and ALWAYS_RUN holds the subset that
-# runs again on every pass even once recorded as done. Both are filled by @step
-# in definition order, see the Rescue class below.
-STEPS: list[str] = []
-ALWAYS_RUN: set[str] = set()
-
 
 # --- talking to the operator ------------------------------------------------
 
@@ -153,7 +147,7 @@ def operator_task(instruction: str, question: str, url: str = "") -> None:
     say(f" 👩‍💻 {instruction}")
     if url:
         console.print()
-        console.print(f"   {url}")
+        console.print(f" 🔗 {url}")
     acknowledge(" " + question)
 
 
@@ -603,7 +597,6 @@ class Ipmi:
         if DRY_RUN:
             return
         say(self.run(*args).strip())
-        sleep(5)
 
     def is_powered_off(self) -> bool:
         """Raises CalledProcessError when the BMC cannot be reached."""
@@ -625,50 +618,148 @@ class Ipmi:
 StepMethod = Callable[["Rescue"], None]
 
 
+class Step:
+    """One step of the rescue, carrying everything anyone needs to know of it.
+
+    It replaces the method it decorates, and hands itself out as a bound call
+    when looked up on an instance, so `rescue.collect_locks()` still reads like
+    the method it used to be while `Rescue.steps()` sees the step itself.
+    """
+
+    def __init__(
+        self,
+        method: StepMethod,
+        *,
+        always: bool = False,
+        number: int = 0,
+        rescue: "Rescue | None" = None,
+    ) -> None:
+        self.method = method
+        self.name = method.__name__
+        # Position in the sequence, filled in below once the class body has run
+        # and the order of the steps is settled.
+        self.number = number
+        # The rescue this step works on. A step read off the class has none
+        # until `bind` gives it one.
+        self.rescue = rescue
+        # First docstring line: the title in `--list`, the run headline and the
+        # ticket checklist.
+        doc = (method.__doc__ or "").strip().splitlines()
+        self.description = doc[0] if doc else self.name
+        # Runs again on every pass even once recorded as done: a safety gate
+        # that wants re-confirming.
+        self.always = always
+
+    def __call__(self) -> None:
+        if self.rescue is None:
+            raise RuntimeError(f"{self.name} is not bound to a rescue")
+        self.method(self.rescue)
+        # Only reached when the body returned normally, so a step that raised
+        # stays unrecorded and a later run picks it up again.
+        self.rescue.state.mark_done(self.name)
+
+    def __get__(self, rescue: "Rescue | None", owner: type | None = None):
+        """Hand out a bound call, so `rescue.collect_locks()` keeps working.
+
+        Without it, reaching for a step by name gives back the step declared on
+        the class, whose `rescue` is None, and the body would run with nothing
+        to work on. `self.steps` is unaffected either way -- those are bound
+        copies that call their method directly.
+
+        This is mostly used by the tests to ensure they can call steps individually.
+
+        """
+        return self if rescue is None else partial(self.method, rescue)
+
+    @override
+    def __repr__(self) -> str:
+        return f"<Step {self.name}>"
+
+    def bind(self, rescue: "Rescue") -> "Step":
+        """A copy of this step that knows which rescue it works on."""
+        return Step(
+            self.method,
+            always=self.always,
+            number=self.number,
+            rescue=rescue,
+        )
+
+    @property
+    def completed(self):
+        assert self.rescue
+        return self.name in self.rescue.state.completed
+
+
 # Spelled out as overloads, so a checker can tell the two call shapes apart.
 @overload
-def step(fn: StepMethod) -> StepMethod: ...
+def step(method: StepMethod) -> Step: ...
 @overload
-def step(*, always: bool) -> Callable[[StepMethod], StepMethod]: ...
+def step(*, always: bool) -> Callable[[StepMethod], Step]: ...
 
 
-def step(fn: StepMethod | None = None, *, always: bool = False):
-    """Register a method as a rescue step. Definition order is run order.
+def step(method: StepMethod | None = None, *, always: bool = False):
+    """Turn a method into a rescue step. Definition order is run order.
 
-    A step's prerequisites are simply every step defined above it, which is what
-    lets an interrupted rescue resume and `--list` tell the truth without
+    A step's prerequisites are simply every step defined above it, which is
+    what lets an interrupted rescue resume and `--list` tell the truth without
     running anything.
-
-    `@step(always=True)` marks a step that runs again on every pass even once
-    recorded as done: a safety gate that wants re-confirming.
     """
 
     # Positional-only (`/`), so it matches the plain `Callable` that the
     # second overload above promises to hand back.
-    def register(method: StepMethod, /) -> StepMethod:
-        STEPS.append(method.__name__)
-        if always:
-            ALWAYS_RUN.add(method.__name__)
-        return method
+    def build(fn: StepMethod, /) -> Step:
+        return Step(fn, always=always)
 
     # Bare `@step` passes the method straight in; `@step(...)` passes nothing
-    # and wants the registering decorator back.
-    return register(fn) if fn else register
-
-
-def step_doc(name: str) -> str:
-    """First docstring line of a step, for `--list` and the run headline."""
-    lines = (getattr(Rescue, name).__doc__ or "").strip().splitlines()
-    return lines[0] if lines else ""
+    # and wants the decorator back.
+    return build(method) if method else build
 
 
 class Rescue:
     """The steps, in the order they run."""
 
+    steps: dict[str, Step]
+
+    @classmethod
+    def all_steps(cls) -> dict[str, Step]:
+        """Every step as declared on the class, in definition order.
+
+        These carry no rescue; `self.steps` holds the bound copies. For the
+        places that have no rescue to bind to, such as the argument parser.
+        """
+        return {
+            name: value
+            for name, value in vars(cls).items()
+            if isinstance(value, Step)
+        }
+
     def __init__(self, state: RescueState) -> None:
         self.state = state
         self.hostname = state.kvmhostname
         self._ipmi: Ipmi | None = None
+
+        self.steps = {
+            name: value.bind(self) for name, value in self.all_steps().items()
+        }
+
+    def runnable_steps(self, run_all: bool = False) -> Iterator[Step]:
+        """The steps still to run, announcing each one as it comes up.
+
+        A step already recorded as done is skipped, unless `run_all` says
+        otherwise or it is a safety gate that wants re-confirming.
+        """
+        for step in self.steps.values():
+            headline = (
+                f"Step {step.number}/{len(self.steps)} {step.description}"
+            )
+            divider()
+            if step.completed and not run_all and not step.always:
+                console.print(
+                    f"✅ [b][green]{headline}[/green][/b] (skipped, already done)\n"
+                )
+                continue
+            console.print(f"📋 [b]{headline}\n")
+            yield step
 
     @property
     def ipmi(self) -> Ipmi:
@@ -676,7 +767,7 @@ class Rescue:
         if self._ipmi is None:
             while not self.state.ipmi_user:
                 self.state.ipmi_user = Prompt.ask(
-                    f"IPMI user for {self.hostname}"
+                    f"IPMI user for {self.hostname}", default="ADMIN"
                 )
             self.state.save()
             self._ipmi = Ipmi(self.hostname, self.state.ipmi_user)
@@ -693,14 +784,6 @@ class Rescue:
         while not self.state.yt_ticket:
             self.state.yt_ticket = Prompt.ask(" Ticket number")
         self.state.save()
-
-    @step
-    def add_ticket_text(self) -> None:
-        """Ensure ticket checklist"""
-        say(" Please put this check list into the ticket description:")
-        show_link(ticket_url(self.state.yt_ticket))
-        framed(ticket_template(self.state))
-        acknowledge("Have you copied the checklist to the rescue ticket?")
 
     @step
     def set_out_of_service(self) -> None:
@@ -744,11 +827,13 @@ class Rescue:
             # operator.
             try:
                 match Prompt.ask(
-                    dedent("""
+                    dedent("""\
                     Actions:
                         1. Trigger IPMI [b]POWER OFF[/b]
                         2. Connect to [b]SOL[/b] console
                         3. Open ipmitool [b]shell[/b]
+                        4. [b]Check[/b] again
+                        5. Re-enter [b]password[/b]
                         [dim]------------------------------------[/dim]
                         0. [b]continue[/b] anyway?
 
@@ -756,23 +841,34 @@ class Rescue:
                     choices=[
                         "1",
                         "power off",
-                        "POWER OFF",
                         "2",
-                        "SOL",
+                        "sol",
                         "3",
                         "shell",
+                        "4",
+                        "check",
+                        "5",
+                        "password",
                         "0",
                         "continue",
                     ],
+                    default="check",
+                    case_sensitive=False,
+                    show_choices=False,
                 ):
                     case "1" | "power off":
                         self.ipmi.change("power", "off")
+                        sleep(10)
                     case "2" | "SOL":
                         self.ipmi.interactive("sol", "activate")
                     case "3" | "shell":
                         self.ipmi.interactive("shell")
-                    case "4" | "continue" | _:
+                    case "5" | "password":
+                        self.ipmi.password = ""
+                    case "0" | "continue":
                         return
+                    case "4" | "check" | _:
+                        continue
             except subprocess.CalledProcessError as e:
                 say(str(e))
 
@@ -955,7 +1051,7 @@ class Rescue:
         )
         self.state.save()  # for good measure
         if not confirm("Continue with cleanup?"):
-            raise KeyboardInterrupt()
+            raise SystemExit()
 
     @step
     def investigate_warnings(self) -> None:
@@ -967,7 +1063,7 @@ class Rescue:
         acknowledge("Did you investigate all warnings above?")
 
     @step(always=True)
-    def cleanup_check_machine_is_clean(self) -> None:
+    def cleanup_check_host_fence(self) -> None:
         """Double-check host fence or VM absence"""
 
         while True:
@@ -1001,6 +1097,7 @@ class Rescue:
                     dedent("""
                     Actions:
                         1. Trigger IPMI [b]POWER OFF[/b]
+                        2. [b]Check[/b] again
                         [dim]------------------------------------[/dim]
                         0. I checked that no VMs are running - [b]continue [orange1]on my risk[/orange1][/b]!
 
@@ -1008,18 +1105,25 @@ class Rescue:
                     choices=[
                         "1",
                         "power off",
-                        "POWER OFF",
+                        "2",
+                        "check",
                         "0",
                         "continue",
                     ],
+                    default="check",
+                    case_sensitive=False,
+                    show_choices=False,
                 ):
                     case "1" | "power off":
                         self.ipmi.change("power", "off")
-                    case "0" | "continue" | _:
+                        sleep(10)
+                    case "0" | "continue":
                         if confirm(
                             "Confirm that you have double checked that NO VMs are running on the host?"
                         ):
                             return
+                    case "2" | "check" | _:
+                        continue
             except subprocess.CalledProcessError as e:
                 say(str(e))
 
@@ -1069,32 +1173,17 @@ class Rescue:
         )
 
 
+# A step's number is its place in the sequence, which is settled the moment the
+# class body above has run.
+for position, declared_step in enumerate(Rescue.all_steps().values(), start=1):
+    declared_step.number = position
+
+
 # --- reporting --------------------------------------------------------------
 
 
 def checkbox(text: str, checked: bool = False) -> str:
     return f"- [{'x' if checked else ' '}] {text.strip()}"
-
-
-def ticket_template(state: RescueState) -> str:
-    """The current rescue state as CommonMark, to paste into the YT ticket."""
-    lines = [f"## `fc-kvmrescue` run on `{gethostname()}`:", ""]
-    lines += [
-        checkbox(step_doc(name), checked=name in state.completed)
-        for name in STEPS
-    ]
-    lines.append("\n")
-
-    if state.warnings:
-        lines += [
-            "### Warnings",
-            "",
-            "Things that looked off and should be investigated:",
-        ]
-        lines += [checkbox(warning) for warning in sorted(state.warnings)]
-        lines.append("\n")
-
-    return "\n".join(lines)
 
 
 def report_warnings(state: RescueState) -> None:
@@ -1107,10 +1196,9 @@ def report_warnings(state: RescueState) -> None:
         say(f"  - {warning}")
 
 
-def list_steps(state: RescueState | None) -> None:
-    completed = state.completed if state else []
+def list_steps(rescue: Rescue) -> None:
     table = Table(
-        title=f"[yellow]Rescue steps for [b]{state.kvmhostname if state else ''}[/b][/yellow]",
+        title=f"[yellow]Rescue steps for [b]{rescue.hostname}[/b][/yellow]",
         title_justify="left",
         box=box.SIMPLE,
     )
@@ -1119,18 +1207,21 @@ def list_steps(state: RescueState | None) -> None:
     table.add_column("Description")
     table.add_column("Status", no_wrap=True)
 
-    for position, name in enumerate(STEPS, start=1):
-        if name in ALWAYS_RUN:
+    for step in rescue.steps.values():
+        if step.always:
             status = "[yellow]pending[/yellow] [dim](always runs)[/dim]"
-        elif name in completed:
+        elif step.completed:
             status = "[green]done[/green]"
         else:
             status = "[yellow]pending[/yellow]"
-        table.add_row(str(position), step_doc(name), status)
+        table.add_row(str(step.number), step.description, status)
 
     console.print(table)
-    if state:
-        report_warnings(state)
+
+    if rescue.state.yt_ticket:
+        show_link(ticket_url(rescue.state.yt_ticket))
+
+    report_warnings(rescue.state)
 
 
 # --- command line -----------------------------------------------------------
@@ -1149,15 +1240,19 @@ def known_rescues() -> list[RescueState]:
     return sorted(states, key=lambda state: state.created, reverse=True)
 
 
-def show_known_rescues() -> None:
+def show_known_rescues() -> str:
     """Remind the operator which rescues are already under way.
 
     Shown before asking for a hostname, so an interrupted rescue gets resumed
     by name instead of being started again from the top.
+
+    Return first (newest) known host name.
+
     """
+    first = ""
     states = known_rescues()
     if not states:
-        return
+        return ""
     table = Table(
         title="[yellow]Rescues in progress[/yellow]",
         title_justify="left",
@@ -1168,8 +1263,10 @@ def show_known_rescues() -> None:
     table.add_column("Started", no_wrap=True)
     table.add_column("Last completed step")
     for state in states:
+        if not first:
+            first = state.kvmhostname
         if state.completed:
-            last = step_doc(state.completed[-1])
+            last = Rescue.all_steps()[state.completed[-1]].description
         else:
             last = "[dim]nothing yet[/dim]"
         table.add_row(
@@ -1179,14 +1276,17 @@ def show_known_rescues() -> None:
             last,
         )
     console.print(table)
+    return first
 
 
 def open_state(kvmhostname: str | None) -> RescueState:
     """Find or start the state file for the host being rescued."""
     if not kvmhostname:
-        show_known_rescues()
-    while not kvmhostname:
-        kvmhostname = Prompt.ask("Enter hostname of the KVM host to evacuate")
+        previous = show_known_rescues()
+        while not kvmhostname:
+            kvmhostname = Prompt.ask(
+                "Enter hostname of the KVM host to evacuate", default=previous
+            )
 
     state = RescueState.load(kvmhostname)
     if state is None:
@@ -1196,11 +1296,40 @@ def open_state(kvmhostname: str | None) -> RescueState:
         f"Found existing rescue state from {state.created:%Y-%m-%d %H:%M %Z} at {state.path}.\n",
         style="dim",
     )
-    list_steps(state)
-    if confirm(f"Continue rescue for [b]{state.kvmhostname}[/b]?"):
-        return state
+    list_steps(Rescue(state))
 
-    return new_state(kvmhostname)
+    while True:
+        match Prompt.ask(
+            dedent("""
+            Options:
+                1. [b]Resume[/b] rescue
+                [dim]------------------------------------[/dim]
+                0. Start [b]new[/b] rescue
+
+            """),
+            choices=[
+                "1",
+                "resume",
+                "0",
+                "new",
+            ],
+        ).lower():
+            case "1" | "resume":
+                return state
+            case "0" | "new":
+                backup = 0
+                while (
+                    target := state.path.with_suffix(f".json.{backup}.bak")
+                ).exists():
+                    backup += 1
+                say(
+                    f"\nBacking up old state to {target}. You can may find old locker and VM info there.",
+                    style="orange1",
+                )
+                state.path.rename(target)
+                return new_state(kvmhostname)
+            case _:
+                pass
 
 
 def new_state(kvmhostname: str) -> RescueState:
@@ -1209,7 +1338,7 @@ def new_state(kvmhostname: str) -> RescueState:
         created=datetime.now(tz=UTC),
     )
     state.save()
-    say(f"Created new state file at {state.path}")
+    say(f"\nCreated new state file at {state.path}\n", style="dim")
     return state
 
 
@@ -1223,12 +1352,10 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         nargs="?",
         help="hostname of the KVM host to evacuate (asked for if omitted)",
     )
-    parser.add_argument("--step", choices=STEPS, help="run only this step")
     parser.add_argument(
-        "--list",
-        action="store_true",
-        dest="list_steps",
-        help="show the steps and what has already run, then exit",
+        "--step",
+        choices=list(Rescue.all_steps()),
+        help="run only this step",
     )
     parser.add_argument(
         "--dry-run",
@@ -1237,9 +1364,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         " instead of running them, and write no state file",
     )
     parser.add_argument(
-        "--no-skip",
-        action="store_false",
-        dest="skip",
+        "--run-all",
+        action="store_true",
+        dest="run_all",
         help="run steps even if they are already recorded as done",
     )
     return parser.parse_args(argv)
@@ -1250,19 +1377,8 @@ def run_rescue(argv: list[str]):
     args = parse_args(argv[1:])
     DRY_RUN = args.dry_run  # pyright: ignore[reportConstantRedefinition]
 
-    if args.list_steps:
-        state = RescueState.load(args.kvmhostname) if args.kvmhostname else None
-        if args.kvmhostname and state is None:
-            say(
-                "Unable to load state file. Showing an empty run.",
-                style="orange1",
-            )
-        list_steps(state)
-        return 0
-
     state = open_state(args.kvmhostname)
     rescue = Rescue(state)
-    resume = f"Run `{argv[0]} {state.kvmhostname}` to continue."
     if DRY_RUN:
         say(
             dedent("""
@@ -1274,58 +1390,15 @@ def run_rescue(argv: list[str]):
             style="cyan",
         )
 
-    todo = STEPS
-    skip = args.skip
     if args.step:
-        # A single step is always run deliberately, so nothing is skipped.
-        todo, skip = [args.step], False
-        missing = [
-            name
-            for name in STEPS[: STEPS.index(args.step)]
-            if name not in state.completed
-        ]
-        if missing:
-            say(
-                f"{args.step} requires steps that have not run yet:",
-                style="red",
-            )
-            for position, name in enumerate(missing, start=1):
-                say(f"  {position}. {name}")
-            say(resume)
-            return 1
-
-    divider()
-
-    try:
-        for name in todo:
-            step_id = STEPS.index(name) + 1
-            if skip and name in state.completed and name not in ALWAYS_RUN:
-                console.print(
-                    f"✅ [b][green]Step {step_id}/{len(STEPS)} {step_doc(name)}[/green][/b] (skipped, already done)"
-                )
-                divider()
-                continue
-            console.print(
-                f"📋 [b]Step {step_id}/{len(STEPS)} {step_doc(name)}\n",
-            )
-            getattr(rescue, name)()
-            # Only reached when the step returned normally, so a step that
-            # raised stays unrecorded and a later run picks it up again.
-            state.mark_done(name)
-            divider()
-        if args.step:
-            say(f"Finished step {args.step}.")
-            following = STEPS[STEPS.index(args.step) + 1 :]
-            if following:
-                say(f"Next step to invoke manually would be {following[0]}.")
-    except KeyboardInterrupt:
-        say(f"Interrupted. {resume}")
-    finally:
-        report_warnings(state)
-        heading("Update the rescue ticket as follows:")
-        if state.yt_ticket:
-            show_link(ticket_url(state.yt_ticket))
-        framed(ticket_template(state))
+        step = rescue.steps[args.step]
+        console.print(
+            f"\n[bold][red]Force running step {step.number}/{len(rescue.steps)} {step.description}[/red][/bold]\n"
+        )
+        step()
+    else:
+        for step in rescue.runnable_steps(run_all=args.run_all):
+            step()
 
 
 def main() -> None:
