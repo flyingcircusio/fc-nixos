@@ -1,6 +1,6 @@
 """The two interactive safety gates, driven by scripted operator answers.
 
-`ensure_host_offline` and `cleanup_check_machine_is_clean` are the steps that
+`ensure_host_offline` and `cleanup_check_host_fence` are the steps that
 decide whether it is safe to touch the locks and whether the host may come
 back. They are also the branchiest code in the script, so every way out of
 them is pinned down here.
@@ -120,7 +120,7 @@ class TestCleanupCheckMachineIsClean:
     def test_a_powered_off_host_is_clean(self, gate, output):
         rescued = gate(power_states=[True])
 
-        rescued.cleanup_check_machine_is_clean()
+        rescued.cleanup_check_host_fence()
 
         assert "safe to clean the blocklist" in output.getvalue()
 
@@ -128,7 +128,7 @@ class TestCleanupCheckMachineIsClean:
     def test_powering_off_then_rechecking(self, gate, answer):
         rescued = gate(power_states=[False, True], answers=[answer])
 
-        rescued.cleanup_check_machine_is_clean()
+        rescued.cleanup_check_host_fence()
 
         assert rescued._ipmi.commands == [("change", "power", "off")]
 
@@ -136,7 +136,7 @@ class TestCleanupCheckMachineIsClean:
     def test_overriding_needs_a_second_confirmation(self, gate, answer):
         rescued = gate(power_states=[False], answers=[answer], confirms=[True])
 
-        rescued.cleanup_check_machine_is_clean()
+        rescued.cleanup_check_host_fence()
 
         assert rescued._ipmi.commands == []
 
@@ -148,8 +148,54 @@ class TestCleanupCheckMachineIsClean:
             confirms=[False],
         )
 
-        rescued.cleanup_check_machine_is_clean()
+        rescued.cleanup_check_host_fence()
 
         # It came back round and only left once the host was really off.
         assert rescued._ipmi.commands == [("change", "power", "off")]
         assert rescued._ipmi.power_states == []
+
+
+class TestMenuFallthroughs:
+    """The answers that only re-check, and the errors that must not escape."""
+
+    @pytest.mark.parametrize("answer", ["4", "check", "anything else"])
+    def test_ensure_host_offline_rechecks_without_touching_the_host(
+        self, gate, answer
+    ):
+        """The default answer just looks again."""
+        rescued = gate(power_states=[False, True], answers=[answer])
+
+        rescued.ensure_host_offline()
+
+        assert rescued._ipmi.commands == []
+        assert rescued._ipmi.power_states == []
+
+    def test_forgetting_the_password_re_asks_for_it(self, gate):
+        rescued = gate(power_states=[False, True], answers=["5"])
+        rescued._ipmi.password = "stale"
+
+        rescued.ensure_host_offline()
+
+        assert rescued._ipmi.password == ""
+
+    @pytest.mark.parametrize("answer", ["2", "check", "anything else"])
+    def test_host_fence_rechecks_without_touching_the_host(self, gate, answer):
+        rescued = gate(power_states=[False, True], answers=[answer])
+
+        rescued.cleanup_check_host_fence()
+
+        assert rescued._ipmi.commands == []
+        assert rescued._ipmi.power_states == []
+
+    def test_a_bmc_error_is_shown_and_the_gate_stays_open(self, gate, output):
+        """A flaky BMC must not drop the operator past the fence check."""
+        rescued = gate(
+            power_states=[False, False, True],
+            answers=["1", "1"],
+            fail_on=[("power", "off")],
+        )
+
+        rescued.cleanup_check_host_fence()
+
+        assert len(rescued._ipmi.commands) == 2
+        assert "Command" in output.getvalue()

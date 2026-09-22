@@ -56,9 +56,10 @@ def test_locker_addresses_only_covers_the_dead_host(make_state, lock):
 class TestOneRescuePerHost:
     """The state file name is what stops a second, rival rescue."""
 
-    def _resume(self, monkeypatch, host, answer):
-        monkeypatch.setattr(rescue, "confirm", lambda *a, **k: answer)
-        monkeypatch.setattr(rescue, "list_steps", lambda state: None)
+    def _reopen(self, monkeypatch, host, choice):
+        """Answer the resume/new prompt open_state puts up."""
+        monkeypatch.setattr(rescue.Prompt, "ask", lambda *a, **k: choice)
+        monkeypatch.setattr(rescue, "list_steps", lambda rescued: None)
         return rescue.open_state(host)
 
     def test_second_run_resumes_the_same_rescue(
@@ -68,7 +69,7 @@ class TestOneRescuePerHost:
         first.yt_ticket = "PL-135552"
         first.save()
 
-        again = self._resume(monkeypatch, "kvm05", answer=True)
+        again = self._reopen(monkeypatch, "kvm05", choice="resume")
 
         assert again.path == first.path
         assert again.yt_ticket == "PL-135552"
@@ -82,19 +83,45 @@ class TestOneRescuePerHost:
             "kvm09.json",
         ]
 
-    def test_declining_starts_the_host_over(self, monkeypatch, state_dir):
-        """The old state is replaced: one file per host, and only ever one."""
+    def test_starting_over_keeps_the_name_and_backs_up_the_old_run(
+        self, monkeypatch, state_dir
+    ):
         first = rescue.new_state("kvm05")
         first.yt_ticket = "PL-135552"
         first.completed = ["register_ticket"]
         first.save()
 
-        fresh = self._resume(monkeypatch, "kvm05", answer=False)
+        fresh = self._reopen(monkeypatch, "kvm05", choice="new")
 
         assert fresh.path == state_dir / "kvm05.json"
         assert fresh.yt_ticket == ""
         assert fresh.completed == []
-        assert [p.name for p in state_dir.glob("*")] == ["kvm05.json"]
+        # The previous run is kept aside rather than overwritten.
+        assert (state_dir / "kvm05.json.0.bak").exists()
+
+    def test_an_answer_it_does_not_know_asks_again(
+        self, monkeypatch, state_dir
+    ):
+        """Nothing but resume or new gets past the prompt."""
+        rescue.new_state("kvm05").save()
+        answers = iter(["", "maybe", "resume"])
+        monkeypatch.setattr(rescue.Prompt, "ask", lambda *a, **k: next(answers))
+        monkeypatch.setattr(rescue, "list_steps", lambda rescued: None)
+
+        state = rescue.open_state("kvm05")
+
+        assert state.kvmhostname == "kvm05"
+        assert next(answers, "exhausted") == "exhausted"
+
+    def test_starting_over_twice_does_not_clobber_the_first_backup(
+        self, monkeypatch, state_dir
+    ):
+        rescue.new_state("kvm05").save()
+        self._reopen(monkeypatch, "kvm05", choice="new")
+        self._reopen(monkeypatch, "kvm05", choice="new")
+
+        assert (state_dir / "kvm05.json.0.bak").exists()
+        assert (state_dir / "kvm05.json.1.bak").exists()
 
 
 class TestRegisterTicket:
@@ -156,11 +183,13 @@ class TestKnownRescues:
         ]
 
     def test_a_restarted_rescue_leaves_one_entry(self, monkeypatch, state_dir):
+        """A `.bak` backup must not show up as a second rescue."""
         self._rescue("kvm05")
-        monkeypatch.setattr(rescue, "confirm", lambda *a, **k: False)
-        monkeypatch.setattr(rescue, "list_steps", lambda state: None)
+        monkeypatch.setattr(rescue.Prompt, "ask", lambda *a, **k: "new")
+        monkeypatch.setattr(rescue, "list_steps", lambda rescued: None)
         rescue.open_state("kvm05")
 
+        assert (state_dir / "kvm05.json.0.bak").exists()
         assert [s.kvmhostname for s in rescue.known_rescues()] == ["kvm05"]
 
     def test_an_unreadable_file_does_not_block_a_new_rescue(

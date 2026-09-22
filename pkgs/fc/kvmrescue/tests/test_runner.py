@@ -78,7 +78,7 @@ class TestRegistration:
         assert always == {
             "ensure_host_offline",
             "monitor_affected_vms",
-            "cleanup_check_machine_is_clean",
+            "cleanup_check_host_fence",
         }
 
     def test_reaching_for_a_step_by_name_gives_a_bound_call(self, make_state):
@@ -95,6 +95,17 @@ class TestRegistration:
         assert declared.__get__(None) is declared  # on the class: the step
         declared.__get__(instance)()  # on an instance: a bound call
         assert seen == [instance]
+
+    def test_an_unbound_step_refuses_to_run(self):
+        """A step read off the class has no rescue, and must say so."""
+
+        def body(self):
+            raise AssertionError("an unbound step ran its body")
+
+        body.__name__ = "collect_locks"
+
+        with pytest.raises(RuntimeError, match="collect_locks"):
+            rescue.Step(body)()
 
     def test_a_bound_step_calls_its_own_method(self, make_state):
         """The runner path does not go back through attribute lookup."""
@@ -130,7 +141,7 @@ class TestSequence:
         assert steps == [
             "ensure_host_offline",
             "monitor_affected_vms",
-            "cleanup_check_machine_is_clean",
+            "cleanup_check_host_fence",
         ]
 
     def test_run_all_repeats_everything(self, steps):
@@ -175,19 +186,22 @@ class TestCommandLine:
         assert args.kvmhostname == "kvm05"
         assert not hasattr(args, "yt_ticket")
 
-    def test_list_needs_no_state(self, output):
-        assert run("--list") == 0
-        assert "Register rescue ticket" in output.getvalue()
+    def test_listing_the_steps_needs_only_a_rescue(self, output, make_state):
+        """`list_steps` is what open_state shows before asking to resume."""
+        rescue.list_steps(rescue.Rescue(make_state("kvm05")))
 
-    def test_list_reports_a_missing_state_file(self, output):
-        assert run("--list", "kvm99") == 0
-        assert "Unable to load state file" in output.getvalue()
+        printed = output.getvalue()
+        assert "Rescue steps for" in printed and "kvm05" in printed
+        assert "Register rescue ticket" in printed
 
-    def test_list_marks_completed_steps(self, steps, output):
-        run("kvm01")
-        output.truncate(0)
-        output.seek(0)
+    def test_the_listing_marks_completed_and_always_run_steps(
+        self, output, make_state
+    ):
+        state = make_state("kvm05")
+        state.completed = ["register_ticket"]
 
-        run("--list", "kvm01")
+        rescue.list_steps(rescue.Rescue(state))
 
-        assert "done" in output.getvalue()
+        printed = output.getvalue()
+        assert "done" in printed
+        assert "always runs" in printed

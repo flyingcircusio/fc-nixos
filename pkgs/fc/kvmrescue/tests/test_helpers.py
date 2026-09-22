@@ -1,5 +1,6 @@
 """The small pure helpers, and the output rules that protect them."""
 
+import json
 import re
 
 import pytest
@@ -117,11 +118,20 @@ def test_the_lock_holder_is_dimmed():
     assert ("@kvm02", "grey50") in spans(cell)
 
 
+def test_the_name_links_to_the_directory():
+    cell = rescue.vm_cell(status(locker="kvm02"))
+    assert ("a", f"link {rescue.directory_url('a')}") in spans(cell)
+
+
 def test_a_check_in_flight_overrides_every_colour():
+    """Only the link survives; every status colour turns into the marker."""
     cell = rescue.vm_cell(
         status(locker="kvm02", new_locker=True, pings=True, checking=True)
     )
-    assert {style for _, style in spans(cell)} == {"blink2 deep_sky_blue1"}
+    colours = {
+        style for _, style in spans(cell) if not style.startswith("link ")
+    }
+    assert colours == {"blink2 deep_sky_blue1"}
 
 
 def vm_fleet(size=200, unhealthy=(7, 150)):
@@ -161,3 +171,115 @@ def test_vm_overview_shows_everything_when_it_fits(monkeypatch, output):
 def test_checkbox():
     assert rescue.checkbox("done", checked=True) == "- [x] done"
     assert rescue.checkbox("open") == "- [ ] open"
+
+
+class TestOutputHelpers:
+    """The small print helpers everything else is built out of."""
+
+    def test_separator_spans_the_width(self, output):
+        rescue.separator()
+        assert output.getvalue().strip() == "=" * 80
+
+    def test_framed_sets_a_block_off_for_copying(self, output):
+        rescue.framed("copy me")
+        lines = [
+            line for line in output.getvalue().splitlines() if line.strip()
+        ]
+        assert lines[0] == "=" * 80
+        assert lines[1] == "copy me"
+        assert lines[2] == "=" * 80
+
+    def test_divider_closes_a_step_with_a_rule(self, output):
+        rescue.divider()
+        printed = output.getvalue()
+        assert "-" * 80 in printed
+        assert printed.startswith("\n") and printed.endswith("\n\n")
+
+    def test_heading_opens_a_block_with_a_blank_line(self, output):
+        rescue.heading("Next up")
+        assert output.getvalue() == "\nNext up\n"
+
+    def test_show_link_indents_the_url(self, output):
+        rescue.show_link("https://example.invalid/x")
+        assert "https://example.invalid/x" in output.getvalue()
+
+    @pytest.mark.parametrize(
+        ("builder", "argument", "expected"),
+        [
+            (
+                rescue.ticket_url,
+                "PL-135552",
+                "https://yt.flyingcircus.io/issue/PL-135552",
+            ),
+            (
+                rescue.directory_url,
+                "kvm05",
+                "https://directory.fcio.net/machine/list?search=name-kvm05",
+            ),
+        ],
+    )
+    def test_urls(self, builder, argument, expected):
+        assert builder(argument) == expected
+
+
+class TestConfirm:
+    """Anything that discards state must not be answerable by Enter alone."""
+
+    @pytest.fixture
+    def asked(self, monkeypatch):
+        calls = []
+
+        def ask(question, **kwargs):
+            calls.append((question, kwargs))
+            return True
+
+        monkeypatch.setattr(rescue.Confirm, "ask", ask)
+        return calls
+
+    def test_without_a_default_no_default_is_passed_on(self, asked):
+        assert rescue.confirm("Ready?") is True
+        assert asked == [("Ready?", {})]
+
+    @pytest.mark.parametrize("default", [True, False])
+    def test_a_default_is_handed_through(self, asked, default):
+        rescue.confirm("Ready?", default=default)
+        assert asked == [("Ready?", {"default": default})]
+
+    def test_a_question_is_set_off_from_the_output_above(self, asked, output):
+        rescue.confirm("Ready?")
+        assert output.getvalue() == "\n"
+
+    def test_acknowledge_keeps_asking_until_yes(self, monkeypatch):
+        answers = iter([False, False, True])
+        asked = []
+
+        monkeypatch.setattr(
+            rescue,
+            "confirm",
+            lambda question: asked.append(question) or next(answers),
+        )
+
+        rescue.acknowledge("Done?")
+
+        assert asked == ["Done?"] * 3
+
+
+def test_list_locks_parses_rbd_output(fake_run):
+    fake_run(
+        {
+            "lock ls": json.dumps(
+                [
+                    {
+                        "id": "kvm05",
+                        "locker": "client.1",
+                        "address": "172.20.4.101:0/111",
+                    }
+                ]
+            )
+        }
+    )
+
+    locks = rescue.list_locks("rbd.hdd/test00.root")
+
+    assert [lock.id for lock in locks] == ["kvm05"]
+    assert locks[0].address == "172.20.4.101:0/111"

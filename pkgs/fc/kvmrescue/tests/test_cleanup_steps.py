@@ -44,10 +44,10 @@ class TestCleanupStart:
         monkeypatch.setattr(rescue, "confirm", lambda *a, **k: True)
         rescue.Rescue(make_state()).cleanup_start()
 
-    def test_declining_interrupts_the_rescue(self, monkeypatch, make_state):
+    def test_declining_ends_the_run(self, monkeypatch, make_state):
         """The operator gets to stop after the evacuation and resume later."""
         monkeypatch.setattr(rescue, "confirm", lambda *a, **k: False)
-        with pytest.raises(KeyboardInterrupt):
+        with pytest.raises(SystemExit):
             rescue.Rescue(make_state()).cleanup_start()
 
 
@@ -149,3 +149,52 @@ def test_report_warnings_sorts_them(make_state, output):
 
     printed = output.getvalue()
     assert printed.index("alpha") < printed.index("zebra")
+
+
+class TestCredentialPrompts:
+    """The IPMI user is remembered; the password never is."""
+
+    def test_the_ipmi_user_is_asked_for_once_and_persisted(
+        self, monkeypatch, make_state
+    ):
+        state = make_state("kvm05")
+        asked = []
+        monkeypatch.setattr(
+            rescue.Prompt,
+            "ask",
+            lambda question, **k: asked.append(question) or "ADMIN",
+        )
+
+        first = rescue.Rescue(state).ipmi
+
+        assert first.user == "ADMIN"
+        assert state.ipmi_user == "ADMIN"
+        assert rescue.RescueState.load("kvm05").ipmi_user == "ADMIN"
+        assert len(asked) == 1
+
+    def test_the_ipmi_password_is_asked_for_once_per_run(self, monkeypatch):
+        """It is kept in memory only, and never written to the state file."""
+        asked = []
+        monkeypatch.setattr(
+            rescue.getpass,
+            "getpass",
+            lambda prompt: asked.append(prompt) or "secret",
+        )
+        ipmi = rescue.Ipmi("kvm05", "ADMIN")
+
+        first = ipmi._env()
+        second = ipmi._env()
+
+        assert first["IPMI_PASSWORD"] == "secret"
+        assert second["IPMI_PASSWORD"] == "secret"
+        assert len(asked) == 1, "asked for the password more than once"
+
+    def test_the_password_does_not_reach_the_command_line(self, monkeypatch):
+        """It goes through the environment so it stays out of `ps`."""
+        monkeypatch.setattr(rescue.getpass, "getpass", lambda prompt: "secret")
+        ipmi = rescue.Ipmi("kvm05", "ADMIN")
+
+        command = ipmi._command(("power", "status"))
+
+        assert "secret" not in " ".join(command)
+        assert ipmi._env()["IPMI_PASSWORD"] == "secret"
