@@ -631,6 +631,23 @@ def test_keystore_rekey_parallel_reports_failures(
     assert sorted(calls) == ["/dev/sda", "/dev/sdb", "/dev/sdc"]
 
 
+def test_keystore_rekey_defaults_to_parallel(
+    mock_LUKSKeyStoreManager, three_devices
+):
+    """Without -j, rekeying uses its default parallelism: every volume is
+    still rekeyed."""
+    keyman = mock_LUKSKeyStoreManager
+    calls = []
+
+    def record(slot, device, header, admin_key=None):
+        calls.append(device)
+
+    keyman._do_rekey = record
+
+    assert keyman.rekey("*", only_active=True, header=None) is None
+    assert sorted(calls) == ["/dev/sda", "/dev/sdb", "/dev/sdc"]
+
+
 @pytest.fixture
 def inputs_mock(monkeypatch):
     """Returns a StringIO buffer that serves the lines served to `input()` calls.

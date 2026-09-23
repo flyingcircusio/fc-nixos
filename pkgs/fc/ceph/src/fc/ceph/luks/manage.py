@@ -19,6 +19,15 @@ from fc.ceph.util import console, run
 from rich.progress import Progress
 
 
+def _cpu_count() -> int:
+    """Number of CPUs available to this process.
+
+    `os.process_cpu_count` (Python 3.13+) respects CPU affinity and cgroups,
+    `os.cpu_count` is the fallback.
+    """
+    return getattr(os, "process_cpu_count", os.cpu_count)() or 1
+
+
 class LuksDevice(NamedTuple):
     base_blockdev: str  # path of the underlying block device
     base_blockdev_name: str  # name of the underlying block device
@@ -182,7 +191,7 @@ class LUKSKeyStoreManager(object):
         only_active: bool,
         header: Optional[str],
         slot="local",
-        parallel: int = 1,
+        parallel: int = 0,
     ):
         """Update keyslots, using the opposite key for assurance."""
 
@@ -217,12 +226,13 @@ class LUKSKeyStoreManager(object):
         # `admin_key` was requested above, in this thread, so no worker will
         # prompt for it.
         # Volumes are independent, but each key derivation needs ~1 GiB of
-        # memory: keep the number of parallel jobs well below available RAM.
+        # memory: default to half the CPUs and let -j tune that.
+        workers = parallel or max(1, min(len(devices), _cpu_count() // 2))
         failures = []
         with Progress() as progress:
             bar = progress.add_task("Rekeying", total=len(devices))
-            if parallel > 1:
-                with ThreadPoolExecutor(max_workers=parallel) as pool:
+            if workers > 1:
+                with ThreadPoolExecutor(max_workers=workers) as pool:
                     pending = {
                         pool.submit(rekey_one, dev): dev for dev in devices
                     }

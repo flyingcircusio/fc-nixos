@@ -667,10 +667,10 @@ def luks(args=sys.argv[1:]):
         "-j",
         "--parallel",
         type=int,
-        default=1,
-        help="Rekey that many volumes concurrently (e.g. -j 4). Each job "
-        "runs memory-intensive key derivation (~1 GiB); do not exceed the "
-        "memory you can spare.",
+        default=0,
+        help="Rekey that many volumes concurrently. Defaults to half the "
+        "available CPUs; each job runs memory-intensive key derivation "
+        "(~1 GiB).",
     )
     parser_rekey.set_defaults(action="rekey")
 
