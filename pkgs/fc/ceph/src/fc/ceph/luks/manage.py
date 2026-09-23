@@ -1,10 +1,10 @@
+import asyncio
 import fnmatch
 import getpass
 import hashlib
 import os
 import secrets
 import shutil
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from subprocess import CalledProcessError
 from typing import NamedTuple, Optional
@@ -228,37 +228,9 @@ class LUKSKeyStoreManager(object):
         # Volumes are independent, but each key derivation needs ~1 GiB of
         # memory: default to half the CPUs and let -j tune that.
         workers = parallel or max(1, min(len(devices), _cpu_count() // 2))
-        failures = []
-        with Progress() as progress:
-            bar = progress.add_task("Rekeying", total=len(devices))
-            if workers > 1:
-                with ThreadPoolExecutor(max_workers=workers) as pool:
-                    pending = {
-                        pool.submit(rekey_one, dev): dev for dev in devices
-                    }
-                    for future in as_completed(pending):
-                        dev = pending[future]
-                        try:
-                            future.result()
-                        except Exception as e:
-                            failures.append(dev.name)
-                            console.print(
-                                f"Rekeying {dev.name} failed: {e}",
-                                style="bold red",
-                            )
-                        progress.advance(bar)
-            else:
-                for dev in devices:
-                    progress.update(bar, description=f"Rekeying {dev.name}")
-                    try:
-                        rekey_one(dev)
-                    except Exception as e:
-                        failures.append(dev.name)
-                        console.print(
-                            f"Rekeying {dev.name} failed: {e}",
-                            style="bold red",
-                        )
-                    progress.advance(bar)
+        failures = asyncio.run(
+            self._rekey_volumes(devices, slot, admin_key, workers)
+        )
 
         if failures:
             console.print(
@@ -268,7 +240,43 @@ class LUKSKeyStoreManager(object):
 
         console.print("Key updated.", style="bold green")
 
-    def _do_rekey(
+    async def _rekey_volumes(
+        self,
+        devices: list["LuksDevice"],
+        slot: str,
+        admin_key: bytes,
+        workers: int,
+    ) -> list[str]:
+        """Rekey all devices, at most `workers` of them at a time."""
+        failures = []
+        semaphore = asyncio.Semaphore(workers)
+        with Progress() as progress:
+            bar = progress.add_task("Rekeying", total=len(devices))
+
+            async def rekey_one(dev: "LuksDevice"):
+                async with semaphore:
+                    console.print(f"Rekeying {dev.name}")
+                    progress.update(bar, description=f"Rekeying {dev.name}")
+                    try:
+                        await self._do_rekey(
+                            slot,
+                            device=dev.base_blockdev,
+                            header=dev.header,
+                            admin_key=admin_key,
+                        )
+                    except Exception as e:
+                        failures.append(dev.name)
+                        console.print(
+                            f"Rekeying {dev.name} failed: {e}",
+                            style="bold red",
+                        )
+                    progress.advance(bar)
+
+            await asyncio.gather(*(rekey_one(dev) for dev in devices))
+
+        return failures
+
+    async def _do_rekey(
         self,
         slot: str,
         device: str,
@@ -292,11 +300,11 @@ class LUKSKeyStoreManager(object):
 
         header_arg = ["--header", header] if header else []
 
-        dump = Cryptsetup.cryptsetup(
-            "luksDump", *header_arg, device, encoding="ascii"
+        dump = await Cryptsetup.cryptsetup_async(
+            "luksDump", *header_arg, device
         )
-        if f"  {slot_id}: luks2" in dump:
-            Cryptsetup.cryptsetup(
+        if f"  {slot_id}: luks2" in dump.decode("ascii"):
+            await Cryptsetup.cryptsetup_async(
                 "luksKillSlot",
                 f"--key-file={key_file_verification}",
                 *header_arg,
@@ -304,7 +312,7 @@ class LUKSKeyStoreManager(object):
                 slot_id,
                 input=kill_input,
             )
-        Cryptsetup.cryptsetup(
+        await Cryptsetup.cryptsetup_async(
             "luksAddKey",
             f"--key-file={key_file_verification}",
             f"--key-slot={slot_id}",

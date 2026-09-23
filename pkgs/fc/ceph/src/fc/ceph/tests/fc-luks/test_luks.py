@@ -327,7 +327,7 @@ def mock_LUKSKeyStoreManager(monkeypatch, tmpdir):
         def admin_key_for_input(*args, **kwargs):
             return "foo"
 
-    def do_nothing(*args, **kwargs):
+    async def do_nothing(*args, **kwargs):
         pass
 
     monkeypatch.setattr(
@@ -597,7 +597,7 @@ def test_keystore_rekey_parallel_runs_all_volumes(
     keyman = mock_LUKSKeyStoreManager
     calls = []
 
-    def record(slot, device, header, admin_key=None):
+    async def record(slot, device, header, admin_key=None):
         calls.append((device, admin_key))
 
     keyman._do_rekey = record
@@ -619,7 +619,7 @@ def test_keystore_rekey_parallel_reports_failures(
     keyman = mock_LUKSKeyStoreManager
     calls = []
 
-    def flaky(slot, device, header, admin_key=None):
+    async def flaky(slot, device, header, admin_key=None):
         calls.append(device)
         if device == "/dev/sdb":
             raise Exception("cryptsetup blew up")
@@ -639,7 +639,7 @@ def test_keystore_rekey_defaults_to_parallel(
     keyman = mock_LUKSKeyStoreManager
     calls = []
 
-    def record(slot, device, header, admin_key=None):
+    async def record(slot, device, header, admin_key=None):
         calls.append(device)
 
     keyman._do_rekey = record
