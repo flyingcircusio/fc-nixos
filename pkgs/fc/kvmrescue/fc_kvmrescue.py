@@ -162,8 +162,8 @@ def ticket_url(yt_ticket: str) -> str:
 def progress_bar() -> Progress:
     """Progress bar that names the item currently being worked on.
 
-    The steps below make one Ceph call per image or address, which is slow
-    enough on a full pool that an opserator wants to see it move -- and see what
+    Useful for steps making one Ceph call per image or address, which is slow
+    enough on a full pool that an operator wants to see it move -- and see what
     it is stuck on if it stops moving.
     """
     return Progress(
@@ -622,8 +622,9 @@ class Step:
     """One step of the rescue, carrying everything anyone needs to know of it.
 
     It replaces the method it decorates, and hands itself out as a bound call
-    when looked up on an instance, so `rescue.collect_locks()` still reads like
-    the method it used to be while `Rescue.steps()` sees the step itself.
+    when looked up on an instance, so `rescue.<some_step>()` still reads like
+    the method it used to be, while `Rescue.all_steps()` collects the steps
+    themselves.
     """
 
     def __init__(
@@ -659,15 +660,15 @@ class Step:
         self.rescue.state.mark_done(self.name)
 
     def __get__(self, rescue: "Rescue | None", owner: type | None = None):
-        """Hand out a bound call, so `rescue.collect_locks()` keeps working.
+        """Make a step callable as a plain method again, for the tests.
 
-        Without it, reaching for a step by name gives back the step declared on
-        the class, whose `rescue` is None, and the body would run with nothing
-        to work on. `self.steps` is unaffected either way -- those are bound
-        copies that call their method directly.
+        `@step` put this object where the function was, and only functions
+        bind themselves on lookup, so without this `rescue.<some_step>()` hands
+        back the step declared on the class, whose `rescue` is None.
 
-        This is mostly used by the tests to ensure they can call steps individually.
-
+        Nothing outside the tests comes through here. What it returns is the
+        bare method, not a bound copy's `__call__`, so a step called this way
+        runs without being recorded as done.
         """
         return self if rescue is None else partial(self.method, rescue)
 
@@ -705,8 +706,8 @@ def step(method: StepMethod | None = None, *, always: bool = False):
     running anything.
     """
 
-    # Positional-only (`/`), so it matches the plain `Callable` that the
-    # second overload above promises to hand back.
+    # Positional-only (`/`): only applied positionally by decorator, the name
+    # is not part of the interface.
     def build(fn: StepMethod, /) -> Step:
         return Step(fn, always=always)
 
