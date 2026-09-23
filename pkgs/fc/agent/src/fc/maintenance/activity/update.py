@@ -89,7 +89,7 @@ class UpdateActivity(Activity):
         )
 
         if next_channel.is_local:
-            log.warn(
+            log.warning(
                 "update-from-enc-local-channel",
                 _replace_msg=(
                     "UpdateActivity is incompatible with local checkouts."
@@ -287,19 +287,38 @@ class UpdateActivity(Activity):
             # configuration changes, so update it here.
             self.next_system = system_path
             nixos.register_system_profile(system_path, log=self.log)
-            switch_type = "switch"
-            if len(self.release_path()) > 1:
-                switch_type = "boot"
 
             with locked(
                 self.log, self.lock_dir, "switch_to_configuration.lock"
             ):
+                self.log.info("stc-boot")
+                # Make sure the build and boot registration is fine.
                 nixos.switch_to_system(
                     system_path,
                     lazy=False,
-                    switch_type=switch_type,
+                    switch_type="boot",
                     log=self.log,
                 )
+
+                # Now, if we do not expect a reboot to be needed,
+                # try a live switch, otherwise just let the switch
+                # be handled by the reboot.
+                if not self.reboot_needed:
+                    # However, if the test fails, we need to escalate to
+                    # a real reboot.
+                    try:
+                        self.log.info("stc-test")
+                        nixos.switch_to_system(
+                            system_path,
+                            lazy=False,
+                            switch_type="test",
+                            log=self.log,
+                        )
+                    except Exception:
+                        # The test succeeded and we didn't expect a reboot previously,
+                        # so unmark our in case of emergency reboot.
+                        self.log.error("stc-test-failed", exc_info=True)
+                        self.reboot_needed = RebootType.WARM
 
         except nixos.ChannelException as e:
             self._handle_channel_exception(e)

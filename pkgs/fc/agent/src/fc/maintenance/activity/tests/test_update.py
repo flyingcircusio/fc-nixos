@@ -1,11 +1,13 @@
 import textwrap
 from io import StringIO
-from unittest.mock import Mock, create_autospec
+from logging import Logger
 from pathlib import Path
+from unittest.mock import ANY, Mock, call, create_autospec
 
+import fc.util.nixos
+import pytest
 import responses
 import yaml
-import fc.util.nixos
 from fc.maintenance import Request, state
 from fc.maintenance.activity import Activity, RebootType
 from fc.maintenance.activity.update import UpdateActivity
@@ -14,9 +16,9 @@ from fc.util.nixos import (
     BuildFailed,
     ChannelException,
     ChannelUpdateFailed,
+    KernelIdentifier,
     RegisterFailed,
     SwitchFailed,
-    KernelIdentifier,
 )
 from pytest import fixture
 from rich.console import Console
@@ -436,9 +438,13 @@ def test_update_release_change_reboot_required(
     )
 
 
-def test_update_activity_run(log, nixos_mock, activity, logger):
+def test_update_activity_run_boot_only(
+    log, nixos_mock: Mock, activity: UpdateActivity, logger: Logger
+):
     activity.run()
 
+    assert activity.log
+    assert activity.reboot_needed == RebootType.WARM
     assert activity.returncode == 0
     nixos_mock.update_system_channel.assert_called_with(
         activity.next_channel_url, log=activity.log
@@ -449,9 +455,110 @@ def test_update_activity_run(log, nixos_mock, activity, logger):
     nixos_mock.register_system_profile.assert_called_with(
         NEXT_SYSTEM_PATH, log=activity.log
     )
-    nixos_mock.switch_to_system.assert_called_with(
-        NEXT_SYSTEM_PATH, lazy=False, switch_type="switch", log=activity.log
-    )
+    assert nixos_mock.switch_to_system.mock_calls == [
+        call(
+            NEXT_SYSTEM_PATH,
+            lazy=False,
+            switch_type="boot",
+            log=ANY,
+        )
+    ]
+    assert log.has("update-run-succeeded")
+
+
+def test_update_activity_switch_boot_and_switch_test(
+    log, nixos_mock: Mock, activity: UpdateActivity, logger: Logger
+):
+    activity.reboot_needed = None
+    activity.run()
+    assert activity.reboot_needed is None
+    assert activity.returncode == 0
+    assert nixos_mock.switch_to_system.mock_calls == [
+        call(
+            NEXT_SYSTEM_PATH,
+            lazy=False,
+            switch_type="boot",
+            log=ANY,
+        ),
+        call(
+            NEXT_SYSTEM_PATH,
+            lazy=False,
+            switch_type="test",
+            log=ANY,
+        ),
+    ]
+    assert log.has("update-run-succeeded")
+
+
+def test_update_activity_switch_boot_fails(
+    log, nixos_mock: Mock, activity: UpdateActivity, logger: Logger
+):
+    # This is a regression test for the change we made due to FC-57632.
+    #
+    # In this scenario the update activity's `nixos-rebuild switch boot`
+    # fails and this causes the overall activity to show up as a failure,
+    # which will later result in the manager not triggering a reboot either.
+    nixos_mock.switch_to_system.side_effect = [Exception("Boom")]
+
+    # We don't initially WANT a reboot, and an exception in `s-t-c boot` must not trigger it either.
+    activity.reboot_needed = None
+    with pytest.raises(Exception):
+        activity.run()
+
+    assert activity.reboot_needed is None
+    # The result is NOT OK as we do NOT want the manager to
+    # keep progressing, potentially with a reboot, here.
+    #
+    # The request manager might still decide to reboot, but we don't
+    # implement vetoes ATM and this isn't a hard requirement to block
+    # other reboots. NixOS does the heavy lifting here so that we trust
+    # in our general ability to be able to boot under various uncertain
+    # conditions.
+    assert activity.returncode == None
+    assert nixos_mock.switch_to_system.mock_calls == [
+        call(
+            NEXT_SYSTEM_PATH,
+            lazy=False,
+            switch_type="boot",
+            log=ANY,
+        ),
+    ]
+    assert not log.has("update-run-succeeded")
+
+
+def test_update_activity_switch_boot_succeeds_and_switch_test_fails(
+    log, nixos_mock: Mock, activity: UpdateActivity, logger: Logger
+):
+    # This is a regression test for the change we made due to FC-57632.
+    #
+    # In this scenario the update activity's `nixos-rebuild switch test`
+    # fails and will cause a WARM reboot.
+    nixos_mock.switch_to_system.side_effect = [None, Exception("Boom")]
+
+    # We don't initially WANT a reboot, but the exception should trigger it.
+    activity.reboot_needed = None
+    # The exception must not bubble up here.
+    activity.run()
+
+    # Now this should have escalated to a warm reboot
+    assert activity.reboot_needed is RebootType.WARM
+    # Our return code also needs to indicate an OK state
+    # so that the request manager will perform a reboot on our behalf.
+    assert activity.returncode == 0
+    assert nixos_mock.switch_to_system.mock_calls == [
+        call(
+            NEXT_SYSTEM_PATH,
+            lazy=False,
+            switch_type="boot",
+            log=ANY,
+        ),
+        call(
+            NEXT_SYSTEM_PATH,
+            lazy=False,
+            switch_type="test",
+            log=ANY,
+        ),
+    ]
     assert log.has("update-run-succeeded")
 
 
@@ -523,12 +630,14 @@ def test_update_activity_switch_if_no_release_change(log, nixos_mock, activity):
     activity.next_version = "24.11.9999"
     activity.run()
 
-    nixos_mock.switch_to_system.assert_called_once_with(
-        NEXT_SYSTEM_PATH,
-        lazy=False,
-        switch_type="switch",
-        log=activity.log,
-    )
+    nixos_mock.switch_to_system.mock_calls = [
+        call(
+            NEXT_SYSTEM_PATH,
+            lazy=False,
+            switch_type="boot",
+            log=activity.log,
+        )
+    ]
 
 
 def test_update_activity_boot_if_release_change(log, nixos_mock, activity):
