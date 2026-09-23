@@ -14,7 +14,7 @@ from fc.ceph.luks import (
     Cryptsetup,
 )
 from fc.ceph.luks.checks import all_checks
-from fc.ceph.lvm import EncryptedLogicalVolume, XFSVolume, undmify
+from fc.ceph.lvm import EncryptedLogicalVolume, XFSVolume, lv_names
 from fc.ceph.util import console, run
 from rich.progress import Progress
 
@@ -38,26 +38,9 @@ class LuksDevice(NamedTuple):
 
     @property
     def name(self) -> str:
-        """The name the volume is (or would be) opened under, so we can filter
-        on and display it consistently whether or not it is currently open.
-
-        An encrypted logical volume is opened as its name without the
-        `-crypted` suffix (see `EncryptedLogicalVolume`), and its base block
-        device name is the device mapper name of the encrypted volume.
-        """
-        if self.luks_name:
-            return self.luks_name
-
-        try:
-            _vg, lv = undmify(self.base_blockdev_name)
-        except ValueError:
-            # Not a logical volume: best we can get.
-            return self.base_blockdev_name
-
-        suffix = EncryptedLogicalVolume.SUFFIX
-        if not lv.endswith(suffix):
-            return self.base_blockdev_name
-        return lv[: -len(suffix)]
+        """Often we just need *any* name to filter on or display, let's take
+        the best we can get."""
+        return self.luks_name if self.luks_name else self.base_blockdev_name
 
     @classmethod
     def detect_cryptdevices(
@@ -382,12 +365,7 @@ class LUKSKeyStoreManager(object):
 
         return success
 
-    def unlock(
-        self,
-        name_glob: str,
-        header: Optional[str],
-        parallel: int = 0,
-    ) -> int:
+    def unlock(self, name_glob: str, parallel: int = 0) -> int:
         """Unlock matching volumes with the admin key.
 
         Intended for emergencies, e.g. when the USB stick holding the local key
@@ -402,32 +380,44 @@ class LUKSKeyStoreManager(object):
             "LUKS admin key for unlocking volumes at this location"
         )
 
-        devices = LuksDevice.filter_cryptvolumes(
-            name_glob, only_active=False, header=header
-        )
+        # A closed volume has no mapper name of its own; the name it is opened
+        # under is the name of the encrypted logical volume without the
+        # `-crypted` suffix of its underlay. So ask LVM, which knows all
+        # volumes and their names, rather than guessing from the devices.
+        suffix = EncryptedLogicalVolume.SUFFIX
+        volumes = [
+            EncryptedLogicalVolume(lv_name[: -len(suffix)])
+            for lv_name in lv_names()
+            if lv_name.endswith(suffix)
+        ]
+        matching = [
+            volume
+            for volume in volumes
+            if fnmatch.fnmatch(volume.name, name_glob)
+        ]
+
         locked = []
-        for dev in devices:
-            if dev.luks_name:
-                console.print(f"{dev.name} is already unlocked, skipping.")
+        for volume in matching:
+            if os.path.exists(volume.device_path):
+                console.print(f"{volume.name} is already unlocked, skipping.")
             else:
-                locked.append(dev)
+                locked.append(volume)
 
         if not locked:
-            console.print(f"Note: The glob `{name_glob}` matches no volume.")
+            if matching:
+                console.print(
+                    f"Note: All volumes matching `{name_glob}` are already "
+                    "unlocked."
+                )
+            else:
+                console.print(
+                    f"Note: The glob `{name_glob}` matches no volume."
+                )
             return 0
 
-        def unlock_one(dev: LuksDevice):
-            console.print(f"Unlocking {dev.name} ...")
-            header_arg = ["--header", dev.header] if dev.header else []
-            Cryptsetup.cryptsetup(
-                "--allow-discards",  # pass through TRIM commands to disk
-                "open",
-                *header_arg,
-                "--key-file=-",
-                dev.base_blockdev,
-                dev.name,
-                input=admin_key,
-            )
+        def unlock_one(volume: EncryptedLogicalVolume):
+            console.print(f"Unlocking {volume.name} ...")
+            volume.activate(key=admin_key)
 
         workers = parallel or max(1, min(len(locked), _cpu_count() // 2))
         failures = []
@@ -436,35 +426,34 @@ class LUKSKeyStoreManager(object):
             if workers > 1:
                 with ThreadPoolExecutor(max_workers=workers) as pool:
                     pending = {
-                        pool.submit(unlock_one, dev): dev for dev in locked
+                        pool.submit(unlock_one, volume): volume
+                        for volume in locked
                     }
                     for future in as_completed(pending):
-                        dev = pending[future]
+                        volume = pending[future]
                         try:
                             future.result()
                         except Exception as e:
-                            failures.append(dev.name)
+                            failures.append(volume.name)
                             console.print(
-                                f"Unlocking {dev.name} failed: {e}",
+                                f"Unlocking {volume.name} failed: {e}",
                                 style="bold red",
                             )
                         progress.advance(bar)
             else:
-                for dev in locked:
+                for volume in locked:
                     progress.update(
-                        bar, description=f"Unlocking {dev.name} ..."
+                        bar, description=f"Unlocking {volume.name} ..."
                     )
                     try:
-                        unlock_one(dev)
+                        unlock_one(volume)
                     except Exception as e:
-                        failures.append(dev.name)
+                        failures.append(volume.name)
                         console.print(
-                            f"Unlocking {dev.name} failed: {e}",
+                            f"Unlocking {volume.name} failed: {e}",
                             style="bold red",
                         )
                     progress.advance(bar)
-
-        run.udevadm("settle")
 
         if failures:
             console.print(

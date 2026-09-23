@@ -720,11 +720,6 @@ def luks(args=sys.argv[1:]):
         help="Names of LUKS volumes to unlock (globbing allowed), e.g. '*osd-*', 'backy'.",
     )
     parser_unlock.add_argument(
-        "--header",
-        help="When using an external LUKS header file, provide a path to it here."
-        "\nDefaults to autodetecting and using a file called ${mountpoint}.luks",
-    )
-    parser_unlock.add_argument(
         "-j",
         "--parallel",
         type=int,
