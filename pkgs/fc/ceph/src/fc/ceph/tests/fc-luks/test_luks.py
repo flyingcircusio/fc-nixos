@@ -7,6 +7,7 @@ from subprocess import CalledProcessError
 
 import fc.ceph.luks
 import pytest
+from fc.ceph.luks import manage
 
 # extracted from cartman06
 LV_DUMMY_DATA = [
@@ -572,6 +573,62 @@ def test_keystore_rekey_argument_calls(mock_LUKSKeyStoreManager):
         slot="admin",
         header="/srv/foo.luks",
     )
+
+
+@pytest.fixture
+def three_devices(monkeypatch):
+    devices = [
+        manage.LuksDevice(
+            base_blockdev=f"/dev/sd{letter}", base_blockdev_name=f"sd{letter}"
+        )
+        for letter in "abc"
+    ]
+    monkeypatch.setattr(
+        manage.LuksDevice,
+        "filter_cryptvolumes",
+        classmethod(lambda cls, *args, **kwargs: list(devices)),
+    )
+    return devices
+
+
+def test_keystore_rekey_parallel_runs_all_volumes(
+    mock_LUKSKeyStoreManager, three_devices, monkeypatch
+):
+    keyman = mock_LUKSKeyStoreManager
+    calls = []
+
+    def record(slot, device, header, admin_key=None):
+        calls.append((device, admin_key))
+
+    keyman._do_rekey = record
+
+    # success: no exitcode is returned (matches previous behaviour)
+    assert keyman.rekey("*", only_active=True, header=None, parallel=3) is None
+    # every worker got the admin key requested once in the main thread, so
+    # none of them had to prompt for it
+    assert sorted(calls) == [
+        ("/dev/sda", "foo"),
+        ("/dev/sdb", "foo"),
+        ("/dev/sdc", "foo"),
+    ]
+
+
+def test_keystore_rekey_parallel_reports_failures(
+    mock_LUKSKeyStoreManager, three_devices
+):
+    keyman = mock_LUKSKeyStoreManager
+    calls = []
+
+    def flaky(slot, device, header, admin_key=None):
+        calls.append(device)
+        if device == "/dev/sdb":
+            raise Exception("cryptsetup blew up")
+
+    keyman._do_rekey = flaky
+
+    # all volumes are still attempted, failing ones are reported, exitcode 1
+    assert keyman.rekey("*", only_active=True, header=None, parallel=3) == 1
+    assert sorted(calls) == ["/dev/sda", "/dev/sdb", "/dev/sdc"]
 
 
 @pytest.fixture

@@ -4,6 +4,7 @@ import hashlib
 import os
 import secrets
 import shutil
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from subprocess import CalledProcessError
 from typing import NamedTuple, Optional
@@ -15,6 +16,7 @@ from fc.ceph.luks import (
 from fc.ceph.luks.checks import all_checks
 from fc.ceph.lvm import XFSVolume
 from fc.ceph.util import console, run
+from rich.progress import Progress
 
 
 class LuksDevice(NamedTuple):
@@ -180,43 +182,102 @@ class LUKSKeyStoreManager(object):
         only_active: bool,
         header: Optional[str],
         slot="local",
+        parallel: int = 1,
     ):
         """Update keyslots, using the opposite key for assurance."""
 
         if slot == "local":
             console.print("Updating local machine key ...", style="bold")
-            # Ensure to request the admin key early on.
-            self._KEYSTORE.admin_key_for_input(
+            # Request the admin key up front, in the main thread, and reuse it
+            # for all volumes: no worker thread may prompt for it.
+            admin_key = self._KEYSTORE.admin_key_for_input(
                 "Current LUKS admin key for unlocking this location"
             )
         elif slot == "admin":
             console.print("Updating admin key ...", style="bold")
-            # Ensure to request the admin key early on.
-            self._KEYSTORE.admin_key_for_input(
+            admin_key = self._KEYSTORE.admin_key_for_input(
                 "New LUKS admin key to be set for this location"
             )
         else:
             raise ValueError(f"slot={slot}")
 
-        for dev in LuksDevice.filter_cryptvolumes(
+        devices = LuksDevice.filter_cryptvolumes(
             name_glob, only_active=only_active, header=header
-        ):
+        )
+
+        def rekey_one(dev: LuksDevice):
             console.print(f"Rekeying {dev.name}")
-            self._do_rekey(slot, device=dev.base_blockdev, header=dev.header)
+            self._do_rekey(
+                slot,
+                device=dev.base_blockdev,
+                header=dev.header,
+                admin_key=admin_key,
+            )
+
+        # `admin_key` was requested above, in this thread, so no worker will
+        # prompt for it.
+        # Volumes are independent, but each key derivation needs ~1 GiB of
+        # memory: keep the number of parallel jobs well below available RAM.
+        failures = []
+        with Progress() as progress:
+            bar = progress.add_task("Rekeying", total=len(devices))
+            if parallel > 1:
+                with ThreadPoolExecutor(max_workers=parallel) as pool:
+                    pending = {
+                        pool.submit(rekey_one, dev): dev for dev in devices
+                    }
+                    for future in as_completed(pending):
+                        dev = pending[future]
+                        try:
+                            future.result()
+                        except Exception as e:
+                            failures.append(dev.name)
+                            console.print(
+                                f"Rekeying {dev.name} failed: {e}",
+                                style="bold red",
+                            )
+                        progress.advance(bar)
+            else:
+                for dev in devices:
+                    progress.update(bar, description=f"Rekeying {dev.name}")
+                    try:
+                        rekey_one(dev)
+                    except Exception as e:
+                        failures.append(dev.name)
+                        console.print(
+                            f"Rekeying {dev.name} failed: {e}",
+                            style="bold red",
+                        )
+                    progress.advance(bar)
+
+        if failures:
+            console.print(
+                "Rekeying failed for: " + ", ".join(failures), style="bold red"
+            )
+            return 1
 
         console.print("Key updated.", style="bold green")
 
-    def _do_rekey(self, slot: str, device: str, header: Optional[str]):
+    def _do_rekey(
+        self,
+        slot: str,
+        device: str,
+        header: Optional[str],
+        admin_key: Optional[bytes] = None,
+    ):
+        if admin_key is None:
+            admin_key = self._KEYSTORE.admin_key_for_input()
+
         if slot == "local":
             # Rekey a new local key. Use the admin key for verifying.
             key_file_verification = "-"
             new_key_file = self._KEYSTORE.local_key_path()
-            kill_input = add_input = self._KEYSTORE.admin_key_for_input()
+            kill_input = add_input = admin_key
         elif slot == "admin":
             key_file_verification = self._KEYSTORE.local_key_path()
             new_key_file = "-"
             kill_input = None
-            add_input = self._KEYSTORE.admin_key_for_input()
+            add_input = admin_key
         slot_id = self._KEYSTORE.slots[slot]
 
         header_arg = ["--header", header] if header else []
