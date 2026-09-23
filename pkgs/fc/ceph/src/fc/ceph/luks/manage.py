@@ -4,6 +4,7 @@ import hashlib
 import os
 import secrets
 import shutil
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from subprocess import CalledProcessError
 from typing import NamedTuple, Optional
@@ -13,8 +14,18 @@ from fc.ceph.luks import (
     Cryptsetup,
 )
 from fc.ceph.luks.checks import all_checks
-from fc.ceph.lvm import XFSVolume
+from fc.ceph.lvm import EncryptedLogicalVolume, XFSVolume, undmify
 from fc.ceph.util import console, run
+from rich.progress import Progress
+
+
+def _cpu_count() -> int:
+    """Number of CPUs available to this process.
+
+    `os.process_cpu_count` (Python 3.13+) respects CPU affinity and cgroups,
+    `os.cpu_count` is the fallback.
+    """
+    return getattr(os, "process_cpu_count", os.cpu_count)() or 1
 
 
 class LuksDevice(NamedTuple):
@@ -27,9 +38,26 @@ class LuksDevice(NamedTuple):
 
     @property
     def name(self) -> str:
-        """Often we just need *any* name to filter on or display, let's take
-        the best we can get."""
-        return self.luks_name if self.luks_name else self.base_blockdev_name
+        """The name the volume is (or would be) opened under, so we can filter
+        on and display it consistently whether or not it is currently open.
+
+        An encrypted logical volume is opened as its name without the
+        `-crypted` suffix (see `EncryptedLogicalVolume`), and its base block
+        device name is the device mapper name of the encrypted volume.
+        """
+        if self.luks_name:
+            return self.luks_name
+
+        try:
+            _vg, lv = undmify(self.base_blockdev_name)
+        except ValueError:
+            # Not a logical volume: best we can get.
+            return self.base_blockdev_name
+
+        suffix = EncryptedLogicalVolume.SUFFIX
+        if not lv.endswith(suffix):
+            return self.base_blockdev_name
+        return lv[: -len(suffix)]
 
     @classmethod
     def detect_cryptdevices(
@@ -353,6 +381,100 @@ class LUKSKeyStoreManager(object):
             success = False
 
         return success
+
+    def unlock(
+        self,
+        name_glob: str,
+        header: Optional[str],
+        parallel: int = 0,
+    ) -> int:
+        """Unlock matching volumes with the admin key.
+
+        Intended for emergencies, e.g. when the USB stick holding the local key
+        cannot be replaced right away: unlock everything once with the admin
+        key and keep the machine (and its volumes) available. The admin
+        passphrase is requested only once and reused for every volume.
+        """
+        # Request the admin key up front, in the main thread, and reuse it for
+        # all volumes: unlocking must not ask per volume (and no worker thread
+        # may prompt).
+        admin_key = self._KEYSTORE.admin_key_for_input(
+            "LUKS admin key for unlocking volumes at this location"
+        )
+
+        devices = LuksDevice.filter_cryptvolumes(
+            name_glob, only_active=False, header=header
+        )
+        locked = []
+        for dev in devices:
+            if dev.luks_name:
+                console.print(f"{dev.name} is already unlocked, skipping.")
+            else:
+                locked.append(dev)
+
+        if not locked:
+            console.print(f"Note: The glob `{name_glob}` matches no volume.")
+            return 0
+
+        def unlock_one(dev: LuksDevice):
+            console.print(f"Unlocking {dev.name} ...")
+            header_arg = ["--header", dev.header] if dev.header else []
+            Cryptsetup.cryptsetup(
+                "--allow-discards",  # pass through TRIM commands to disk
+                "open",
+                *header_arg,
+                "--key-file=-",
+                dev.base_blockdev,
+                dev.name,
+                input=admin_key,
+            )
+
+        workers = parallel or max(1, min(len(locked), _cpu_count() // 2))
+        failures = []
+        with Progress() as progress:
+            bar = progress.add_task("Unlocking", total=len(locked))
+            if workers > 1:
+                with ThreadPoolExecutor(max_workers=workers) as pool:
+                    pending = {
+                        pool.submit(unlock_one, dev): dev for dev in locked
+                    }
+                    for future in as_completed(pending):
+                        dev = pending[future]
+                        try:
+                            future.result()
+                        except Exception as e:
+                            failures.append(dev.name)
+                            console.print(
+                                f"Unlocking {dev.name} failed: {e}",
+                                style="bold red",
+                            )
+                        progress.advance(bar)
+            else:
+                for dev in locked:
+                    progress.update(
+                        bar, description=f"Unlocking {dev.name} ..."
+                    )
+                    try:
+                        unlock_one(dev)
+                    except Exception as e:
+                        failures.append(dev.name)
+                        console.print(
+                            f"Unlocking {dev.name} failed: {e}",
+                            style="bold red",
+                        )
+                    progress.advance(bar)
+
+        run.udevadm("settle")
+
+        if failures:
+            console.print(
+                "Unlocking failed for: " + ", ".join(failures),
+                style="bold red",
+            )
+            return 1
+
+        console.print("Volumes unlocked.", style="bold green")
+        return 0
 
     def fingerprint(self, verify: bool, confirm: bool) -> int:
         """

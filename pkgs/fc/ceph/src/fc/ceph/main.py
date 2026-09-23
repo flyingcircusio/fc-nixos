@@ -703,6 +703,37 @@ def luks(args=sys.argv[1:]):
     )
     parser_fingerprint.set_defaults(action="fingerprint")
 
+    volume = subparsers.add_parser("volume", help="Manage LUKS volumes.")
+    volume.set_defaults(
+        subsystem=fc.ceph.luks.manage.LUKSKeyStoreManager,
+        action=volume.print_usage,
+    )
+    volume_sub = volume.add_subparsers()
+
+    parser_unlock = volume_sub.add_parser(
+        "unlock",
+        help="Unlock matching volumes with the admin key, e.g. after the local "
+        "key stick failed. The admin passphrase is requested only once.",
+    )
+    parser_unlock.add_argument(
+        "name_glob",
+        help="Names of LUKS volumes to unlock (globbing allowed), e.g. '*osd-*', 'backy'.",
+    )
+    parser_unlock.add_argument(
+        "--header",
+        help="When using an external LUKS header file, provide a path to it here."
+        "\nDefaults to autodetecting and using a file called ${mountpoint}.luks",
+    )
+    parser_unlock.add_argument(
+        "-j",
+        "--parallel",
+        type=int,
+        default=0,
+        help="Unlock that many volumes concurrently. Defaults to half the "
+        "available CPUs; each job runs memory-intensive key derivation.",
+    )
+    parser_unlock.set_defaults(action="unlock")
+
     backup = subparsers.add_parser("backup", help="Manage backup volumes.")
     backup.set_defaults(
         subsystem=fc.ceph.backup.BackupManager, action=backup.print_usage

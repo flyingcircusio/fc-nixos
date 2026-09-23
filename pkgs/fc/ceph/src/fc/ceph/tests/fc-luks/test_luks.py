@@ -7,6 +7,7 @@ from subprocess import CalledProcessError
 
 import fc.ceph.luks
 import pytest
+from fc.ceph.luks import manage
 
 # extracted from cartman06
 LV_DUMMY_DATA = [
@@ -572,6 +573,211 @@ def test_keystore_rekey_argument_calls(mock_LUKSKeyStoreManager):
         slot="admin",
         header="/srv/foo.luks",
     )
+
+
+@pytest.fixture
+def cryptsetup_mock(monkeypatch):
+    """Records cryptsetup invocations and udevadm calls."""
+    calls = []
+
+    def invoke(*args, **kwargs):
+        calls.append((args, kwargs))
+
+    monkeypatch.setattr("fc.ceph.luks.Cryptsetup.cryptsetup", invoke)
+    monkeypatch.setattr("fc.ceph.util.run.udevadm", lambda *a, **kw: b"")
+    return calls
+
+
+@pytest.fixture
+def locked_and_open_devices(monkeypatch):
+    from fc.ceph.luks import manage
+
+    locked = manage.LuksDevice(
+        base_blockdev="/dev/mapper/vgosd--5-ceph--osd--5--block--crypted",
+        base_blockdev_name="vgosd--5-ceph--osd--5--block--crypted",
+    )
+    open_volume = manage.LuksDevice(
+        base_blockdev="/dev/mapper/vgsys-ceph--mon--crypted",
+        base_blockdev_name="vgsys-ceph--mon--crypted",
+        luks_name="ceph-mon",
+    )
+    monkeypatch.setattr(
+        manage.LuksDevice,
+        "filter_cryptvolumes",
+        classmethod(lambda cls, *args, **kw: [locked, open_volume]),
+    )
+    return locked, open_volume
+
+
+def test_luks_device_name_is_the_mapper_name():
+    from fc.ceph.luks import manage
+
+    # LVM-backed encrypted volumes are opened as the LV name without the
+    # `-crypted` suffix, as device mapper doubles each `-` of a name.
+    assert (
+        manage.LuksDevice(
+            base_blockdev="/dev/mapper/vgosd--5-ceph--osd--5--block--crypted",
+            base_blockdev_name="vgosd--5-ceph--osd--5--block--crypted",
+        ).name
+        == "ceph-osd-5-block"
+    )
+    assert (
+        manage.LuksDevice(
+            base_blockdev="/dev/mapper/vgsys-ceph--mon--crypted",
+            base_blockdev_name="vgsys-ceph--mon--crypted",
+        ).name
+        == "ceph-mon"
+    )
+    # Currently open volumes keep the name they were opened under.
+    assert (
+        manage.LuksDevice(
+            base_blockdev="/dev/mapper/vgsys-ceph--mon--crypted",
+            base_blockdev_name="vgsys-ceph--mon--crypted",
+            luks_name="ceph-mon",
+        ).name
+        == "ceph-mon"
+    )
+    # Without a naming convention to follow, we keep the base name.
+    assert (
+        manage.LuksDevice(
+            base_blockdev="/dev/sdb1", base_blockdev_name="sdb1"
+        ).name
+        == "sdb1"
+    )
+
+
+def test_unlock_opens_locked_volumes_with_the_admin_key(
+    mock_LUKSKeyStoreManager,
+    cryptsetup_mock,
+    locked_and_open_devices,
+    capsys,
+):
+    keyman = mock_LUKSKeyStoreManager
+    locked, open_volume = locked_and_open_devices
+
+    # `cryptsetup open` is called once, for the locked volume, with the admin
+    # key on stdin and the mapper name fc-ceph itself would use.
+    assert keyman.unlock("ceph-*", header=None) == 0
+    assert cryptsetup_mock == [
+        (
+            (
+                "--allow-discards",
+                "open",
+                "--key-file=-",
+                locked.base_blockdev,
+                "ceph-osd-5-block",
+            ),
+            {"input": "foo"},
+        )
+    ]
+
+    captured = capsys.readouterr()
+    assert "ceph-mon is already unlocked, skipping." in captured.out
+    assert "Volumes unlocked." in captured.out
+
+
+def test_unlock_reports_failing_volumes(
+    mock_LUKSKeyStoreManager, monkeypatch, capsys
+):
+    from fc.ceph.luks import manage
+
+    monkeypatch.setattr(
+        manage.LuksDevice,
+        "filter_cryptvolumes",
+        classmethod(
+            lambda cls, *args, **kw: [
+                manage.LuksDevice(
+                    base_blockdev="/dev/mapper/vgosd--5-ceph--osd--5--block--crypted",
+                    base_blockdev_name="vgosd--5-ceph--osd--5--block--crypted",
+                ),
+                manage.LuksDevice(
+                    base_blockdev="/dev/mapper/vgosd--6-ceph--osd--6--block--crypted",
+                    base_blockdev_name="vgosd--6-ceph--osd--6--block--crypted",
+                ),
+            ]
+        ),
+    )
+
+    keyman = mock_LUKSKeyStoreManager
+    attempted = []
+
+    def cryptsetup(*args, **kwargs):
+        attempted.append(args[3])
+        if "vgosd--5" in args[3]:
+            raise CalledProcessError(returncode=2, cmd=args)
+
+    monkeypatch.setattr("fc.ceph.luks.Cryptsetup.cryptsetup", cryptsetup)
+    monkeypatch.setattr("fc.ceph.util.run.udevadm", lambda *a, **kw: b"")
+
+    # all volumes are attempted and the failures are reported
+    assert keyman.unlock("ceph-*", header=None, parallel=2) == 1
+    assert sorted(attempted) == [
+        "/dev/mapper/vgosd--5-ceph--osd--5--block--crypted",
+        "/dev/mapper/vgosd--6-ceph--osd--6--block--crypted",
+    ]
+
+    captured = capsys.readouterr()
+    assert "ceph-osd-5-block" in captured.out
+    assert "Unlocking failed for: ceph-osd-5-block" in captured.out
+
+
+def test_luks_volume_unlock_command_invocation(
+    monkeypatch, tmp_path, capsys, mock_LUKSKeyStoreManager
+):
+    """smoke test for invocation via CLI arguments"""
+    import fc.ceph.luks
+    from fc.ceph.main import luks
+
+    monkeypatch.setattr(
+        "fc.ceph.main.CONFIG_FILE_PATH", tmp_path / "fc-ceph.conf"
+    )
+    (tmp_path / "fc-ceph.conf").write_text(
+        dedent(
+            """\
+            [default]
+            path=/bin
+            release=nautilus
+            """
+        )
+    )
+
+    monkeypatch.setattr(
+        fc.ceph.luks.KEYSTORE,
+        "admin_key_for_input",
+        lambda *args, **kwargs: b"foo",
+    )
+
+    from fc.ceph.luks import manage
+
+    monkeypatch.setattr(
+        manage.LuksDevice,
+        "filter_cryptvolumes",
+        classmethod(
+            lambda cls, *args, **kw: [
+                manage.LuksDevice(
+                    base_blockdev="/dev/mapper/vgosd--5-ceph--osd--5--block--crypted",
+                    base_blockdev_name="vgosd--5-ceph--osd--5--block--crypted",
+                )
+            ]
+        ),
+    )
+
+    calls = []
+    monkeypatch.setattr(
+        "fc.ceph.luks.Cryptsetup.cryptsetup",
+        lambda *args, **kwargs: calls.append(args),
+    )
+    monkeypatch.setattr("fc.ceph.util.run.udevadm", lambda *a, **kw: b"")
+
+    luks(["volume", "unlock", "ceph-osd-*"])
+
+    assert [args[3:] for args in calls] == [
+        (
+            "/dev/mapper/vgosd--5-ceph--osd--5--block--crypted",
+            "ceph-osd-5-block",
+        )
+    ]
+    assert "Volumes unlocked." in capsys.readouterr().out
 
 
 @pytest.fixture

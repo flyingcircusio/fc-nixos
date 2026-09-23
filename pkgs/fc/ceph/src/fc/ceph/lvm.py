@@ -11,6 +11,28 @@ from fc.ceph.luks import Cryptsetup
 from fc.ceph.util import console, mount_status, run
 
 
+def dmify(identifier: str) -> str:
+    """Escape a VG or LV name the way device mapper and lsblk display it.
+
+    Device mapper doubles each `-` of a name, so that a single `-` can
+    separate the parts of the resulting device mapper name.
+    """
+    return "--".join(identifier.split("-"))
+
+
+def undmify(dm_name: str) -> tuple[str, str]:
+    """Split a device mapper name `<dmify(vg)>-<dmify(lv)>` into (VG, LV).
+
+    Inverse of `dmify`, e.g. `vgosd--5-ceph--osd--5--block--crypted` is
+    `("vgosd-5", "ceph-osd-5-block-crypted")`.
+    """
+    escaped = dm_name.replace("--", "\x00")
+    vg, separator, lv = escaped.partition("-")
+    if not separator:
+        raise ValueError(f"Not a VG/LV device mapper name: {dm_name!r}")
+    return vg.replace("\x00", "-"), lv.replace("\x00", "-")
+
+
 class GenericBlockDevice:
     def __new__(cls, name: str):
         # prevent explicitly instantiated child classes from returning as None
@@ -330,10 +352,6 @@ class LogicalVolume(GenericLogicalVolume):
         Constructs the expected device mapper name from VG and LV, as it is
         returned by lsblk as "name"
         """
-
-        def dmify(identifier: str):
-            return "--".join(identifier.split("-"))
-
         if not self._vg_name:
             self.activate()
         assert self._vg_name is not None  # make MyPy happy
