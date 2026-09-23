@@ -55,7 +55,7 @@ DRY_RUN = False
 # recover on its own should we miss cleaning them up.
 BLOCKLIST_TTL = 24 * 60 * 60
 
-MANUAL_URL = "https://wiki.flyingcircus.io/Qemu/KVM_operations_manual#semi-automated_KVM_host_evacuation"
+MANUAL_URL = "https://wiki.flyingcircus.io/Qemu/KVM_operations_manual#Script-assisted_evacuation_of_broken_KVM_hosts"
 
 # How monitor_affected_vms watches the VMs come back.
 PING_TIMEOUT = 2  # seconds a VM gets to answer a single ping
