@@ -500,7 +500,7 @@ def test_update_activity_switch_boot_fails(
     # which will later result in the manager not triggering a reboot either.
     nixos_mock.switch_to_system.side_effect = [Exception("Boom")]
 
-    # We don't initially WANT a reboot, but the exception should trigger it.
+    # We don't initially WANT a reboot, and an exception in `s-t-c boot` must not trigger it either.
     activity.reboot_needed = None
     with pytest.raises(Exception):
         activity.run()
