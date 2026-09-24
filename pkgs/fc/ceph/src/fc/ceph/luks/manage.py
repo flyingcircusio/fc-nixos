@@ -4,6 +4,7 @@ import hashlib
 import os
 import secrets
 import shutil
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from subprocess import CalledProcessError
 from typing import NamedTuple, Optional
@@ -13,8 +14,18 @@ from fc.ceph.luks import (
     Cryptsetup,
 )
 from fc.ceph.luks.checks import all_checks
-from fc.ceph.lvm import XFSVolume
+from fc.ceph.lvm import EncryptedLogicalVolume, XFSVolume, lv_names
 from fc.ceph.util import console, run
+from rich.progress import Progress
+
+
+def _cpu_count() -> int:
+    """Number of CPUs available to this process.
+
+    `os.process_cpu_count` (Python 3.13+) respects CPU affinity and cgroups,
+    `os.cpu_count` is the fallback.
+    """
+    return getattr(os, "process_cpu_count", os.cpu_count)() or 1
 
 
 class LuksDevice(NamedTuple):
@@ -353,6 +364,106 @@ class LUKSKeyStoreManager(object):
             success = False
 
         return success
+
+    def unlock(self, name_glob: str, parallel: int = 0) -> int:
+        """Unlock matching volumes with the admin key.
+
+        Intended for emergencies, e.g. when the USB stick holding the local key
+        cannot be replaced right away: unlock everything once with the admin
+        key and keep the machine (and its volumes) available. The admin
+        passphrase is requested only once and reused for every volume.
+        """
+        # Request the admin key up front, in the main thread, and reuse it for
+        # all volumes: unlocking must not ask per volume (and no worker thread
+        # may prompt).
+        admin_key = self._KEYSTORE.admin_key_for_input(
+            "LUKS admin key for unlocking volumes at this location"
+        )
+
+        # A closed volume has no mapper name of its own; the name it is opened
+        # under is the name of the encrypted logical volume without the
+        # `-crypted` suffix of its underlay. So ask LVM, which knows all
+        # volumes and their names, rather than guessing from the devices.
+        suffix = EncryptedLogicalVolume.SUFFIX
+        volumes = [
+            EncryptedLogicalVolume(lv_name[: -len(suffix)])
+            for lv_name in lv_names()
+            if lv_name.endswith(suffix)
+        ]
+        matching = [
+            volume
+            for volume in volumes
+            if fnmatch.fnmatch(volume.name, name_glob)
+        ]
+
+        locked = []
+        for volume in matching:
+            if os.path.exists(volume.device_path):
+                console.print(f"{volume.name} is already unlocked, skipping.")
+            else:
+                locked.append(volume)
+
+        if not locked:
+            if matching:
+                console.print(
+                    f"Note: All volumes matching `{name_glob}` are already "
+                    "unlocked."
+                )
+            else:
+                console.print(
+                    f"Note: The glob `{name_glob}` matches no volume."
+                )
+            return 0
+
+        def unlock_one(volume: EncryptedLogicalVolume):
+            console.print(f"Unlocking {volume.name} ...")
+            volume.activate(key=admin_key)
+
+        workers = parallel or max(1, min(len(locked), _cpu_count() // 2))
+        failures = []
+        with Progress() as progress:
+            bar = progress.add_task("Unlocking", total=len(locked))
+            if workers > 1:
+                with ThreadPoolExecutor(max_workers=workers) as pool:
+                    pending = {
+                        pool.submit(unlock_one, volume): volume
+                        for volume in locked
+                    }
+                    for future in as_completed(pending):
+                        volume = pending[future]
+                        try:
+                            future.result()
+                        except Exception as e:
+                            failures.append(volume.name)
+                            console.print(
+                                f"Unlocking {volume.name} failed: {e}",
+                                style="bold red",
+                            )
+                        progress.advance(bar)
+            else:
+                for volume in locked:
+                    progress.update(
+                        bar, description=f"Unlocking {volume.name} ..."
+                    )
+                    try:
+                        unlock_one(volume)
+                    except Exception as e:
+                        failures.append(volume.name)
+                        console.print(
+                            f"Unlocking {volume.name} failed: {e}",
+                            style="bold red",
+                        )
+                    progress.advance(bar)
+
+        if failures:
+            console.print(
+                "Unlocking failed for: " + ", ".join(failures),
+                style="bold red",
+            )
+            return 1
+
+        console.print("Volumes unlocked.", style="bold green")
+        return 0
 
     def fingerprint(self, verify: bool, confirm: bool) -> int:
         """

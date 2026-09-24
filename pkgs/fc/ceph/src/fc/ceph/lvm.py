@@ -511,15 +511,27 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
     def encrypted(self):
         return True
 
-    def activate(self):
+    def activate(self, key: Optional[bytes] = None):
+        """Activate the volume, i.e. open its LUKS container.
+
+        Uses the local key file by default. Pass the admin key to open the
+        volume with that instead, e.g. when the local key is not available.
+        """
         self.underlay.activate()
         if not os.path.exists(self.device_path):
+            if key is None:
+                key_arg = ("-d", fc.ceph.luks.KEYSTORE.local_key_path())
+                stdin = {}
+            else:
+                key_arg = ("--key-file=-",)
+                stdin = {"input": key}
             Cryptsetup.cryptsetup(
                 "--allow-discards",  # pass through TRIM commands to disk
                 "open",
-                "-d", fc.ceph.luks.KEYSTORE.local_key_path(),
+                *key_arg,
                 self.underlay.device,
                 self.name,
+                **stdin,
             )  # fmt: skip
             run.udevadm("settle")
         self._ready = True
