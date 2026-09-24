@@ -177,6 +177,7 @@ in
         };
       in
       {
+        environment.systemPackages = [ pkgs.fc.kvmrescue ];
         flyingcircus.passwordlessSudoPackages = [
           {
             commands = [

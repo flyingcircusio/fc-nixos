@@ -1,0 +1,73 @@
+# Packaging and type-checking config.
+#
+# fc_kvmrescue.py also runs standalone via `uv run --script`, declaring its
+# dependencies inline (PEP 723), so there is nothing for an editor to resolve
+# imports against by default. `cp .envrc.example .envrc && direnv allow` keeps
+# .venv in sync with that block; without direnv, do it by hand with:
+#
+#     VIRTUAL_ENV=.venv uv sync --script fc_kvmrescue.py --active
+#
+# re-running it whenever the inline `dependencies` change.
+#
+# Most editors only read this from the workspace root, so open this
+# directory as its own workspace to pick it up.
+
+# ⬇ keep in sync with fc_kvmrescue.py, to allow copying this as a standalone
+# quick-edit script for quick changes.
+[project]
+name = "fc-kvmrescue"
+version = "1.0"
+requires-python = ">= 3.12"
+dependencies = ["rich", "pydantic"]
+
+[project.scripts]
+fc-kvmrescue = "fc_kvmrescue:main"
+
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+# The rescue is a single copy-and-run module, and flat-layout auto-discovery
+# would otherwise pick up stray files next to it.
+[tool.setuptools]
+py-modules = ["fc_kvmrescue"]
+
+# Tests are not part of the shipped module, so they stay out of `dependencies`
+# and out of the nix build, which only builds `workspace.deps.default`.
+#
+#     uv run --group dev pytest
+[dependency-groups]
+dev = ["pytest", "pytest-cov"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+# Coverage is on by default; `--no-cov` turns it off for a quick run.
+addopts = "--cov --cov-report=html"
+
+[tool.coverage.run]
+source = ["fc_kvmrescue"]
+branch = true
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.report]
+show_missing = true
+exclude_also = [
+    # The entry point only exists for the shebang and the console script.
+    "if __name__ == .__main__.:",
+]
+
+[tool.basedpyright]
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "standard"
+
+[tool.ruff]
+line-length = 80
+
+[tool.ruff.lint]
+# EXE005: the script opens with a two-line `nix-shell` shebang, so the second
+# line is meant to sit below `#!/usr/bin/env nix-shell`.
+ignore = ["EXE005"]
