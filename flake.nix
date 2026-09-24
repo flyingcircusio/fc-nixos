@@ -69,7 +69,13 @@
               inherit system;
               overlays = [ (import ./pkgs/overlay.nix) ];
               config = {
-                inherit (nixpkgsConfig) permittedInsecurePackages;
+                inherit (nixpkgsConfig)
+                  permittedInsecurePackages
+                  cudaSupport
+                  cudaCapabilities
+                  cudaForwardCompat
+                  rocmSupport
+                  ;
 
                 allowUnfreePredicate = pkg: elem (getName pkg) nixpkgsConfig.allowedUnfreePackageNames;
               };

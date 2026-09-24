@@ -10,6 +10,8 @@ let
   enc = config.flyingcircus.enc;
   settingsFormat = pkgs.formats.toml { };
   baseConfigFile = settingsFormat.generate "skvaider-config.toml" cfg.settings;
+  checkSkvaiderCmdSudoers = "${pkgs.fc.skvaider}/bin/check-skvaider https\\://${cfg.hostname} --config /var/lib/skvaider/config.toml";
+  checkSkvaiderCmd = "${pkgs.fc.skvaider}/bin/check-skvaider https://${cfg.hostname} --config /var/lib/skvaider/config.toml";
 in
 {
   options.flyingcircus.roles.ai-api-gateway = {
@@ -47,19 +49,34 @@ in
             default = enc.name;
             internal = true;
           };
+          server.host = lib.mkOption {
+            default = "127.0.0.1";
+            type = lib.types.str;
+            description = "IP to bind the server on";
+          };
+          server.port = lib.mkOption {
+            default = cfg.port;
+            type = lib.types.int;
+            description = "Port to bind the server on";
+          };
           backend = lib.mkOption {
             description = "Backends configured in skvaider";
             type = with lib.types; listOf (attrsOf str);
             internal = true;
             default = builtins.map (val: {
-              type = "openai";
-              url = "http://${val.address}:11434";
+              type = "skvaider";
+              url = "http://${val.address}:8000";
             }) (builtins.filter (s: s.service == "ai-model-server-server") config.flyingcircus.encServices);
           };
-          openai.models = lib.mkOption {
+          auth.admin_tokens = lib.mkOption {
+            description = "List of static bearer tokens accepted by the proxy.";
+            type = with lib.types; listOf str;
+            default = [ ];
+          };
+          models = lib.mkOption {
             description = "model config";
-            type = with lib.types; attrsOf anything;
-            default = { };
+            type = with lib.types; listOf anything;
+            default = [ ];
           };
           logging.access_log_path = lib.mkOption {
             default = "/var/log/skvaider/access.log";
@@ -112,11 +129,8 @@ in
       after = [ "skvaider-config.service" ];
       # Currently, we only support one worker because we would otherwise have multiple aramaki connections with the same app ID
       script = ''
-        ${lib.getExe' pkgs.fc.skvaider "gunicorn"} -b "127.0.0.1:${toString cfg.port}" "skvaider:app_factory()" -w 1 -k uvicorn_worker.UvicornWorker
+        ${lib.getExe' pkgs.fc.skvaider "skvaider-proxy"} -c /var/lib/skvaider/config.toml
       '';
-      environment = {
-        SKVAIDER_CONFIG_FILE = "/var/lib/skvaider/config.toml";
-      };
       serviceConfig = {
         ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";
         UMask = "0022";
@@ -135,6 +149,14 @@ in
         isSystemUser = true;
       };
     };
+    systemd.tmpfiles.rules = [
+      "d /var/lib/skvaider 0750 skvaider service - -"
+      "d /var/lib/skvaider/debug 0750 skvaider service 4d -"
+
+      "d /var/log/skvaider 0750 skvaider service - -"
+      "A /var/log/skvaider - - - - g:sudo-srv:r-x,g:admins:r-x"
+      "a /var/log/skvaider - - - - d:g:sudo-srv:r,d:g:admins:r"
+    ];
     services.logrotate.settings.skvaider = {
       create = "0640 skvaider service";
       files = [ "/var/log/skvaider/*.log" ];
@@ -159,12 +181,26 @@ in
       };
     };
 
+    flyingcircus.services.telegraf.inputs.prometheus = [
+      {
+        urls = [ "http://127.0.0.1:${toString cfg.port}/metrics" ];
+      }
+    ];
+
+    flyingcircus.passwordlessSudoRules = [
+      {
+        commands = [ checkSkvaiderCmdSudoers ];
+        groups = [ "sensuclient" ];
+        runAs = "skvaider";
+      }
+    ];
+
     flyingcircus.services.sensu-client.checks = {
       skvaider = {
         notification = "Skvaider provides appropriate responses";
         interval = 300;
         timeout = 60;
-        command = "${pkgs.fc.check-skvaider}/bin/check_skvaider https://${cfg.hostname} /etc/local/sensu-client/skvaider.key";
+        command = "sudo -u skvaider ${checkSkvaiderCmd}";
       };
     };
 
