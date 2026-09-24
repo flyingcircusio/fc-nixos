@@ -1,3 +1,25 @@
+# Release 2026_039
+
+## NixOS XX.XX platform
+
+- Added monitoring for OpenVPN PKI certificate expiry, so an expiring CA or server certificate alerts well before the VPN breaks. (PL-135338)
+
+- Optimize system updates in maintenance for reduced noise and robustness. (FC-57632)
+
+  1. If no reboot was scheduled for a system updated but switching to the
+     new config online fails for any reason, we immediately schedule a reboot
+     with the new configuration to avoid leaving machines stuck in undefined
+     states.
+
+  2. We try harder to avoid superfluous online unit restarts if system updates
+     have already scheduled.
+
+  3. We ensure to extend the scheduled maintenance period if we initiate
+     a reboot to avoid accidentally causing noisy keepalive alarms even
+     though the system knows what it's doing right now.
+
+
+
 # Release 2026_038
 
 ## NixOS XX.XX platform
