@@ -1,10 +1,13 @@
+import asyncio
 import getpass
 import hashlib
 import os
+import shlex
 import shutil
 from functools import wraps
 from pathlib import Path
 from socket import gethostname
+from subprocess import CalledProcessError
 from typing import Optional
 
 from fc.ceph.util import console, mlockall, prompt_bool, run
@@ -142,6 +145,38 @@ class Cryptsetup:
             "luksAddKey",
             *args, **kwargs,
         )  # fmt: skip
+
+    @classmethod
+    async def cryptsetup_async(
+        cls, *args: str, input: Optional[bytes] = None, check: bool = True
+    ) -> bytes:
+        """`cryptsetup` wrapper for coroutines.
+
+        Runs the command without blocking the event loop, so that several
+        volumes can be rekeyed concurrently.
+        """
+        argv = ("cryptsetup", "-q", *cls.cryptsetup_tunables, *args)
+        console.print("$", argv[0], shlex.join(argv[1:]), style="grey50")
+        proc = await asyncio.create_subprocess_exec(
+            *argv,
+            stdin=(
+                asyncio.subprocess.PIPE
+                if input is not None
+                else asyncio.subprocess.DEVNULL
+            ),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await proc.communicate(input)
+        if proc.returncode:
+            console.print(f"> return code: {proc.returncode}", style="red")
+            console.print("> stdout:", style="red")
+            console.print(stdout.decode("ascii", errors="replace"), style="red")
+            console.print("> stderr:", style="red")
+            console.print(stderr.decode("ascii", errors="replace"), style="red")
+            if check:
+                raise CalledProcessError(proc.returncode, argv, stdout, stderr)
+        return stdout
 
 
 KEYSTORE = LUKSKeyStore()

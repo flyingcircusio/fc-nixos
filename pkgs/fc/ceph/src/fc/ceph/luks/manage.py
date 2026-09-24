@@ -1,3 +1,4 @@
+import asyncio
 import fnmatch
 import getpass
 import hashlib
@@ -15,6 +16,16 @@ from fc.ceph.luks import (
 from fc.ceph.luks.checks import all_checks
 from fc.ceph.lvm import XFSVolume
 from fc.ceph.util import console, run
+from rich.progress import Progress
+
+
+def _cpu_count() -> int:
+    """Number of CPUs available to this process.
+
+    `os.process_cpu_count` (Python 3.13+) respects CPU affinity and cgroups,
+    `os.cpu_count` is the fallback.
+    """
+    return getattr(os, "process_cpu_count", os.cpu_count)() or 1
 
 
 class LuksDevice(NamedTuple):
@@ -180,52 +191,120 @@ class LUKSKeyStoreManager(object):
         only_active: bool,
         header: Optional[str],
         slot="local",
+        parallel: int = 0,
     ):
         """Update keyslots, using the opposite key for assurance."""
 
         if slot == "local":
             console.print("Updating local machine key ...", style="bold")
-            # Ensure to request the admin key early on.
-            self._KEYSTORE.admin_key_for_input(
+            # Request the admin key up front, in the main thread, and reuse it
+            # for all volumes: no worker thread may prompt for it.
+            admin_key = self._KEYSTORE.admin_key_for_input(
                 "Current LUKS admin key for unlocking this location"
             )
         elif slot == "admin":
             console.print("Updating admin key ...", style="bold")
-            # Ensure to request the admin key early on.
-            self._KEYSTORE.admin_key_for_input(
+            admin_key = self._KEYSTORE.admin_key_for_input(
                 "New LUKS admin key to be set for this location"
             )
         else:
             raise ValueError(f"slot={slot}")
 
-        for dev in LuksDevice.filter_cryptvolumes(
+        devices = LuksDevice.filter_cryptvolumes(
             name_glob, only_active=only_active, header=header
-        ):
+        )
+
+        def rekey_one(dev: LuksDevice):
             console.print(f"Rekeying {dev.name}")
-            self._do_rekey(slot, device=dev.base_blockdev, header=dev.header)
+            self._do_rekey(
+                slot,
+                device=dev.base_blockdev,
+                header=dev.header,
+                admin_key=admin_key,
+            )
+
+        # `admin_key` was requested above, in this thread, so no worker will
+        # prompt for it.
+        # Volumes are independent, but each key derivation needs ~1 GiB of
+        # memory: default to half the CPUs and let -j tune that.
+        workers = parallel or max(1, min(len(devices), _cpu_count() // 2))
+        failures = asyncio.run(
+            self._rekey_volumes(devices, slot, admin_key, workers)
+        )
+
+        if failures:
+            console.print(
+                "Rekeying failed for: " + ", ".join(failures), style="bold red"
+            )
+            return 1
 
         console.print("Key updated.", style="bold green")
 
-    def _do_rekey(self, slot: str, device: str, header: Optional[str]):
+    async def _rekey_volumes(
+        self,
+        devices: list["LuksDevice"],
+        slot: str,
+        admin_key: bytes,
+        workers: int,
+    ) -> list[str]:
+        """Rekey all devices, at most `workers` of them at a time."""
+        failures = []
+        semaphore = asyncio.Semaphore(workers)
+        with Progress() as progress:
+            bar = progress.add_task("Rekeying", total=len(devices))
+
+            async def rekey_one(dev: "LuksDevice"):
+                async with semaphore:
+                    console.print(f"Rekeying {dev.name}")
+                    progress.update(bar, description=f"Rekeying {dev.name}")
+                    try:
+                        await self._do_rekey(
+                            slot,
+                            device=dev.base_blockdev,
+                            header=dev.header,
+                            admin_key=admin_key,
+                        )
+                    except Exception as e:
+                        failures.append(dev.name)
+                        console.print(
+                            f"Rekeying {dev.name} failed: {e}",
+                            style="bold red",
+                        )
+                    progress.advance(bar)
+
+            await asyncio.gather(*(rekey_one(dev) for dev in devices))
+
+        return failures
+
+    async def _do_rekey(
+        self,
+        slot: str,
+        device: str,
+        header: Optional[str],
+        admin_key: Optional[bytes] = None,
+    ):
+        if admin_key is None:
+            admin_key = self._KEYSTORE.admin_key_for_input()
+
         if slot == "local":
             # Rekey a new local key. Use the admin key for verifying.
             key_file_verification = "-"
             new_key_file = self._KEYSTORE.local_key_path()
-            kill_input = add_input = self._KEYSTORE.admin_key_for_input()
+            kill_input = add_input = admin_key
         elif slot == "admin":
             key_file_verification = self._KEYSTORE.local_key_path()
             new_key_file = "-"
             kill_input = None
-            add_input = self._KEYSTORE.admin_key_for_input()
+            add_input = admin_key
         slot_id = self._KEYSTORE.slots[slot]
 
         header_arg = ["--header", header] if header else []
 
-        dump = Cryptsetup.cryptsetup(
-            "luksDump", *header_arg, device, encoding="ascii"
+        dump = await Cryptsetup.cryptsetup_async(
+            "luksDump", *header_arg, device
         )
-        if f"  {slot_id}: luks2" in dump:
-            Cryptsetup.cryptsetup(
+        if f"  {slot_id}: luks2" in dump.decode("ascii"):
+            await Cryptsetup.cryptsetup_async(
                 "luksKillSlot",
                 f"--key-file={key_file_verification}",
                 *header_arg,
@@ -233,7 +312,7 @@ class LUKSKeyStoreManager(object):
                 slot_id,
                 input=kill_input,
             )
-        Cryptsetup.cryptsetup(
+        await Cryptsetup.cryptsetup_async(
             "luksAddKey",
             f"--key-file={key_file_verification}",
             f"--key-slot={slot_id}",

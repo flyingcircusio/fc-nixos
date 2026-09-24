@@ -663,6 +663,15 @@ def luks(args=sys.argv[1:]):
         choices=["local", "admin"],
         default="local",
     )
+    parser_rekey.add_argument(
+        "-j",
+        "--parallel",
+        type=int,
+        default=0,
+        help="Rekey that many volumes concurrently. Defaults to half the "
+        "available CPUs; each job runs memory-intensive key derivation "
+        "(~1 GiB).",
+    )
     parser_rekey.set_defaults(action="rekey")
 
     parser_test = keystore_sub.add_parser(
