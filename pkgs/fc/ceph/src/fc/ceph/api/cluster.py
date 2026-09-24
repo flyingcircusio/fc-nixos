@@ -1,6 +1,9 @@
 """Access to a specific Ceph cluster."""
 
 import configparser
+from typing import Any
+
+from fc.ceph.util import run
 
 CEPH_CONF = "/etc/ceph/ceph.conf"
 
@@ -12,6 +15,21 @@ class Cluster(object):
         # XXX customising the ceph_conf is not used or exposed somewhere, consider removing
         self.ceph_conf = ceph_conf
         self.config = None  # lazy ConfigParser init
+
+    # Thin convenience wrappers around the `run.*` runners that apply this
+    # cluster's config file.
+
+    def ceph(self, *args: str, **kwargs) -> Any:
+        return run.ceph("-c", self.ceph_conf, *args, **kwargs)
+
+    def ceph_json(self, *args: str, **kwargs) -> Any:
+        return run.json.ceph("-c", self.ceph_conf, *args, **kwargs)
+
+    def rbd(self, *args: str, **kwargs) -> Any:
+        return run.rbd("-c", self.ceph_conf, *args, **kwargs)
+
+    def rbd_json(self, *args: str, **kwargs) -> Any:
+        return run.json.rbd("-c", self.ceph_conf, *args, **kwargs)
 
     def parse_config(self):
         self.config = configparser.ConfigParser()

@@ -1,9 +1,9 @@
 import random
 import time
 from subprocess import CalledProcessError
+from typing import Any, Self
 
-from fc.ceph.util import run
-
+from .cluster import Cluster
 from .rbdimage import RBDImage
 
 
@@ -13,10 +13,10 @@ class Pools(object):
     `Pools` caches already obtained result to speed up lookups.
     """
 
-    def __init__(self, cluster):
-        self.cluster = cluster
-        self._cache = {}
-        self._names = set()
+    def __init__(self, cluster: Cluster):
+        self.cluster: Cluster = cluster
+        self._cache: dict[str, Pool] = {}
+        self._names: set[str] = set()
 
     def lookup(self, pool):
         """Deprecated. Use pools[poolname] instead."""
@@ -35,11 +35,11 @@ class Pools(object):
         except KeyError:
             return False
 
-    def names(self):
+    def names(self) -> set[str]:
         """Returns all pool names."""
         if self._names:
             return self._names
-        pools = run.json.ceph("-c", self.cluster.ceph_conf, "osd", "lspools")
+        pools = self.cluster.ceph_json("osd", "lspools")
         self._names = set(p["poolname"] for p in pools)
         return self._names
 
@@ -55,11 +55,9 @@ class Pools(object):
         """Returns randomly picked pool (as Pool object)."""
         return self[random.choice(list(self.names()))]
 
-    def create(self, pool):
+    def create(self, pool: str) -> "Pool":
         """Adds new pool to the Ceph cluster."""
-        run.ceph(
-            "-c",
-            self.cluster.ceph_conf,
+        self.cluster.ceph(
             "osd",
             "pool",
             "create",
@@ -77,9 +75,9 @@ class Pool(object):
     easy access.
     """
 
-    def __init__(self, poolname, cluster):
+    def __init__(self, poolname: str, cluster: Cluster):
         self.name = poolname
-        self.cluster = cluster
+        self.cluster: Cluster = cluster
         self._images = None
         self._pg_num: int | None = None
         self._pg_num_min: int | None = None
@@ -113,9 +111,7 @@ class Pool(object):
 
     def _rbd_query(self):
         try:
-            return run.json.rbd(
-                "-c", self.cluster.ceph_conf, "ls", "-l", self.name
-            )
+            return self.cluster.rbd_json("ls", "-l", self.name)
         except CalledProcessError as e:
             if e.returncode == 2 and "error opening pool" in e.stderr:
                 raise KeyError(self.name, e.output)
@@ -125,9 +121,7 @@ class Pool(object):
 
     def fix_options(self):
         """Adapt important pool properties to most up-to-date values."""
-        run.ceph(
-            "-c",
-            self.cluster.ceph_conf,
+        self.cluster.ceph(
             "osd",
             "pool",
             "set",
@@ -140,9 +134,7 @@ class Pool(object):
     def pg_num(self):
         if self._pg_num:
             return self._pg_num
-        pginfo = run.json.ceph(
-            "-c",
-            self.cluster.ceph_conf,
+        pginfo = self.cluster.ceph_json(
             "osd",
             "pool",
             "get",
@@ -159,9 +151,7 @@ class Pool(object):
         This may take a while as pgp_num (the effective number) can only
         be changed after the PGs have been created in the cluster.
         """
-        run.ceph(
-            "-c",
-            self.cluster.ceph_conf,
+        self.cluster.ceph(
             "osd",
             "pool",
             "set",
@@ -179,9 +169,7 @@ class Pool(object):
         if self._pg_num_min:
             return self.pg_num_min
         try:
-            pginfo = run.json.ceph(
-                "-c",
-                self.cluster.ceph_conf,
+            pginfo = self.cluster.ceph_json(
                 "osd",
                 "pool",
                 "get",
@@ -204,9 +192,7 @@ class Pool(object):
         value_numerical = (
             value if value else 0
         )  # setting `0` unsets the property back to default
-        run.ceph(
-            "-c",
-            self.cluster.ceph_conf,
+        self.cluster.ceph(
             "osd",
             "pool",
             "set",
@@ -220,9 +206,7 @@ class Pool(object):
     def pgp_num(self):
         if self._pgp_num:
             return self._pgp_num
-        pginfo = run.json.ceph(
-            "-c",
-            self.cluster.ceph_conf,
+        pginfo = self.cluster.ceph_json(
             "osd",
             "pool",
             "get",
@@ -240,9 +224,7 @@ class Pool(object):
             time.sleep(min([30, 1.2**retry]))
 
             try:
-                run.ceph(
-                    "-c",
-                    self.cluster.ceph_conf,
+                self.cluster.ceph(
                     "osd",
                     "pool",
                     "set",
@@ -262,9 +244,7 @@ class Pool(object):
         return sum(i.size_gb for i in self.images if not i.snapshot)
 
     def snap_rm(self, rbdimage):
-        run.rbd(
-            "-c",
-            self.cluster.ceph_conf,
+        self.cluster.rbd(
             "snap",
             "rm",
             f"{self.name}/{rbdimage.image}@{rbdimage.snapshot}",
@@ -273,9 +253,7 @@ class Pool(object):
 
     def image_rm(self, rbdimage):
         assert rbdimage.snapshot is None
-        run.rbd(
-            "-c", self.cluster.ceph_conf, "rm", f"{self.name}/{rbdimage.image}"
-        )
+        self.cluster.rbd("rm", f"{self.name}/{rbdimage.image}")
         self._images = None
 
     def delete(self):
@@ -285,9 +263,7 @@ class Pool(object):
                     self.name
                 )
             )
-        run.ceph(
-            "-c",
-            self.cluster.ceph_conf,
+        self.cluster.ceph(
             "osd",
             "pool",
             "delete",
