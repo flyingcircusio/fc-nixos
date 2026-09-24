@@ -465,14 +465,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.110",
+    "name": "linux-6.12.111",
     "pname": "linux",
-    "version": "6.12.110"
+    "version": "6.12.111"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.18.52",
+    "name": "linux-6.18.53",
     "pname": "linux",
-    "version": "6.18.52"
+    "version": "6.18.53"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -735,9 +735,9 @@
     "version": "0.29.2"
   },
   "podman": {
-    "name": "podman-5.8.6",
+    "name": "podman-5.8.7",
     "pname": "podman",
-    "version": "5.8.6"
+    "version": "5.8.7"
   },
   "poetry": {
     "name": "poetry-2.4.1",
@@ -1010,9 +1010,9 @@
     "version": "0.11.0"
   },
   "slurm": {
-    "name": "slurm-25-11-6-1",
+    "name": "slurm-25-11-8-1",
     "pname": "slurm",
-    "version": "25-11-6-1"
+    "version": "25-11-8-1"
   },
   "smartmontools": {
     "name": "smartmontools-7.5",
