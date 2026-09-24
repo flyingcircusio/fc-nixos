@@ -1,6 +1,6 @@
 import time
 from subprocess import CalledProcessError
-from unittest.mock import MagicMock
+from unittest.mock import Mock, MagicMock
 
 import pkg_resources
 import pytest
@@ -181,7 +181,9 @@ class TestPool(object):
         monkeypatch.setattr(
             "fc.ceph.api.cluster.run.json.ceph", behaviour_model.ceph
         )
-        monkeypatch.setattr("fc.ceph.api.cluster.run.ceph", behaviour_model.ceph)
+        monkeypatch.setattr(
+            "fc.ceph.api.cluster.run.ceph", behaviour_model.ceph
+        )
         monkeypatch.setattr(time, "sleep", lambda t: None)
         p = Pool("test", cluster)
         p.pg_num = 32
@@ -289,6 +291,46 @@ class TestPool(object):
         monkeypatch.setattr(time, "sleep", lambda t: None)
         with pytest.raises(RuntimeError):
             Pool("test", cluster).pgp_num = 100
+
+    def test_get_size(self, cluster, monkeypatch):
+        call_mock = Mock(
+            return_value={"pool": "test", "pool_id": 161, "size": 3}
+        )
+        monkeypatch.setattr("fc.ceph.api.cluster.run.json.ceph", call_mock)
+        p = Pool("test", cluster)
+        assert p.size == 3
+        # result should be cached
+        assert p.size == 3
+        call_mock.assert_called_once()
+
+    def test_set_size(self, cluster, monkeypatch):
+        mock_ceph = MagicMock()
+        monkeypatch.setattr("fc.ceph.api.cluster.run.ceph", mock_ceph)
+        cluster.num_hosts_per_root = lambda *args: 9
+
+        p = Pool("test", cluster)
+        p.size = 5
+        mock_ceph.assert_called_with(
+            "-c",
+            cluster.ceph_conf,
+            "osd",
+            "pool",
+            "set",
+            "test",
+            "size",
+            "5",
+        )
+        assert p._size == 5
+
+    def test_set_size_checks_available_hosts(self, cluster, monkeypatch):
+        mock_ceph = MagicMock()
+        monkeypatch.setattr("fc.ceph.api.cluster.run.ceph", mock_ceph)
+        cluster.num_hosts_per_root = lambda *args: 3
+        p = Pool("test", cluster)
+        with pytest.raises(ValueError):
+            p.size = 4
+
+        assert not mock_ceph.called
 
     def test_total_size(self, pools):
         assert 25 == pools["test"].size_total_gb

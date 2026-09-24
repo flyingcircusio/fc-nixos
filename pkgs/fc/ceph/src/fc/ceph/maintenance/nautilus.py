@@ -20,7 +20,8 @@ from fc.ceph.util import run
 class ResourcegroupPoolEquivalence(object):
     """Ensure that required Ceph pools exist."""
 
-    REQUIRED_POOLS = ["rbd", "rbd.hdd"]
+    ORCHESTRATION_POOL_NAME = "fcio"
+    REQUIRED_POOLS = ["rbd", "rbd.hdd", ORCHESTRATION_POOL_NAME]
 
     def __init__(self, directory, cluster):
         self.directory = directory
@@ -46,21 +47,24 @@ class ResourcegroupPoolEquivalence(object):
                 print("Continuing...", file=sys.stderr)
                 status_code = 12
 
-        return status_code
+        orchestration = self.pools[self.ORCHESTRATION_POOL_NAME]
+        try:
+            orchestration.size = 5
+        except ValueError as e:
+            print(
+                str(e),
+                f"Keeping previous size for pool {orchestration.name}.",
+                sep="\n",
+            )
+        orchestration.cluster.ceph(
+            "osd", "pool", "application",
+            "enable", orchestration.name, "orchestration",
+        )  # fmt: skip
 
-    def ensure_pools_are_balanceable(self):
-        """For all pools that have a default value of `pg_num_min`, set that
-        property to `1`.
-        We have many pools that are almost empty by design, like `rbd`. The
-        pg_autoscaler assigns at least `pg_num_min` PGs to each pool, which
-        defaults to `32` and is a waste of PGs in smaller clusters. Let's allow
-        going down to 1 PG if needed. Unfortunately there is no configurable
-        default value.
-        This behaviour *might* improve in Ceph Quincy.
-        """
         for pool in self.pools:
-            if not pool.pg_num_min:
-                pool.pg_num_min = 1
+            pool.ensure_balanceable()
+
+        return status_code
 
 
 class VolumeDeletions(object):
@@ -231,8 +235,6 @@ class MaintenanceTasks(object):
         volume_statuscode = volumes.ensure()
         rpe = ResourcegroupPoolEquivalence(directory, ceph)
         rpe_statuscode = rpe.ensure()
-        # piggybacking this for now
-        rpe.ensure_pools_are_balanceable()
         return max(volume_statuscode, rpe_statuscode)
 
     def _ensure_maintenance_volume(self, lock_name: str):

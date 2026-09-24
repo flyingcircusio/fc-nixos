@@ -66,6 +66,7 @@ class Pools(object):
         )
         if self._names:
             self._names.add(pool)
+        return self[pool]
 
 
 class Pool(object):
@@ -82,6 +83,7 @@ class Pool(object):
         self._pg_num: int | None = None
         self._pg_num_min: int | None = None
         self._pgp_num: int | None = None
+        self._size: int | None = None
 
     def get(self, imagename):
         """Deprecated. Use pool[imagename] instead."""
@@ -167,7 +169,7 @@ class Pool(object):
     @property
     def pg_num_min(self) -> int | None:
         if self._pg_num_min:
-            return self.pg_num_min
+            return self._pg_num_min
         try:
             pginfo = self.cluster.ceph_json(
                 "osd",
@@ -240,6 +242,32 @@ class Pool(object):
         raise RuntimeError("max retries exceeded while setting pgp_num")
 
     @property
+    def size(self) -> int:
+        if self._size:
+            return self._size
+        pginfo = self.cluster.ceph_json(
+            "osd",
+            "pool",
+            "get",
+            self.name,
+            "size",
+        )
+        self._size = int(pginfo["size"])
+        return self._size
+
+    @size.setter
+    def size(self, value: int) -> None:
+        if (num_hosts := self.cluster.num_hosts_per_root()) < value:
+            raise ValueError(
+                f"Insufficient amount of hosts: {value} required, {num_hosts} available."
+            )
+        else:
+            self.cluster.ceph(
+                "osd", "pool", "set", self.name, "size", str(value)
+            )
+            self._size = value
+
+    @property
     def size_total_gb(self):
         return sum(i.size_gb for i in self.images if not i.snapshot)
 
@@ -271,3 +299,16 @@ class Pool(object):
             self.name,
             "--yes-i-really-really-mean-it",
         )
+
+    def ensure_balanceable(self):
+        """For all pools that have a default value of `pg_num_min`, set that
+        property to `1`.
+        We have many pools that are almost empty by design, like `rbd`. The
+        pg_autoscaler assigns at least `pg_num_min` PGs to each pool, which
+        defaults to `32` and is a waste of PGs in smaller clusters. Let's allow
+        going down to 1 PG if needed. Unfortunately there is no configurable
+        default value.
+        This behaviour *might* improve in Ceph Quincy.
+        """
+        if not self.pg_num_min:
+            self.pg_num_min = 1
