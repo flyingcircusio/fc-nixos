@@ -37,7 +37,7 @@ Migrating your configuration to the new path is recommended.
 
 The other option is to use our Vinyl Cache NixOS module. We recommended this approach
 when your setup is more involved, e.g. when caching multiple domains on a single VM.
-For an overview of the available configuration options, look at the options in our search: [https://search.flyingcircus.io/search/options?q=flyingcircus.services.vinyl-cache&channel=fc-26.05-dev&page=1](search.flyingcircus.io).
+For an overview of the available configuration options, look at the options in our search: [https://search.flyingcircus.io/search/options?q=flyingcircus.services.vinyl-cache](search.flyingcircus.io).
 If you provide configuration via both {file}`/etc/local/vinyl-cache/default.vcl` and the NixOS module,
 the configuration in {file}`default.vcl` will be used as a fallback when none of the configurations defined in the module
 match on incoming requests.
