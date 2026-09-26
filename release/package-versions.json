@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-153.0.8010.52",
+    "name": "chromedriver-unwrapped-154.0.8037.57",
     "pname": "chromedriver-unwrapped",
-    "version": "153.0.8010.52"
+    "version": "154.0.8037.57"
   },
   "chromium": {
-    "name": "chromium-153.0.8010.52",
+    "name": "chromium-154.0.8037.57",
     "pname": "chromium",
-    "version": "153.0.8010.52"
+    "version": "154.0.8037.57"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.5",
@@ -175,14 +175,14 @@
     "version": "2.4.5"
   },
   "element-web": {
-    "name": "element-web-1.12.26",
+    "name": "element-web-1.12.28",
     "pname": "element-web",
-    "version": "1.12.26"
+    "version": "1.12.28"
   },
   "erlang": {
-    "name": "erlang-28.5.0.6",
+    "name": "erlang-28.5.0.7",
     "pname": "erlang",
-    "version": "28.5.0.6"
+    "version": "28.5.0.7"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -210,9 +210,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-156.0",
+    "name": "firefox-156.0.1",
     "pname": "firefox",
-    "version": "156.0"
+    "version": "156.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-15.3.0",
@@ -465,14 +465,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.110",
+    "name": "linux-6.12.111",
     "pname": "linux",
-    "version": "6.12.110"
+    "version": "6.12.111"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.18.52",
+    "name": "linux-6.18.53",
     "pname": "linux",
-    "version": "6.18.52"
+    "version": "6.18.53"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -580,9 +580,9 @@
     "version": "20.20.2"
   },
   "nodejs_22": {
-    "name": "nodejs-22.23.2",
+    "name": "nodejs-22.23.3",
     "pname": "nodejs",
-    "version": "22.23.2"
+    "version": "22.23.3"
   },
   "nodejs_24": {
     "name": "nodejs-24.21.0",
@@ -740,9 +740,9 @@
     "version": "0.29.2"
   },
   "podman": {
-    "name": "podman-5.8.6",
+    "name": "podman-5.8.7",
     "pname": "podman",
-    "version": "5.8.6"
+    "version": "5.8.7"
   },
   "poetry": {
     "name": "poetry-2.4.1",
@@ -1015,9 +1015,9 @@
     "version": "0.11.0"
   },
   "slurm": {
-    "name": "slurm-25-11-6-1",
+    "name": "slurm-25-11-8-1",
     "pname": "slurm",
-    "version": "25-11-6-1"
+    "version": "25-11-8-1"
   },
   "smartmontools": {
     "name": "smartmontools-7.5",
