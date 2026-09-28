@@ -1,0 +1,29 @@
+<!--
+
+A new changelog entry.
+
+Delete placeholder items that do not apply. Empty sections will be removed
+automatically during release.
+
+Leave the XX.XX as is: this is a placeholder and will be automatically filled
+correctly during the release and helps when backporting over multiple platform
+branches.
+
+-->
+
+### Impact
+
+<!-- Impact means "when this change is rolled out, there
+     might be interruptions/downtimes/required actions/... that
+     IMPACT THE RUNNING APPLICATION NEGATIVELY.
+
+     Having new features or changed is not an "impact". That's what
+     the main changelog (see below) is for.
+     -->
+
+
+### NixOS XX.XX platform
+
+- k3s-1.33, the default k3s version in this release, is end-of-life upstream
+
+  We encourage [updating your k3s cluster](https://doc.flyingcircus.io/roles/fc-26.05-production/kubernetes.html#updates-and-version-management) to 1.34 as described.
