@@ -16,5 +16,6 @@
     "jitsi-meet-1.0.8792" # insecure libolm but this only affects optional e2ee which we don't really support.
     "nodejs-slim-20.20.2" # EOL, required by github-runner
     "nodejs-20.20.2" # EOL, required by github-runner
+    "k3s-1.33.13+k3s2" # EOL, but current default
   ];
 }
