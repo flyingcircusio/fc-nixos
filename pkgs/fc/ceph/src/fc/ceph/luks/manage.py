@@ -17,6 +17,16 @@ from fc.ceph.lvm import XFSVolume
 from fc.ceph.util import console, run
 
 
+def _cpu_count() -> int:
+    # fc-ceph is on Python 3.12: os.process_cpu_count (3.13+) would respect
+    # cgroups and CPU affinity.
+    return os.cpu_count() or 1
+
+
+def default_parallelism() -> int:
+    return max(1, _cpu_count() // 2)
+
+
 class LuksDevice(NamedTuple):
     base_blockdev: str  # path of the underlying block device
     base_blockdev_name: str  # name of the underlying block device
