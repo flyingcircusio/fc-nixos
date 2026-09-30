@@ -677,8 +677,7 @@ def encrypted_volumes(monkeypatch, tmp_path):
     from fc.ceph.lvm import EncryptedLogicalVolume
 
     monkeypatch.setattr(
-        manage,
-        "lv_names",
+        "fc.ceph.lvm.lv_names",
         lambda: [
             "ceph-osd-5-block-crypted",
             "ceph-mon-crypted",
@@ -722,8 +721,7 @@ def test_unlock_reports_failing_volumes(
     from fc.ceph.lvm import EncryptedLogicalVolume
 
     monkeypatch.setattr(
-        manage,
-        "lv_names",
+        "fc.ceph.lvm.lv_names",
         lambda: ["ceph-osd-5-block-crypted", "ceph-osd-6-block-crypted"],
     )
     monkeypatch.setattr(
@@ -776,7 +774,9 @@ def test_luks_volume_unlock_command_invocation(
         "admin_key_for_input",
         lambda *args, **kwargs: b"foo",
     )
-    monkeypatch.setattr(manage, "lv_names", lambda: ["ceph-osd-5-block-crypted"])
+    monkeypatch.setattr(
+        "fc.ceph.lvm.lv_names", lambda: ["ceph-osd-5-block-crypted"]
+    )
     monkeypatch.setattr(
         EncryptedLogicalVolume,
         "device_path",

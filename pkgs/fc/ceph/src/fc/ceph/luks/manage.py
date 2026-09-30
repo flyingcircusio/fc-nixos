@@ -14,7 +14,7 @@ from fc.ceph.luks import (
     Cryptsetup,
 )
 from fc.ceph.luks.checks import all_checks
-from fc.ceph.lvm import EncryptedLogicalVolume, XFSVolume, lv_names
+from fc.ceph.lvm import EncryptedLogicalVolume, XFSVolume
 from fc.ceph.util import console, run
 from rich.progress import Progress
 
@@ -27,6 +27,42 @@ def _cpu_count() -> int:
 
 def default_parallelism() -> int:
     return max(1, _cpu_count() // 2)
+
+
+async def run_parallel(
+    items: list, jobs, label: str, workers: int
+) -> list[str]:
+    """Run `jobs(item)` for every item, at most `workers` of them at a time.
+
+    Shows a progress bar, reports failures as they happen and returns the
+    names of the items that failed.
+    """
+    semaphore = asyncio.Semaphore(max(1, workers))
+    with Progress() as progress:
+        bar = progress.add_task(label, total=len(items))
+
+        async def run(item):
+            async with semaphore:
+                console.print(f"{label} {item.name} ...")
+                try:
+                    await jobs(item)
+                except Exception as e:
+                    console.print(
+                        f"{label} {item.name} failed: {e}", style="bold red"
+                    )
+                    raise
+                finally:
+                    progress.advance(bar)
+
+        results = await asyncio.gather(
+            *(run(item) for item in items), return_exceptions=True
+        )
+
+    return [
+        item.name
+        for item, result in zip(items, results)
+        if isinstance(result, BaseException)
+    ]
 
 
 class LuksDevice(NamedTuple):
@@ -215,8 +251,14 @@ class LUKSKeyStoreManager(object):
             name_glob, only_active=only_active, header=header
         )
 
-        workers = max(1, parallel)
-        failures = asyncio.run(self._rekey_volumes(devices, slot, workers))
+        async def rekey(dev: LuksDevice):
+            await self._do_rekey(
+                slot, device=dev.base_blockdev, header=dev.header
+            )
+
+        failures = asyncio.run(
+            run_parallel(devices, rekey, "Rekeying", parallel)
+        )
 
         if failures:
             console.print(
@@ -226,45 +268,6 @@ class LUKSKeyStoreManager(object):
 
         console.print("Key updated.", style="bold green")
         return 0
-
-    async def _rekey_volumes(
-        self,
-        devices: list[LuksDevice],
-        slot: str,
-        workers: int,
-    ) -> list[str]:
-        semaphore = asyncio.Semaphore(workers)
-        with Progress() as progress:
-            bar = progress.add_task("Rekeying", total=len(devices))
-
-            async def rekey_one(dev: LuksDevice):
-                async with semaphore:
-                    console.print(f"Rekeying {dev.name}")
-                    try:
-                        await self._do_rekey(
-                            slot, device=dev.base_blockdev, header=dev.header
-                        )
-                    except Exception as e:
-                        console.print(
-                            f"Rekeying {dev.name} failed: {e}",
-                            style="bold red",
-                        )
-                        raise
-                    finally:
-                        progress.advance(bar)
-
-            results = await asyncio.gather(
-                *(rekey_one(dev) for dev in devices),
-                return_exceptions=True,
-            )
-
-        failures = [
-            dev.name
-            for dev, result in zip(devices, results)
-            if isinstance(result, BaseException)
-        ]
-
-        return failures
 
     async def _do_rekey(
         self,
@@ -425,21 +428,10 @@ class LUKSKeyStoreManager(object):
             "LUKS admin key for unlocking volumes at this location"
         )
 
-        suffix = EncryptedLogicalVolume.SUFFIX
-        volumes = [
-            EncryptedLogicalVolume(lv_name[: -len(suffix)])
-            for lv_name in lv_names()
-            if lv_name.endswith(suffix)
-        ]
-        matching = [
-            volume
-            for volume in volumes
-            if fnmatch.fnmatch(volume.name, name_glob)
-        ]
-
+        matching = EncryptedLogicalVolume.matching(name_glob)
         locked = []
         for volume in matching:
-            if os.path.exists(volume.device_path):
+            if volume.is_unlocked():
                 console.print(f"{volume.name} is already unlocked, skipping.")
             else:
                 locked.append(volume)
@@ -456,8 +448,12 @@ class LUKSKeyStoreManager(object):
                 )
             return 0
 
-        workers = max(1, parallel)
-        failures = asyncio.run(self._unlock_volumes(locked, workers))
+        async def unlock(volume: EncryptedLogicalVolume):
+            await volume.activate_async(self._KEYSTORE.admin_key_for_input())
+
+        failures = asyncio.run(
+            run_parallel(locked, unlock, "Unlocking", parallel)
+        )
 
         if failures:
             console.print(
@@ -468,44 +464,6 @@ class LUKSKeyStoreManager(object):
 
         console.print("Volumes unlocked.", style="bold green")
         return 0
-
-    async def _unlock_volumes(
-        self,
-        volumes: list[EncryptedLogicalVolume],
-        workers: int,
-    ) -> list[str]:
-        semaphore = asyncio.Semaphore(workers)
-        with Progress() as progress:
-            bar = progress.add_task("Unlocking", total=len(volumes))
-
-            async def unlock_one(volume: EncryptedLogicalVolume):
-                async with semaphore:
-                    console.print(f"Unlocking {volume.name} ...")
-                    try:
-                        await volume.activate_async(
-                            self._KEYSTORE.admin_key_for_input()
-                        )
-                    except Exception as e:
-                        console.print(
-                            f"Unlocking {volume.name} failed: {e}",
-                            style="bold red",
-                        )
-                        raise
-                    finally:
-                        progress.advance(bar)
-
-            results = await asyncio.gather(
-                *(unlock_one(volume) for volume in volumes),
-                return_exceptions=True,
-            )
-
-        failures = [
-            volume.name
-            for volume, result in zip(volumes, results)
-            if isinstance(result, BaseException)
-        ]
-
-        return failures
 
     def fingerprint(self, verify: bool, confirm: bool) -> int:
         """

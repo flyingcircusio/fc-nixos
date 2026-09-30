@@ -1,4 +1,5 @@
 import asyncio
+import fnmatch
 import glob
 import os
 import os.path
@@ -453,6 +454,23 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
     @classmethod
     def exists(cls, name):
         return LogicalVolume.exists(name + cls.SUFFIX)
+
+    @classmethod
+    def matching(cls, name_glob: str) -> list["EncryptedLogicalVolume"]:
+        """All encrypted volumes whose name matches `name_glob`.
+
+        A locked volume has no mapper name of its own, so we go by the LVM
+        volume names: the mapper name is the volume name without its suffix.
+        """
+        names = [
+            name[: -len(cls.SUFFIX)]
+            for name in lv_names()
+            if name.endswith(cls.SUFFIX)
+        ]
+        return [cls(name) for name in names if fnmatch.fnmatch(name, name_glob)]
+
+    def is_unlocked(self) -> bool:
+        return os.path.exists(self.device_path)
 
     @property
     def device(self) -> str:
