@@ -150,9 +150,9 @@
     "version": "5.3.28"
   },
   "discourse": {
-    "name": "discourse-2026.8.0",
+    "name": "discourse-2026.9.0",
     "pname": "discourse",
-    "version": "2026.8.0"
+    "version": "2026.9.0"
   },
   "dnsmasq": {
     "name": "dnsmasq-2.93",
@@ -175,9 +175,9 @@
     "version": "2.4.5"
   },
   "element-web": {
-    "name": "element-web-1.12.28",
+    "name": "element-web-1.12.29",
     "pname": "element-web",
-    "version": "1.12.28"
+    "version": "1.12.29"
   },
   "erlang": {
     "name": "erlang-28.5.0.7",
