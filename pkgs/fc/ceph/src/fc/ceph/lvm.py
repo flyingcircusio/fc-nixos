@@ -1,3 +1,4 @@
+import asyncio
 import glob
 import os
 import os.path
@@ -512,14 +513,22 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
         return True
 
     def activate(self):
+        asyncio.run(self.activate_async(fc.ceph.luks.KEYSTORE.local_key_path()))
+
+    async def activate_async(self, key: bytes | str):
+        """Open the volume with `key`: the admin passphrase, or the path of a
+        key file that cryptsetup reads itself."""
         self.underlay.activate()
         if not os.path.exists(self.device_path):
-            Cryptsetup.cryptsetup(
+            key_file = key if isinstance(key, str) else "-"
+            stdin = None if isinstance(key, str) else key
+            await Cryptsetup.cryptsetup_async(
                 "--allow-discards",  # pass through TRIM commands to disk
                 "open",
-                "-d", fc.ceph.luks.KEYSTORE.local_key_path(),
+                f"--key-file={key_file}",
                 self.underlay.device,
                 self.name,
+                input=stdin,
             )  # fmt: skip
             run.udevadm("settle")
         self._ready = True

@@ -1,3 +1,4 @@
+import asyncio
 import fnmatch
 import getpass
 import hashlib
@@ -13,8 +14,9 @@ from fc.ceph.luks import (
     Cryptsetup,
 )
 from fc.ceph.luks.checks import all_checks
-from fc.ceph.lvm import XFSVolume
+from fc.ceph.lvm import EncryptedLogicalVolume, XFSVolume, lv_names
 from fc.ceph.util import console, run
+from rich.progress import Progress
 
 
 def _cpu_count() -> int:
@@ -363,6 +365,94 @@ class LUKSKeyStoreManager(object):
             success = False
 
         return success
+
+    def unlock(self, name_glob: str, parallel: int) -> int:
+        """Unlock matching volumes with the admin key, asking for it once."""
+        self._KEYSTORE.admin_key_for_input(
+            "LUKS admin key for unlocking volumes at this location"
+        )
+
+        suffix = EncryptedLogicalVolume.SUFFIX
+        volumes = [
+            EncryptedLogicalVolume(lv_name[: -len(suffix)])
+            for lv_name in lv_names()
+            if lv_name.endswith(suffix)
+        ]
+        matching = [
+            volume
+            for volume in volumes
+            if fnmatch.fnmatch(volume.name, name_glob)
+        ]
+
+        locked = []
+        for volume in matching:
+            if os.path.exists(volume.device_path):
+                console.print(f"{volume.name} is already unlocked, skipping.")
+            else:
+                locked.append(volume)
+
+        if not locked:
+            if matching:
+                console.print(
+                    f"Note: All volumes matching `{name_glob}` are already "
+                    "unlocked."
+                )
+            else:
+                console.print(
+                    f"Note: The glob `{name_glob}` matches no volume."
+                )
+            return 0
+
+        workers = max(1, parallel)
+        failures = asyncio.run(self._unlock_volumes(locked, workers))
+
+        if failures:
+            console.print(
+                "Unlocking failed for: " + ", ".join(failures),
+                style="bold red",
+            )
+            return 1
+
+        console.print("Volumes unlocked.", style="bold green")
+        return 0
+
+    async def _unlock_volumes(
+        self,
+        volumes: list[EncryptedLogicalVolume],
+        workers: int,
+    ) -> list[str]:
+        semaphore = asyncio.Semaphore(workers)
+        with Progress() as progress:
+            bar = progress.add_task("Unlocking", total=len(volumes))
+
+            async def unlock_one(volume: EncryptedLogicalVolume):
+                async with semaphore:
+                    console.print(f"Unlocking {volume.name} ...")
+                    try:
+                        await volume.activate_async(
+                            self._KEYSTORE.admin_key_for_input()
+                        )
+                    except Exception as e:
+                        console.print(
+                            f"Unlocking {volume.name} failed: {e}",
+                            style="bold red",
+                        )
+                        raise
+                    finally:
+                        progress.advance(bar)
+
+            results = await asyncio.gather(
+                *(unlock_one(volume) for volume in volumes),
+                return_exceptions=True,
+            )
+
+        failures = [
+            volume.name
+            for volume, result in zip(volumes, results)
+            if isinstance(result, BaseException)
+        ]
+
+        return failures
 
     def fingerprint(self, verify: bool, confirm: bool) -> int:
         """
