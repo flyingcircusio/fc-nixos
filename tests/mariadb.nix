@@ -78,7 +78,7 @@ import ./make-test-python.nix (
             }})
 
         with subtest("after logrotate, mariadb should write to the new slow log file"):
-            master.execute("logrotate -v -f /etc/current-config/logrotate.conf")
+            master.execute("logrotate -v -f /etc/logrotate.conf")
             master.sleep(5)
             master.succeed("grep select /var/log/mariadb/mariadb.slow")
 
