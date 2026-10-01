@@ -528,11 +528,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     enableHashes = "strong,sha256crypt";
   };
 
-  links2_nox = super.links2.override {
-    enableX11 = false;
-    enableFB = false;
-  };
-
   lkl = super.lkl.overrideAttrs (_: {
     prePatch = ''
       substituteInPlace tools/lkl/cptofs.c \
