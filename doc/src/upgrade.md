@@ -125,6 +125,16 @@ and uses it only when the whole filesystem metadata storage was migrated to the 
 New installations also use the `gitlab-container-registry` system user for the GitLab container registry
 instead of the `docker-registry` user. This behavior can be modified with the `services.gitlab.registry.user` option.
 
+
+(nixos-upgrade-k3s)=
+
+### k3s
+
+The default `k3s` package has also been bumped to 1.34. Existing clusters may
+need to be updated to this version before upgrading cluster VM's to the 26.11
+platform. See the role documentation for {ref}`cluster version updates
+<nixos-k3s-update-versions>`.
+
 ## Other notable changes
 
 - The `security.dhparams` module has been removed. Remove any uses of DHE and migrate to ECDHE (RFC 8422, 2018) and Hybrid PQ (draft-ietf-tls-ecdhe-mlkem, 2026) key exchange algorithms.
