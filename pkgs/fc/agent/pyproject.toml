@@ -5,7 +5,7 @@ version = "1.0"
 description = "FC NixOS platform management utilities."
 
 authors = [
-  {name = "Flying Circus IO GmbH <mail@flyingcircus.io>", email = "mail@flyingcircus.io" }
+    { name = "Flying Circus IO GmbH <mail@flyingcircus.io>", email = "mail@flyingcircus.io" },
 ]
 
 license = "ZPL-2.1"
@@ -112,6 +112,15 @@ line_length = 80
 [tool.pytest.ini_options]
 addopts = "-vv --tb=native --strict-markers --cov=src/fc --cov-report=html"
 markers = [
-  "needs_nix: marks test that need a working Nix environment to download and build things"
+    "needs_nix: marks test that need a working Nix environment to download and build things",
 ]
-testpaths = [ "src" ]
+testpaths = ["src"]
+
+
+[tool.basedpyright]
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "standard"
+
+[tool.ruff]
+line-length = 80

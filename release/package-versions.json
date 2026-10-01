@@ -70,9 +70,9 @@
     "version": "9.14.0"
   },
   "ceph": {
-    "name": "ceph-14.2.22",
+    "name": "ceph-16.2.15",
     "pname": "ceph",
-    "version": "14.2.22"
+    "version": "16.2.15"
   },
   "ceph-pacific.ceph": {
     "name": "ceph-16.2.15",
@@ -933,11 +933,6 @@
     "name": "python3.14-urllib3-2.7.0",
     "pname": "urllib3",
     "version": "2.7.0"
-  },
-  "qemu-ceph-nautilus": {
-    "name": "qemu-6.0.0",
-    "pname": "qemu",
-    "version": "6.0.0"
   },
   "qemu-ceph-pacific": {
     "name": "qemu-11.1.0",

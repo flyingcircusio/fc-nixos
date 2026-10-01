@@ -286,14 +286,12 @@ rec {
         underlay-netdev = rec {
           description = "Set up underlay loopback device";
           wantedBy = [
-            "network.target"
-          ];
-          partOf = [
-            "network.target"
-            "networking-scripted.target"
+            "network-setup.service"
+            "multi-user.target"
           ];
           before = wantedBy;
           after = [ "network-pre.service" ];
+          requires = [ "network-setup.service" ];
           path = [ pkgs.iproute2 ];
           script = "ip link add underlay type dummy";
           preStop = "ip link delete underlay";
@@ -304,16 +302,12 @@ rec {
       // (listToAttrs (
         map (
           name:
-          lib.nameValuePair "${name}-netdev" rec {
+          lib.nameValuePair "${name}-netdev" {
             wantedBy = [
-              "network.target"
+              "network-setup.service"
+              "multi-user.target"
             ];
-            before = wantedBy;
-            after = [ "network-pre.target" ];
-            partOf = [
-              "network.target"
-              "networking-scripted.target"
-            ];
+            requires = [ "network-setup.service" ];
             script = ":";
             serviceConfig.Type = "oneshot";
             serviceConfig.RemainAfterExit = true;

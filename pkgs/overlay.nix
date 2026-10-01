@@ -292,6 +292,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       ./frr/0001-Don-t-throw-error-when-log-directory-already-exists.patch
       ./frr/0002-zebra-dplane-sleep-after-writing-batches-to-netlink.patch
       ./frr/0003-netlink-don-t-manage-kernel-neighbour-table-entries-.patch
+      ./frr/0004-watchfrr-don-t-admit-to-systemd-that-we-restart.patch
     ];
   });
 

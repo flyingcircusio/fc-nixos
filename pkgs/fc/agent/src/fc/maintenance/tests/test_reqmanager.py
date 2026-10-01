@@ -515,9 +515,10 @@ def test_execute_logs_exception(connect, reqmanager, log):
 def test_execute_marks_service_status(connect, reqmanager):
     req = reqmanager.add(Request(Activity(), 1))
     reqmanager.execute(run_all_now=True)
+    hostname = socket.gethostname()
     assert [
-        unittest.mock.call("localhost", False, 661),
-        unittest.mock.call("localhost", True, 0),
+        unittest.mock.call(hostname, False, 661),
+        unittest.mock.call(hostname, True, 0),
     ] == connect().mark_node_service_status.call_args_list
 
 

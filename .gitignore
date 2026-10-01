@@ -6,13 +6,17 @@
 .coverage
 .eggs/
 .envrc
+.pytest_cache/
+.ruff_cache/
 /*.sublime-*
 .devenv/
+.venv/
 __pycache__/
 bin/
 channels
 dist/
 doc/_build
+htmlcov/
 lib64
 pyenv
 pyvenv.cfg

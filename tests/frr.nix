@@ -39,16 +39,12 @@ import ./make-test-python.nix (
       {
         networking.interfaces."${name}".ipv4.addresses = lib.mkForce [ ];
         networking.firewall.trustedInterfaces = [ name ];
-        systemd.services."${name}-netdev" = rec {
+        systemd.services."${name}-netdev" = {
           wantedBy = [
-            "network.target"
+            "network-setup.service"
+            "multi-user.target"
           ];
-          before = wantedBy;
-          after = [ "network-pre.target" ];
-          partOf = [
-            "network.target"
-            "networking-scripted.target"
-          ];
+          requires = [ "network-setup.service" ];
           script = ":";
           serviceConfig.Type = "oneshot";
           serviceConfig.RemainAfterExit = true;
@@ -68,14 +64,12 @@ import ./make-test-python.nix (
         systemd.services.underlay-netdev = rec {
           description = "Set up underlay loopback device";
           wantedBy = [
-            "network.target"
+            "network-setup.service"
+            "multi-user.target"
           ];
           before = wantedBy;
-          after = [ "network-pre.target" ];
-          partOf = [
-            "network.target"
-            "networking-scripted.target"
-          ];
+          after = [ "network-pre.service" ];
+          requires = [ "network-setup.service" ];
           path = [ pkgs.iproute2 ];
           script = "ip link add underlay type dummy";
           preStop = "ip link delete underlay";
@@ -118,14 +112,12 @@ import ./make-test-python.nix (
         systemd.services.vxlan0-netdev = rec {
           description = "Set up overlay VXLAN device";
           wantedBy = [
-            "network.target"
+            "network-setup.service"
+            "multi-user.target"
           ];
           before = wantedBy;
-          after = [ "network-pre.target" ];
-          partOf = [
-            "network.target"
-            "networking-scripted.target"
-          ];
+          after = [ "network-pre.service" ];
+          requires = [ "network-setup.service" ];
           path = [ pkgs.iproute2 ];
           script = ''
             ip link add vxlan0 type vxlan \
@@ -364,6 +356,9 @@ import ./make-test-python.nix (
               host1.succeed("ip route show 192.168.42.3 | grep -F fe80::5054:ff:fe12:203")
               host1.succeed("ip route show 192.168.42.3 | grep -F fe80::5054:ff:fe12:104")
 
+          with subtest("check that config reload works correctly"):
+              # https://github.com/FRRouting/frr/issues/20430
+              host1.succeed("systemctl reload frr")
         '';
       };
       evpn = {

@@ -40,19 +40,13 @@ rec {
   ipmitool = callPackage ./ipmitool { };
   install = callPackage ./install { };
 
+  kvmrescue = callPackage ./kvmrescue { };
   ledtool = pkgs.writers.writePython3Bin "fc-ledtool" { } (builtins.readFile ./ledtool/led.py);
   lldp-to-altname = callPackage ./lldp-to-altname { };
   logcheckhelper = callPackage ./logcheckhelper { };
   megacli = callPackage ./megacli { };
   multiping = callPackage ./multiping.nix { };
   neighbour-cache-monitor = callPackage ./neighbour-cache-monitor { };
-  netdev = pkgs.writers.writePython3BinFromFile ./netdev.py {
-    libraries = with pkgs.python3Packages; [ netaddr ];
-    dependencies = with pkgs; [
-      iproute2
-      ethtool
-    ];
-  };
   ping-on-tap = callPackage ./ping-on-tap { };
 
   qemu-pacific = callPackage ./qemu rec {

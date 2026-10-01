@@ -1,7 +1,7 @@
 From f5a9f37c6ebeaff916b708401e7c190a7ecb33e7 Mon Sep 17 00:00:00 2001
 From: Molly Miller <mm@flyingcircus.io>
 Date: Tue, 29 Apr 2025 16:12:01 +0200
-Subject: [PATCH 2/3] zebra-dplane: sleep after writing batches to netlink
+Subject: [PATCH 2/4] zebra-dplane: sleep after writing batches to netlink
 
 When synchronising the RIB for an L2-VNI into the kernel (e.g. bgpd is
 learning the initial EVPN RIB from a peer, a new VNI interface has
