@@ -71,10 +71,6 @@
               config = {
                 inherit (nixpkgsConfig)
                   permittedInsecurePackages
-                  cudaSupport
-                  cudaCapabilities
-                  cudaForwardCompat
-                  rocmSupport
                   ;
 
                 allowUnfreePredicate = pkg: elem (getName pkg) nixpkgsConfig.allowedUnfreePackageNames;

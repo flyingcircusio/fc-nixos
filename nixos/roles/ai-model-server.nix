@@ -81,6 +81,7 @@ in
   };
 
   config = lib.mkIf cfg.enable (
+
     lib.mkMerge [
       {
         # Settings defaults at lib.mkDefault priority (1000) rather than the
@@ -103,6 +104,18 @@ in
         hardware.nvidia.open = true;
         services.xserver.videoDrivers = [ "nvidia" ];
         hardware.nvidia-container-toolkit.suppressNvidiaDriverAssertion = true;
+
+        nixpkgs.config = {
+          # We need to keep nixpkgs.config kinda centralized and homogenous to avoid
+          # combinatorial issues with the important-packages list.
+          # See PL-135603.
+          cudaSupport = true;
+          cudaCapabilities = [
+            "12.0" # Blackwell / RTX PRO 6000 (Workstation)
+          ];
+          cudaForwardCompat = true;
+          rocmSupport = false;
+        };
 
         environment.systemPackages = [
           (pkgs.writeShellScriptBin "nvtop-nvidia" ''

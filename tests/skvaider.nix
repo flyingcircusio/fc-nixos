@@ -106,6 +106,9 @@ import ./make-test-python.nix (
         # role's services.xserver.videoDrivers = [ "nvidia" ] here.
         hardware.nvidia-container-toolkit.suppressNvidiaDriverAssertion = true;
 
+        # We can't put vllm(-cuda) in the important packaging list as this would
+        # cause ALL MACHINES to always pull in cuda, which doesn't make sense.
+        # See PL-135603
         systemd.services.skvaider-inference.path = lib.mkAfter [ pkgs.vllm ];
 
         flyingcircus.roles.ai-model-server.skvaider-inference.settings = {
