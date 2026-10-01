@@ -1,4 +1,9 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   cfg = config.flyingcircus.roles.crowdsec;
 in
@@ -125,6 +130,42 @@ in
       };
     };
     services.crowdsec-firewall-bouncer.enable = true;
+    flyingcircus.services.sensu-client.checks = {
+      crowdsec_lapi_status = {
+        notification = "CrowdSec local API is non-functional";
+        command = "/run/wrappers/bin/sudo -u crowdsec ${lib.getExe' config.services.crowdsec.package "cscli"} lapi status";
+        interval = 60;
+      };
+      crowdsec_capi_status = {
+        notification = "CrowdSec is not connected to central API";
+        command = "/run/wrappers/bin/sudo -u crowdsec ${lib.getExe' config.services.crowdsec.package "cscli"} capi status";
+        interval = 600;
+      };
+    }
+    // (lib.optionalAttrs (cfg.waf.enable) {
+      crowdsec_appsec_status = {
+        notification = "CrowdSec AppSec API is not available";
+        command = ''
+          ${pkgs.monitoring-plugins}/bin/check_http \
+            -H 127.0.0.1 -p ${toString cfg.waf.appSecPort} -e 401 -c 5 -w 2
+        '';
+        interval = 60;
+      };
+    });
+    flyingcircus.passwordlessSudoPackages = [
+      {
+        commands = [
+          "bin/cscli"
+        ];
+        package = config.services.crowdsec.package;
+        groups = [
+          "sensuclient"
+          "service"
+          "sudo-srv"
+        ];
+        runAs = "crowdsec";
+      }
+    ];
 
     # NGINX
     services.logrotate.settings."nginx-crowdsec" = {
