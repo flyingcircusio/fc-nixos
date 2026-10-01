@@ -1,3 +1,11 @@
+# Release 2026_040
+
+## NixOS XX.XX platform
+
+- ceph_mon: provide `fc-kvmrescue` helper script to streamline the evacuation of dead KVM hosts (PL-135552)
+
+
+
 # Release 2026_039
 
 ## NixOS XX.XX platform
