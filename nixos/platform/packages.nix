@@ -39,7 +39,6 @@
         multipath-tools # kpartx
         iotop
         jq
-        links2_nox
         lsof
         lnav
         lynx
