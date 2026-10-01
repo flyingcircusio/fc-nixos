@@ -91,7 +91,7 @@ import ./make-test-python.nix (
             }})
 
         with subtest("after logrotate, mysql should write to the new slow log file"):
-            master.execute("logrotate -v -f /etc/current-config/logrotate.conf")
+            master.execute("logrotate -v -f /etc/logrotate.conf")
             master.succeed("grep select /var/log/mysql/mysql.slow")
 
         with subtest("slow log should have correct permissions (readable for service users)"):

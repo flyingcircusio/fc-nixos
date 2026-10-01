@@ -139,7 +139,9 @@ platform. See the role documentation for {ref}`cluster version updates
 
 - The `security.dhparams` module has been removed. Remove any uses of DHE and migrate to ECDHE (RFC 8422, 2018) and Hybrid PQ (draft-ietf-tls-ecdhe-mlkem, 2026) key exchange algorithms.
 - The `python2` and `python27` packages has been removed.
-- The `openssl_1_1` package has been removed.
+- The `openssl_1_1` and `openssl_3` packages has been removed.
+- The current logrotate config can now be found in `/etc/logrotate.conf` instead of `/etc/current-config/logrotate.conf`.
+  With that, the `logrotate-show-config` command has been deprecated and removed.
 
 ## Known issues
 
