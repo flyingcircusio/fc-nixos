@@ -1,10 +1,7 @@
-# 2. Let fc.qemu handle network configuration directly
+# ADR 2 - Let fc.qemu handle network configuration directly
 
-Date: 2026-07-20
-
-## Status
-
-Accepted
+Date: 2026-07-20  
+Status: Accepted
 
 ## Context
 
