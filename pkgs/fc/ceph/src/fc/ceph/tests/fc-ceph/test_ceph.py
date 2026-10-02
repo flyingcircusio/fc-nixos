@@ -28,8 +28,8 @@ def fake_directory():
 @pytest.fixture
 def mock_rbd(monkeypatch):
     mock_rbd = mock.MagicMock()
-    monkeypatch.setattr("fc.ceph.api.pools.run.json.rbd", mock_rbd)
-    monkeypatch.setattr("fc.ceph.api.pools.run.rbd", mock_rbd)
+    monkeypatch.setattr("fc.ceph.api.cluster.run.json.rbd", mock_rbd)
+    monkeypatch.setattr("fc.ceph.api.cluster.run.rbd", mock_rbd)
     return mock_rbd
 
 
