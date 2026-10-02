@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-154.0.8037.57",
+    "name": "chromedriver-unwrapped-154.0.8037.92",
     "pname": "chromedriver-unwrapped",
-    "version": "154.0.8037.57"
+    "version": "154.0.8037.92"
   },
   "chromium": {
-    "name": "chromium-154.0.8037.57",
+    "name": "chromium-154.0.8037.92",
     "pname": "chromium",
-    "version": "154.0.8037.57"
+    "version": "154.0.8037.92"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.5",
@@ -150,9 +150,9 @@
     "version": "5.3.28"
   },
   "discourse": {
-    "name": "discourse-2026.8.0",
+    "name": "discourse-2026.9.0",
     "pname": "discourse",
-    "version": "2026.8.0"
+    "version": "2026.9.0"
   },
   "dnsmasq": {
     "name": "dnsmasq-2.93",
@@ -175,9 +175,9 @@
     "version": "2.4.5"
   },
   "element-web": {
-    "name": "element-web-1.12.28",
+    "name": "element-web-1.12.29",
     "pname": "element-web",
-    "version": "1.12.28"
+    "version": "1.12.29"
   },
   "erlang": {
     "name": "erlang-28.5.0.7",
@@ -210,9 +210,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-156.0.1",
+    "name": "firefox-157.0",
     "pname": "firefox",
-    "version": "156.0.1"
+    "version": "157.0"
   },
   "gcc": {
     "name": "gcc-wrapper-15.3.0",
@@ -395,9 +395,9 @@
     "version": "1.36.4+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.7.4",
+    "name": "keycloak-26.7.5",
     "pname": "keycloak",
-    "version": "26.7.4"
+    "version": "26.7.5"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.20.2",
@@ -510,9 +510,9 @@
     "version": "5.12.0"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-1.161.0",
+    "name": "matrix-synapse-1.162.0",
     "pname": "matrix-synapse",
-    "version": "1.161.0"
+    "version": "1.162.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.3",
@@ -590,9 +590,9 @@
     "version": "4.40"
   },
   "nss_latest": {
-    "name": "nss-3.128",
+    "name": "nss-3.130",
     "pname": "nss",
-    "version": "3.128"
+    "version": "3.130"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.16",
