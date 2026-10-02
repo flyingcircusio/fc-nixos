@@ -1,10 +1,7 @@
-# 3. Physical machine and rack information visibility
+# ADR 3 - Physical machine and rack information visibility
 
-Date: 2026-08-31
-
-## Status
-
-Accepted
+Date: 2026-08-31  
+Status: Accepted
 
 ## Context
 
