@@ -26,6 +26,7 @@
   "containerd",
   "coreutils",
   "coturn",
+  "crowdsec",
   "curl",
   "cyrus_sasl",
   "db",

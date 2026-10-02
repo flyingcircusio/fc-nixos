@@ -16,6 +16,7 @@ in
     ./ceph/rgw.nix
     ./consul
     ./coturn.nix
+    ./crowdsec.nix
     ./devhost
     ./docker.nix
     ./elasticsearch.nix
