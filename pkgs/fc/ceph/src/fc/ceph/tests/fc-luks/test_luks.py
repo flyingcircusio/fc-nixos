@@ -7,6 +7,7 @@ from subprocess import CalledProcessError
 
 import fc.ceph.luks
 import pytest
+from fc.ceph.luks import manage
 
 # extracted from cartman06
 LV_DUMMY_DATA = [
@@ -326,7 +327,7 @@ def mock_LUKSKeyStoreManager(monkeypatch, tmpdir):
         def admin_key_for_input(*args, **kwargs):
             return "foo"
 
-    def do_nothing(*args, **kwargs):
+    async def do_nothing(*args, **kwargs):
         pass
 
     monkeypatch.setattr(
@@ -559,19 +560,239 @@ def test_detect_cryptdevices_all_volumes(mock_cryptsetup_isLuks):
 def test_keystore_rekey_argument_calls(mock_LUKSKeyStoreManager):
     keyman = mock_LUKSKeyStoreManager
     # testing with `only_active` is easier, no need to mock cryptsetup
-    keyman.rekey(name_glob="*", only_active=True, header=None)
+    keyman.rekey(name_glob="*", only_active=True, header=None, parallel=3)
     keyman.rekey(
         name_glob="backy",
         only_active=True,
+        parallel=3,
         slot="local",
         header="/srv/foo.luks",
     )
     keyman.rekey(
         name_glob="ceph*",
         only_active=True,
+        parallel=3,
         slot="admin",
         header="/srv/foo.luks",
     )
+
+
+@pytest.fixture
+def three_devices(monkeypatch):
+    devices = [
+        manage.LuksDevice(
+            base_blockdev=f"/dev/sd{letter}", base_blockdev_name=f"sd{letter}"
+        )
+        for letter in "abc"
+    ]
+    monkeypatch.setattr(
+        manage.LuksDevice,
+        "filter_cryptvolumes",
+        classmethod(lambda cls, *args, **kwargs: list(devices)),
+    )
+    return devices
+
+
+def test_keystore_rekey_parallel_runs_all_volumes(
+    mock_LUKSKeyStoreManager, three_devices, monkeypatch
+):
+    keyman = mock_LUKSKeyStoreManager
+    calls = []
+
+    async def record(slot, device, header):
+        calls.append(device)
+
+    keyman._do_rekey = record
+
+    assert keyman.rekey("*", only_active=True, header=None, parallel=3) == 0
+    assert sorted(calls) == ["/dev/sda", "/dev/sdb", "/dev/sdc"]
+
+
+def test_keystore_rekey_parallel_reports_failures(
+    mock_LUKSKeyStoreManager, three_devices
+):
+    keyman = mock_LUKSKeyStoreManager
+    calls = []
+
+    async def flaky(slot, device, header):
+        calls.append(device)
+        if device == "/dev/sdb":
+            raise Exception("cryptsetup blew up")
+
+    keyman._do_rekey = flaky
+
+    assert keyman.rekey("*", only_active=True, header=None, parallel=3) == 1
+    assert sorted(calls) == ["/dev/sda", "/dev/sdb", "/dev/sdc"]
+
+
+def test_luks_rekey_command_invocation(
+    monkeypatch, tmp_path, capsys, mock_LUKSKeyStoreManager
+):
+    import fc.ceph.luks
+    from fc.ceph.main import luks
+
+    monkeypatch.setattr(
+        "fc.ceph.main.CONFIG_FILE_PATH", tmp_path / "fc-ceph.conf"
+    )
+    (tmp_path / "fc-ceph.conf").write_text(
+        dedent(
+            """\
+            [default]
+            path=/bin
+            release=nautilus
+            """
+        )
+    )
+
+    monkeypatch.setattr(
+        fc.ceph.luks.KEYSTORE,
+        "admin_key_for_input",
+        lambda *args, **kwargs: b"foo",
+    )
+    devices = [
+        manage.LuksDevice(base_blockdev="/dev/sda", base_blockdev_name="sda")
+    ]
+    monkeypatch.setattr(
+        manage.LuksDevice,
+        "filter_cryptvolumes",
+        classmethod(lambda cls, *args, **kwargs: list(devices)),
+    )
+    rekeyed = []
+
+    async def rekey(self, slot, device, header):
+        rekeyed.append(device)
+
+    monkeypatch.setattr(manage.LUKSKeyStoreManager, "_do_rekey", rekey)
+
+    luks(["keystore", "rekey", "*"])
+
+    assert rekeyed == ["/dev/sda"]
+    assert "Key updated." in capsys.readouterr().out
+
+
+@pytest.fixture
+def encrypted_volumes(monkeypatch, tmp_path):
+    """Two encrypted volumes and one unencrypted one; the mon volume is
+    already unlocked."""
+    from fc.ceph.lvm import EncryptedLogicalVolume
+
+    monkeypatch.setattr(
+        "fc.ceph.lvm.lv_names",
+        lambda: [
+            "ceph-osd-5-block-crypted",
+            "ceph-mon-crypted",
+            "vgkeys-keys",
+        ],
+    )
+    monkeypatch.setattr(
+        EncryptedLogicalVolume,
+        "device_path",
+        property(lambda self: str(tmp_path / self.name)),
+    )
+    (tmp_path / "ceph-mon").touch()
+    activated = []
+
+    async def activate(self, key):
+        activated.append((self.name, key))
+
+    monkeypatch.setattr(EncryptedLogicalVolume, "activate_async", activate)
+    return activated
+
+
+def test_unlock_opens_locked_volumes_with_the_admin_key(
+    mock_LUKSKeyStoreManager, encrypted_volumes, capsys
+):
+    keyman = mock_LUKSKeyStoreManager
+
+    assert keyman.unlock("ceph-*", parallel=2) == 0
+
+    # the locked OSD volume is opened with the once-requested admin key; the
+    # already unlocked mon volume and the unencrypted keys volume are left alone
+    assert encrypted_volumes == [("ceph-osd-5-block", "foo")]
+
+    captured = capsys.readouterr()
+    assert "ceph-mon is already unlocked, skipping." in captured.out
+    assert "Volumes unlocked." in captured.out
+
+
+def test_unlock_reports_failing_volumes(
+    mock_LUKSKeyStoreManager, monkeypatch, tmp_path, capsys
+):
+    from fc.ceph.lvm import EncryptedLogicalVolume
+
+    monkeypatch.setattr(
+        "fc.ceph.lvm.lv_names",
+        lambda: ["ceph-osd-5-block-crypted", "ceph-osd-6-block-crypted"],
+    )
+    monkeypatch.setattr(
+        EncryptedLogicalVolume,
+        "device_path",
+        property(lambda self: str(tmp_path / self.name)),
+    )
+
+    attempted = []
+
+    async def activate(self, key):
+        attempted.append(self.name)
+        if self.name == "ceph-osd-5-block":
+            raise CalledProcessError(returncode=2, cmd="cryptsetup open")
+
+    monkeypatch.setattr(EncryptedLogicalVolume, "activate_async", activate)
+
+    keyman = mock_LUKSKeyStoreManager
+
+    # all volumes are attempted and failures are reported
+    assert keyman.unlock("ceph-*", parallel=2) == 1
+    assert sorted(attempted) == ["ceph-osd-5-block", "ceph-osd-6-block"]
+
+    captured = capsys.readouterr()
+    assert "Unlocking failed for: ceph-osd-5-block" in captured.out
+
+
+def test_luks_volume_unlock_command_invocation(
+    monkeypatch, tmp_path, capsys, mock_LUKSKeyStoreManager
+):
+    import fc.ceph.luks
+    from fc.ceph.lvm import EncryptedLogicalVolume
+    from fc.ceph.main import luks
+
+    monkeypatch.setattr(
+        "fc.ceph.main.CONFIG_FILE_PATH", tmp_path / "fc-ceph.conf"
+    )
+    (tmp_path / "fc-ceph.conf").write_text(
+        dedent(
+            """\
+            [default]
+            path=/bin
+            release=nautilus
+            """
+        )
+    )
+
+    monkeypatch.setattr(
+        fc.ceph.luks.KEYSTORE,
+        "admin_key_for_input",
+        lambda *args, **kwargs: b"foo",
+    )
+    monkeypatch.setattr(
+        "fc.ceph.lvm.lv_names", lambda: ["ceph-osd-5-block-crypted"]
+    )
+    monkeypatch.setattr(
+        EncryptedLogicalVolume,
+        "device_path",
+        property(lambda self: str(tmp_path / self.name)),
+    )
+    unlocked = []
+
+    async def activate(self, key):
+        unlocked.append((self.name, key))
+
+    monkeypatch.setattr(EncryptedLogicalVolume, "activate_async", activate)
+
+    luks(["volume", "unlock", "ceph-osd-*"])
+
+    assert unlocked == [("ceph-osd-5-block", b"foo")]
+    assert "Volumes unlocked." in capsys.readouterr().out
 
 
 @pytest.fixture

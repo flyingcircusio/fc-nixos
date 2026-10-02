@@ -663,6 +663,15 @@ def luks(args=sys.argv[1:]):
         choices=["local", "admin"],
         default="local",
     )
+    parser_rekey.add_argument(
+        "-j",
+        "--parallel",
+        type=int,
+        default=fc.ceph.luks.manage.default_parallelism(),
+        help="Rekey that many volumes concurrently. Defaults to half the "
+        "available CPUs; each job runs memory-intensive key derivation "
+        "(~1 GiB).",
+    )
     parser_rekey.set_defaults(action="rekey")
 
     parser_test = keystore_sub.add_parser(
@@ -702,6 +711,33 @@ def luks(args=sys.argv[1:]):
         "already stored. On mismatch, returns exitcode 1",
     )
     parser_fingerprint.set_defaults(action="fingerprint")
+
+    volume = subparsers.add_parser("volume", help="Manage LUKS volumes.")
+    volume.set_defaults(
+        subsystem=fc.ceph.luks.manage.LUKSKeyStoreManager,
+        action=volume.print_usage,
+    )
+    volume_sub = volume.add_subparsers()
+
+    parser_unlock = volume_sub.add_parser(
+        "unlock",
+        help="Unlock matching volumes with the admin key, e.g. after the local "
+        "key stick failed. The admin passphrase is requested only once.",
+    )
+    parser_unlock.add_argument(
+        "name_glob",
+        help="Names of LUKS volumes to unlock (globbing allowed), e.g. '*osd-*', 'backy'.",
+    )
+    parser_unlock.add_argument(
+        "-j",
+        "--parallel",
+        type=int,
+        default=fc.ceph.luks.manage.default_parallelism(),
+        help="Unlock that many volumes concurrently. Defaults to half the "
+        "available CPUs; each job runs memory-intensive key derivation "
+        "(~1 GiB).",
+    )
+    parser_unlock.set_defaults(action="unlock")
 
     backup = subparsers.add_parser("backup", help="Manage backup volumes.")
     backup.set_defaults(

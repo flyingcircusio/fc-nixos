@@ -1,4 +1,5 @@
 # also copied to pkgs/fc/agent/fc/util/runners.py
+import asyncio
 import ctypes
 import json
 import os
@@ -6,6 +7,7 @@ import shlex
 import subprocess
 import time
 from subprocess import PIPE
+from typing import Optional
 
 from rich.console import Console
 
@@ -128,17 +130,69 @@ class Runner(object):
         return callable
 
 
-run = Runner(
-    aliases={
-        "ceph_osd": "ceph-osd",
-        "ceph_mgr": "ceph-mgr",
-        "ceph_mon": "ceph-mon",
-        "ceph_authtool": "ceph-authtool",
-        "mkfs_xfs": "mkfs.xfs",
-        "rbd_locktool": "rbd-locktool",
-        "radosgw_admin": "radosgw-admin",
-    }
-)
+class AsyncRunner(object):
+    """`Runner` counterpart for coroutines: same command echo, error reporting
+    and `check` semantics, but without blocking the event loop."""
+
+    def __init__(self, aliases={}):
+        self.__aliases = aliases
+
+    async def _run(
+        self,
+        name,
+        *args: str,
+        input: Optional[bytes] = None,
+        check: bool = True,
+        encoding: Optional[str] = None,
+    ):
+        console.print(
+            "$", name, shlex.join([str(a) for a in args]), style="grey50"
+        )
+        proc = await asyncio.create_subprocess_exec(
+            name,
+            *args,
+            stdin=(
+                asyncio.subprocess.PIPE
+                if input is not None
+                else asyncio.subprocess.DEVNULL
+            ),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await proc.communicate(input)
+        if proc.returncode:
+            console.print(f"> return code: {proc.returncode}", style="red")
+            console.print("> stdout:", style="red")
+            console.print(stdout.decode("ascii", errors="replace"), style="red")
+            console.print("> stderr:", style="red")
+            console.print(stderr.decode("ascii", errors="replace"), style="red")
+            if check:
+                raise subprocess.CalledProcessError(
+                    proc.returncode, (name, *args), stdout, stderr
+                )
+        return stdout.decode(encoding) if encoding else stdout
+
+    def __getattr__(self, name):
+        name = self.__aliases.get(name, name)
+
+        async def callable(*args: str, **kw):
+            return await self._run(name, *args, **kw)
+
+        return callable
+
+
+RUNNER_ALIASES = {
+    "ceph_osd": "ceph-osd",
+    "ceph_mgr": "ceph-mgr",
+    "ceph_mon": "ceph-mon",
+    "ceph_authtool": "ceph-authtool",
+    "mkfs_xfs": "mkfs.xfs",
+    "rbd_locktool": "rbd-locktool",
+    "radosgw_admin": "radosgw-admin",
+}
+
+run = Runner(aliases=RUNNER_ALIASES)
+run_async = AsyncRunner(aliases=RUNNER_ALIASES)
 
 
 def mount_status(mountpoint):

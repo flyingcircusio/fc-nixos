@@ -1,3 +1,5 @@
+import asyncio
+import fnmatch
 import glob
 import os
 import os.path
@@ -453,6 +455,23 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
     def exists(cls, name):
         return LogicalVolume.exists(name + cls.SUFFIX)
 
+    @classmethod
+    def matching(cls, name_glob: str) -> list["EncryptedLogicalVolume"]:
+        """All encrypted volumes whose name matches `name_glob`.
+
+        A locked volume has no mapper name of its own, so we go by the LVM
+        volume names: the mapper name is the volume name without its suffix.
+        """
+        names = [
+            name[: -len(cls.SUFFIX)]
+            for name in lv_names()
+            if name.endswith(cls.SUFFIX)
+        ]
+        return [cls(name) for name in names if fnmatch.fnmatch(name, name_glob)]
+
+    def is_unlocked(self) -> bool:
+        return os.path.exists(self.device_path)
+
     @property
     def device(self) -> str:
         if not self._ready:
@@ -512,14 +531,22 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
         return True
 
     def activate(self):
+        asyncio.run(self.activate_async(fc.ceph.luks.KEYSTORE.local_key_path()))
+
+    async def activate_async(self, key: bytes | str):
+        """Open the volume with `key`: the admin passphrase, or the path of a
+        key file that cryptsetup reads itself."""
         self.underlay.activate()
         if not os.path.exists(self.device_path):
-            Cryptsetup.cryptsetup(
+            key_file = key if isinstance(key, str) else "-"
+            stdin = None if isinstance(key, str) else key
+            await Cryptsetup.cryptsetup_async(
                 "--allow-discards",  # pass through TRIM commands to disk
                 "open",
-                "-d", fc.ceph.luks.KEYSTORE.local_key_path(),
+                f"--key-file={key_file}",
                 self.underlay.device,
                 self.name,
+                input=stdin,
             )  # fmt: skip
             run.udevadm("settle")
         self._ready = True

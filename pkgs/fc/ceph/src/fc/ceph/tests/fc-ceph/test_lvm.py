@@ -1,3 +1,4 @@
+import asyncio
 from subprocess import CalledProcessError
 from unittest import mock
 
@@ -103,3 +104,85 @@ def test_mkfs_handles_none_stderr(monkeypatch):
         XFSVolume.mkfs("/dev/test", "testlabel", ["-K"])
 
     mock_mkfs.assert_called_once()
+
+
+def test_encrypted_activate_passes_the_key_on_stdin(monkeypatch):
+    """The volume is opened with the key through stdin, not with `-d <file>`."""
+    from fc.ceph.lvm import EncryptedLogicalVolume
+
+    calls = []
+
+    async def cryptsetup_async(*args, **kwargs):
+        calls.append((args, kwargs))
+        return b""
+
+    monkeypatch.setattr(
+        "fc.ceph.lvm.Cryptsetup.cryptsetup_async", cryptsetup_async
+    )
+    monkeypatch.setattr("fc.ceph.lvm.run.udevadm", mock.Mock())
+
+    volume = EncryptedLogicalVolume("ceph-osd-5-block")
+    volume.underlay._vg_name = "vgosd-5"
+    monkeypatch.setattr(volume.underlay, "activate", mock.Mock())
+    monkeypatch.setattr(
+        EncryptedLogicalVolume,
+        "device_path",
+        property(lambda self: "/dev/does-not-exist"),
+    )
+
+    asyncio.run(volume.activate_async(b"admin-key"))
+
+    assert calls == [
+        (
+            (
+                "--allow-discards",
+                "open",
+                "--key-file=-",
+                "/dev/vgosd-5/ceph-osd-5-block-crypted",
+                "ceph-osd-5-block",
+            ),
+            {"input": b"admin-key"},
+        )
+    ]
+
+
+def test_encrypted_activate_lets_cryptsetup_read_the_local_key(monkeypatch):
+    """Without a key we hand over the path: the key never enters this process."""
+    from fc.ceph.luks import KEYSTORE
+    from fc.ceph.lvm import EncryptedLogicalVolume
+
+    calls = []
+
+    async def cryptsetup_async(*args, **kwargs):
+        calls.append((args, kwargs))
+        return b""
+
+    monkeypatch.setattr(
+        "fc.ceph.lvm.Cryptsetup.cryptsetup_async", cryptsetup_async
+    )
+    monkeypatch.setattr("fc.ceph.lvm.run.udevadm", mock.Mock())
+    monkeypatch.setattr(KEYSTORE, "local_key_path", lambda: "/mnt/keys/test.key")
+
+    volume = EncryptedLogicalVolume("ceph-osd-5-block")
+    volume.underlay._vg_name = "vgosd-5"
+    monkeypatch.setattr(volume.underlay, "activate", mock.Mock())
+    monkeypatch.setattr(
+        EncryptedLogicalVolume,
+        "device_path",
+        property(lambda self: "/dev/does-not-exist"),
+    )
+
+    volume.activate()
+
+    assert calls == [
+        (
+            (
+                "--allow-discards",
+                "open",
+                "--key-file=/mnt/keys/test.key",
+                "/dev/vgosd-5/ceph-osd-5-block-crypted",
+                "ceph-osd-5-block",
+            ),
+            {"input": None},
+        )
+    ]
