@@ -36,6 +36,7 @@ in
     ./telegraf
     ./varnish
     ./vinyl-cache
+    ./wazuh
 
     (mkRemovedOptionModule [
       "flyingcircus"
