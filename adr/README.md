@@ -9,3 +9,4 @@
 | 1 | Accepted | [Record architecture decisions](0001-record-architecture-decisions.md) |
 | 2 | Accepted | [Let fc.qemu handle network configuration directly](0002-let-fc-qemu-handle-network-configuration-directly.md) |
 | 3 | Accepted | [Physical machine and rack information visibility](0003-physical-machine-and-rack-visibility.md) |
+| 4 | Accepted | [Use sentence case](0004-use-sentence-case.md) |
