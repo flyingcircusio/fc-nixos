@@ -4,6 +4,7 @@
   buildPythonApplication,
   parted,
   cryptsetup,
+  e2fsprogs,
   lz4,
   blockdev,
   agent,
@@ -42,6 +43,7 @@ buildPythonApplication rec {
     agent
     cryptsetup
     parted
+    e2fsprogs
   ];
 
   passthru = {
