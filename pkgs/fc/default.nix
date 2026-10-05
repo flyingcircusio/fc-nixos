@@ -1,6 +1,5 @@
 {
   pkgs,
-  pyPackages,
   callPackage,
 }:
 
@@ -9,7 +8,6 @@ rec {
 
   agent = callPackage ./agent {
     nix = pkgs.nixVersions.nix_2_34;
-    pyPackages = pyPackages;
   };
   # FIXME: PL-135583
   # agentWithSlurm = agent.override { enableSlurm = true; };
@@ -18,7 +16,7 @@ rec {
 
   # fc-ceph does not need to be versioned on the Nix-package level as
   # it can be parametrized via config file for each individual subsystem.
-  ceph = pyPackages.callPackage ./ceph {
+  ceph = pkgs.python313Packages.callPackage ./ceph {
     inherit agent blockdev;
   };
 
@@ -28,11 +26,11 @@ rec {
   check-journal = callPackage ./check-journal.nix { };
   check-kvm-vrf-integrity = callPackage ./check-kvm-vrf-integrity { };
   check-link-redundancy = callPackage ./check-link-redundancy { };
-  check-mongodb = pyPackages.callPackage ./check-mongodb { };
+  check-mongodb = pkgs.python313Packages.callPackage ./check-mongodb { };
   check-postfix = callPackage ./check-postfix { };
   check-rib-integrity = callPackage ./check-rib-integrity { };
   check-skvaider = callPackage ./check-skvaider { };
-  check-tls-cert = pyPackages.callPackage ./check-tls-cert { };
+  check-tls-cert = pkgs.python313Packages.callPackage ./check-tls-cert { };
   check-vrf-default-routes = callPackage ./check-vrf-default-routes { };
   check-xfs-broken = callPackage ./check-xfs-broken { };
 
@@ -91,7 +89,7 @@ rec {
   skvaider = callPackage ./skvaider { };
   telegraf-collect-psi = callPackage ./telegraf-collect-psi { };
   telegraf-routes-summary = callPackage ./telegraf-routes-summary { };
-  trafficclient = pyPackages.callPackage ./trafficclient.nix { };
+  trafficclient = pkgs.python313Packages.callPackage ./trafficclient.nix { };
   userscan = callPackage ./userscan.nix { };
   util-physical = callPackage ./util-physical { };
 }

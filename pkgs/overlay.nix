@@ -181,9 +181,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   fc = (
     import ./default.nix {
       pkgs = self;
-      # Only used by the agent for now but we should probably use this
-      # for all our Python packages and update Python in sync then.
-      pyPackages = self.python312Packages;
     }
   );
 
