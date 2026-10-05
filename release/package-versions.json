@@ -5,9 +5,9 @@
     "version": "1.6.1"
   },
   "apacheHttpd": {
-    "name": "apache-httpd-2.4.68",
+    "name": "apache-httpd-2.4.69",
     "pname": "apache-httpd",
-    "version": "2.4.68"
+    "version": "2.4.69"
   },
   "asterisk": {
     "name": "asterisk-22.8.2",
@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-154.0.8037.57",
+    "name": "chromedriver-unwrapped-154.0.8037.97",
     "pname": "chromedriver-unwrapped",
-    "version": "154.0.8037.57"
+    "version": "154.0.8037.97"
   },
   "chromium": {
-    "name": "chromium-154.0.8037.57",
+    "name": "chromium-154.0.8037.97",
     "pname": "chromium",
-    "version": "154.0.8037.57"
+    "version": "154.0.8037.97"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.5",
@@ -134,6 +134,22 @@
     "pname": "coturn",
     "version": "4.16.0"
   },
+  "cuda-merged": {},
+  "cuda_cccl": {},
+  "cuda_cudart": {},
+  "cuda_cuobjdump": {},
+  "cuda_cupti": {},
+  "cuda_cuxxfilt": {},
+  "cuda_gdb": {},
+  "cuda_nvcc": {},
+  "cuda_nvdisasm": {},
+  "cuda_nvml_dev": {},
+  "cuda_nvprune": {},
+  "cuda_nvrtc": {},
+  "cuda_nvtx": {},
+  "cuda_profiler_api": {},
+  "cuda_sanitizer_api": {},
+  "cudnn": {},
   "curl": {
     "name": "curl-8.22.0",
     "pname": "curl",
@@ -150,9 +166,9 @@
     "version": "5.3.28"
   },
   "discourse": {
-    "name": "discourse-2026.8.0",
+    "name": "discourse-2026.9.0",
     "pname": "discourse",
-    "version": "2026.8.0"
+    "version": "2026.9.0"
   },
   "dnsmasq": {
     "name": "dnsmasq-2.93",
@@ -160,9 +176,9 @@
     "version": "2.93"
   },
   "docker": {
-    "name": "docker-29.8.0",
+    "name": "docker-29.8.1",
     "pname": "docker",
-    "version": "29.8.0"
+    "version": "29.8.1"
   },
   "docker-compose": {
     "name": "docker-compose-5.4.0",
@@ -175,9 +191,9 @@
     "version": "2.4.5"
   },
   "element-web": {
-    "name": "element-web-1.12.28",
+    "name": "element-web-1.12.29",
     "pname": "element-web",
-    "version": "1.12.28"
+    "version": "1.12.29"
   },
   "erlang": {
     "name": "erlang-28.5.0.7",
@@ -210,9 +226,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-156.0.1",
+    "name": "firefox-157.0",
     "pname": "firefox",
-    "version": "156.0.1"
+    "version": "157.0"
   },
   "gcc": {
     "name": "gcc-wrapper-15.3.0",
@@ -395,15 +411,22 @@
     "version": "1.36.4+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.7.4",
+    "name": "keycloak-26.7.5",
     "pname": "keycloak",
-    "version": "26.7.4"
+    "version": "26.7.5"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.20.2",
     "pname": "kubernetes-helm",
     "version": "3.20.2"
   },
+  "libcublas": {},
+  "libcufft": {},
+  "libcufile": {},
+  "libcurand": {},
+  "libcusolver": {},
+  "libcusparse": {},
+  "libcusparse_lt": {},
   "libffi": {
     "name": "libffi-3.8.0",
     "pname": "libffi",
@@ -429,6 +452,8 @@
     "pname": "mariadb-connector-c",
     "version": "3.3.5"
   },
+  "libnpp": {},
+  "libnvjitlink": {},
   "libressl": {
     "name": "libressl-4.2.1",
     "pname": "libressl",
@@ -464,15 +489,20 @@
     "pname": "libyaml",
     "version": "0.2.5"
   },
-  "linuxKernelStable": {
-    "name": "linux-6.12.111",
+  "linuxKernelGPU": {
+    "name": "linux-6.18.55",
     "pname": "linux",
-    "version": "6.12.111"
+    "version": "6.18.55"
+  },
+  "linuxKernelStable": {
+    "name": "linux-6.12.112",
+    "pname": "linux",
+    "version": "6.12.112"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.18.54",
+    "name": "linux-6.18.55",
     "pname": "linux",
-    "version": "6.18.54"
+    "version": "6.18.55"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -500,9 +530,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.6.8",
+    "name": "mastodon-4.6.9",
     "pname": "mastodon",
-    "version": "4.6.8"
+    "version": "4.6.9"
   },
   "matomo": {
     "name": "matomo-5.12.0",
@@ -510,9 +540,9 @@
     "version": "5.12.0"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-1.161.0",
+    "name": "matrix-synapse-1.162.0",
     "pname": "matrix-synapse",
-    "version": "1.161.0"
+    "version": "1.162.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.3",
@@ -590,10 +620,12 @@
     "version": "4.40"
   },
   "nss_latest": {
-    "name": "nss-3.128",
+    "name": "nss-3.130",
     "pname": "nss",
-    "version": "3.128"
+    "version": "3.130"
   },
+  "nvidia-settings": {},
+  "nvidia-x11": {},
   "nvme-cli": {
     "name": "nvme-cli-2.16",
     "pname": "nvme-cli",
