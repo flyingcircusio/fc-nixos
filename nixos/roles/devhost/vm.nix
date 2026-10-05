@@ -242,7 +242,10 @@ in
         bindsTo = [ "br-vm-srv-netdev.service" ];
         after = [ "br-vm-srv-netdev.service" ];
 
-        path = [ pkgs.jq pkgs.iproute2 ];
+        path = [
+          pkgs.jq
+          pkgs.iproute2
+        ];
         script = ''
           for interface in $(ip -j link show | jq '.[] | .ifname' -r | egrep '^vm-srv-'); do
             echo "Ensuring attachment of $interface"
@@ -261,7 +264,7 @@ in
         environment = config.nix.envVars // {
           HOME = "/root";
           LANG = "en_US.utf8";
-          NIX_PATH = lib.concatStringsSep ":" config.nix.nixPath;
+          NIX_PATH = lib.concatStringsSep ":" config.nix.settings.nix-path;
         };
         serviceConfig = {
           Type = "oneshot";
