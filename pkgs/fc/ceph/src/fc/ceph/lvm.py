@@ -669,7 +669,7 @@ class XFSVolume(AutomountActivationMixin, GenericCephVolume):
         return self.lv.encrypted
 
 
-class Ext4Volume(AutomountActivationMixin, GenericCephVolume):
+class Ext4Volume(AutomountActivationMixin):
     MKFS_OPTS = ["-m", "0"]
     MOUNT_OPTS = "nodev,nosuid,noatime,nodiratime"
     FSTYPE = "ext4"
