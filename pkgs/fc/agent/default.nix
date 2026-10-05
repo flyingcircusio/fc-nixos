@@ -9,7 +9,7 @@
   libyaml,
   multipath-tools,
   nix,
-  pyPackages,
+  python313Packages,
   python,
   util-linux,
   xfsprogs,
@@ -17,6 +17,7 @@
 }:
 
 let
+  pyPackages = python313Packages;
   pytest-structlog = pyPackages.buildPythonPackage (finalAttrs: {
     pname = "pytest-structlog";
     version = "1.2";
