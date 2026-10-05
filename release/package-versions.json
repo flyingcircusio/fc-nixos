@@ -671,10 +671,25 @@
     "pname": "openssl",
     "version": "1.1.1w"
   },
-  "openssl_3": {
-    "name": "openssl-3.0.22",
+  "openssl_3_5": {
+    "name": "openssl-3.5.9",
     "pname": "openssl",
-    "version": "3.0.22"
+    "version": "3.5.9"
+  },
+  "openssl_3_6": {
+    "name": "openssl-3.6.4",
+    "pname": "openssl",
+    "version": "3.6.4"
+  },
+  "openssl_4_0": {
+    "name": "openssl-4.0.3",
+    "pname": "openssl",
+    "version": "4.0.3"
+  },
+  "openssl_legacy": {
+    "name": "openssl-3.6.4",
+    "pname": "openssl",
+    "version": "3.6.4"
   },
   "openvpn": {
     "name": "openvpn-2.6.23",
