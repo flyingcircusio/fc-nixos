@@ -47,21 +47,30 @@ let
     lib.concatMapStringsSep "\n" (
       network:
       lib.concatMapStringsSep "\n" (
-        iface: "${fclib.iptables network} -A nixos-fw -i ${iface} " + "-s ${network} -j DROP"
+        iface: "${fclib.iptables network} -A nixos-fw -i ${iface} -s ${network} -j DROP"
       ) uplinkInterfaces
     ) role.martianNetworks
   );
 
-  martianIptablesForward = (
+  martianIptablesForwardIngress = (
     lib.concatMapStringsSep "\n"
       (
         network:
         lib.concatMapStringsSep "\n" (
-          iface: "${fclib.iptables network} -A fc-router-forward -i ${iface} " + "-s ${network} -j DROP"
+          iface: "${fclib.iptables network} -A fc-router-forward -i ${iface} -s ${network} -j DROP"
         ) uplinkInterfaces
       )
       # Also drop link-local addresses here.
       (role.martianNetworks ++ [ "fe80::/10" ])
+  );
+
+  martianIptablesForwardEgress = (
+    lib.concatMapStringsSep "\n" (
+      network:
+      lib.concatMapStringsSep "\n" (
+        iface: "${fclib.iptables network} -A fc-router-forward -o ${iface} -d ${network} -j DROP"
+      ) uplinkInterfaces
+    ) (role.martianNetworks ++ [ "fe80::/10" ])
   );
 
   locationSensuServer = lib.findFirst (
@@ -246,7 +255,8 @@ in
           ip46tables -N fc-router-forward || true
           ip46tables -A FORWARD -j fc-router-forward
         ''
-        martianIptablesForward
+        martianIptablesForwardIngress
+        martianIptablesForwardEgress
         ''
           # Suppress multicast forwarding
           iptables -A fc-router-forward -s 224.0.0.0/4 -j DROP
