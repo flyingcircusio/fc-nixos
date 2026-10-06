@@ -142,6 +142,7 @@ platform. See the role documentation for {ref}`cluster version updates
 - The `openssl_1_1` and `openssl_3` packages has been removed.
 - The current logrotate config can now be found in `/etc/logrotate.conf` instead of `/etc/current-config/logrotate.conf`.
   With that, the `logrotate-show-config` command has been deprecated and removed.
+- PostgreSQL Anonymizer now only allows applying masking rules by users without the `SUPERUSER` privilege. This can be changed as described in [the upstream documentation](https://postgresql-anonymizer.readthedocs.io/en/stable/configure/)
 
 ## Known issues
 
