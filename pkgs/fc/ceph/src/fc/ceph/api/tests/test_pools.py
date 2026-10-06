@@ -1,6 +1,6 @@
 import time
 from subprocess import CalledProcessError
-from unittest.mock import MagicMock
+from unittest.mock import Mock, MagicMock
 
 import pkg_resources
 import pytest
@@ -48,7 +48,7 @@ class TestPools(object):
 
     def test_pool_names(self, cluster, monkeypatch):
         monkeypatch.setattr(
-            "fc.ceph.api.pools.run.json.ceph",
+            "fc.ceph.api.cluster.run.json.ceph",
             lambda *args: [
                 {"poolnum": 0, "poolname": "data"},
                 {"poolnum": 1, "poolname": "metadata"},
@@ -62,7 +62,7 @@ class TestPools(object):
 
     def test_all_pools(self, cluster, monkeypatch):
         monkeypatch.setattr(
-            "fc.ceph.api.pools.run.json.ceph",
+            "fc.ceph.api.cluster.run.json.ceph",
             lambda *args: [
                 {"poolnum": 0, "poolname": "data"},
                 {"poolnum": 161, "poolname": "test"},
@@ -77,7 +77,7 @@ class TestPools(object):
         def record_call_args(*args):
             call_args.append(list(args))
 
-        monkeypatch.setattr("fc.ceph.api.pools.run.ceph", record_call_args)
+        monkeypatch.setattr("fc.ceph.api.cluster.run.ceph", record_call_args)
         Pools(cluster).create("new_pool")
         assert [
             ["-c", cluster.ceph_conf, "osd", "pool", "create", "new_pool", "32"]
@@ -85,7 +85,7 @@ class TestPools(object):
 
     def test_create_should_add_pool_to_names_cache(self, cluster, monkeypatch):
         monkeypatch.setattr(
-            "fc.ceph.api.pools.run.json.ceph",
+            "fc.ceph.api.cluster.run.json.ceph",
             lambda *args: [
                 {"poolnum": 0, "poolname": "data"},
                 {"poolnum": 161, "poolname": "test"},
@@ -93,13 +93,13 @@ class TestPools(object):
         )
         p = Pools(cluster)
         assert "new_pool" not in p.names()
-        monkeypatch.setattr("fc.ceph.api.pools.run.ceph", lambda *args: None)
+        monkeypatch.setattr("fc.ceph.api.cluster.run.ceph", lambda *args: None)
         p.create("new_pool")
         assert "new_pool" in p.names()
 
     def test_pick(self, cluster, monkeypatch):
         monkeypatch.setattr(
-            "fc.ceph.api.pools.run.json.ceph",
+            "fc.ceph.api.cluster.run.json.ceph",
             lambda *args: [
                 {"poolnum": 0, "poolname": "data"},
                 {"poolnum": 161, "poolname": "test"},
@@ -153,7 +153,7 @@ class TestPool(object):
                 "directory\n",
             )
 
-        monkeypatch.setattr("fc.ceph.api.pools.run.json.rbd", rbd_raise)
+        monkeypatch.setattr("fc.ceph.api.cluster.run.json.rbd", rbd_raise)
         with pytest.raises(KeyError):
             Pool("test2", cluster)._rbd_query()
 
@@ -166,12 +166,12 @@ class TestPool(object):
                 stderr="rbd: pool t3 doesn't contain rbd images\n",
             )
 
-        monkeypatch.setattr("fc.ceph.api.pools.run.json.rbd", rbd_raise)
+        monkeypatch.setattr("fc.ceph.api.cluster.run.json.rbd", rbd_raise)
         assert [] == Pool("t3", cluster)._rbd_query()
 
     def test_get_pg_num(self, cluster, monkeypatch):
         monkeypatch.setattr(
-            "fc.ceph.api.pools.run.json.ceph",
+            "fc.ceph.api.cluster.run.json.ceph",
             lambda *args: {"pool": "test", "pool_id": 161, "pg_num": 512},
         )
         assert 512 == Pool("test", cluster).pg_num
@@ -179,9 +179,11 @@ class TestPool(object):
     def test_set_pg_num(self, cluster, monkeypatch):
         behaviour_model = PgIncreaseBehaviour()
         monkeypatch.setattr(
-            "fc.ceph.api.pools.run.json.ceph", behaviour_model.ceph
+            "fc.ceph.api.cluster.run.json.ceph", behaviour_model.ceph
         )
-        monkeypatch.setattr("fc.ceph.api.pools.run.ceph", behaviour_model.ceph)
+        monkeypatch.setattr(
+            "fc.ceph.api.cluster.run.ceph", behaviour_model.ceph
+        )
         monkeypatch.setattr(time, "sleep", lambda t: None)
         p = Pool("test", cluster)
         p.pg_num = 32
@@ -222,7 +224,7 @@ class TestPool(object):
 
     def test_get_pg_num_min(self, cluster, monkeypatch):
         monkeypatch.setattr(
-            "fc.ceph.api.pools.run.json.ceph",
+            "fc.ceph.api.cluster.run.json.ceph",
             lambda *args: {
                 "pool": "test",
                 "pool_id": 161,
@@ -239,12 +241,12 @@ class TestPool(object):
                 stderr=b"Error ENOENT: option 'pg_num_min' is not set on pool 'test1'",
             )
 
-        monkeypatch.setattr("fc.ceph.api.pools.run.json.ceph", raiser)
+        monkeypatch.setattr("fc.ceph.api.cluster.run.json.ceph", raiser)
         assert Pool("test1", cluster).pg_num_min is None
 
     def test_set_pg_num_min(self, cluster, monkeypatch):
         mock_ceph = MagicMock()
-        monkeypatch.setattr("fc.ceph.api.pools.run.ceph", mock_ceph)
+        monkeypatch.setattr("fc.ceph.api.cluster.run.ceph", mock_ceph)
 
         p = Pool("test", cluster)
         p.pg_num_min = 1
@@ -276,7 +278,7 @@ class TestPool(object):
 
     def test_get_pgp_num(self, cluster, monkeypatch):
         monkeypatch.setattr(
-            "fc.ceph.api.pools.run.json.ceph",
+            "fc.ceph.api.cluster.run.json.ceph",
             lambda *args: {"pool": "test", "pool_id": 161, "pgp_num": 128},
         )
         assert 128 == Pool("test", cluster).pgp_num
@@ -285,10 +287,50 @@ class TestPool(object):
         def ceph_raise(*args, **kwargs):
             raise CalledProcessError(1, "ceph", stderr="failed")
 
-        monkeypatch.setattr("fc.ceph.api.pools.run.ceph", ceph_raise)
+        monkeypatch.setattr("fc.ceph.api.cluster.run.ceph", ceph_raise)
         monkeypatch.setattr(time, "sleep", lambda t: None)
         with pytest.raises(RuntimeError):
             Pool("test", cluster).pgp_num = 100
+
+    def test_get_size(self, cluster, monkeypatch):
+        call_mock = Mock(
+            return_value={"pool": "test", "pool_id": 161, "size": 3}
+        )
+        monkeypatch.setattr("fc.ceph.api.cluster.run.json.ceph", call_mock)
+        p = Pool("test", cluster)
+        assert p.size == 3
+        # result should be cached
+        assert p.size == 3
+        call_mock.assert_called_once()
+
+    def test_set_size(self, cluster, monkeypatch):
+        mock_ceph = MagicMock()
+        monkeypatch.setattr("fc.ceph.api.cluster.run.ceph", mock_ceph)
+        cluster.num_hosts_per_root = lambda *args: 9
+
+        p = Pool("test", cluster)
+        p.size = 5
+        mock_ceph.assert_called_with(
+            "-c",
+            cluster.ceph_conf,
+            "osd",
+            "pool",
+            "set",
+            "test",
+            "size",
+            "5",
+        )
+        assert p._size == 5
+
+    def test_set_size_checks_available_hosts(self, cluster, monkeypatch):
+        mock_ceph = MagicMock()
+        monkeypatch.setattr("fc.ceph.api.cluster.run.ceph", mock_ceph)
+        cluster.num_hosts_per_root = lambda *args: 3
+        p = Pool("test", cluster)
+        with pytest.raises(ValueError):
+            p.size = 4
+
+        assert not mock_ceph.called
 
     def test_total_size(self, pools):
         assert 25 == pools["test"].size_total_gb
