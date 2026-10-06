@@ -5,9 +5,9 @@
     "version": "1.6.1"
   },
   "apacheHttpd": {
-    "name": "apache-httpd-2.4.68",
+    "name": "apache-httpd-2.4.69",
     "pname": "apache-httpd",
-    "version": "2.4.68"
+    "version": "2.4.69"
   },
   "asterisk": {
     "name": "asterisk-22.8.2",
@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-154.0.8037.92",
+    "name": "chromedriver-unwrapped-154.0.8037.97",
     "pname": "chromedriver-unwrapped",
-    "version": "154.0.8037.92"
+    "version": "154.0.8037.97"
   },
   "chromium": {
-    "name": "chromium-154.0.8037.92",
+    "name": "chromium-154.0.8037.97",
     "pname": "chromium",
-    "version": "154.0.8037.92"
+    "version": "154.0.8037.97"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.5",
@@ -490,19 +490,19 @@
     "version": "0.2.5"
   },
   "linuxKernelGPU": {
-    "name": "linux-6.18.54",
+    "name": "linux-6.18.55",
     "pname": "linux",
-    "version": "6.18.54"
+    "version": "6.18.55"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.111",
+    "name": "linux-6.12.112",
     "pname": "linux",
-    "version": "6.12.111"
+    "version": "6.12.112"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.18.54",
+    "name": "linux-6.18.55",
     "pname": "linux",
-    "version": "6.18.54"
+    "version": "6.18.55"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -530,9 +530,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.6.8",
+    "name": "mastodon-4.6.9",
     "pname": "mastodon",
-    "version": "4.6.8"
+    "version": "4.6.9"
   },
   "matomo": {
     "name": "matomo-5.12.0",
