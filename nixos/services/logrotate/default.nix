@@ -88,16 +88,12 @@ in
         "local/logrotate/README.txt".text = readme;
         # needed by user-logrotate.sh
         "logrotate.options".text = userConfigHeader;
-        "current-config/logrotate.conf".source = config.services.logrotate.configFile;
       };
 
       environment.systemPackages = with pkgs; [
         logrotate
-        (pkgs.writeScriptBin "logrotate-show-config" ''
-          cat ${config.services.logrotate.configFile}
-        '')
         (pkgs.writeScriptBin "fc-logrotate" ''
-          logrotate "$@" ${config.services.logrotate.configFile}
+          logrotate "$@" /etc/logrotate.conf
         '')
       ];
 

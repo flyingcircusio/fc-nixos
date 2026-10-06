@@ -323,12 +323,6 @@ in
     documentation.nixos.enable = mkDefault false;
 
     nix = {
-      nixPath = [
-        "/nix/var/nix/profiles/per-user/root/channels/nixos"
-        "/nix/var/nix/profiles/per-user/root/channels"
-        "nixos-config=/etc/nixos/configuration.nix"
-      ];
-
       extraOptions = ''
         keep-outputs = true
         fallback = true
@@ -350,6 +344,12 @@ in
         ];
 
         connect-timeout = 5;
+
+        nix-path = [
+          "/nix/var/nix/profiles/per-user/root/channels/nixos"
+          "/nix/var/nix/profiles/per-user/root/channels"
+          "nixos-config=/etc/nixos/configuration.nix"
+        ];
       };
     };
 

@@ -12,6 +12,7 @@ import ../make-test-python.nix (
     insertSql = pkgs.writeText "insert.sql" ''
       create extension anon cascade;
       select anon.init();
+      alter database anonymized set anon.nosuperuser = false;
       create table player(id serial, name text, points int);
       insert into player(id,name,points) values (1,'Foo', 23);
       insert into player(id,name,points) values (2,'Bar',42);

@@ -1,5 +1,5 @@
 # Collection of own packages
-{ pkgs, pyPackages }:
+{ pkgs }:
 
 let
   self = {
@@ -7,7 +7,7 @@ let
 
     fc = import ./fc {
       inherit (self) callPackage;
-      inherit pkgs pyPackages;
+      inherit pkgs;
     };
 
   };

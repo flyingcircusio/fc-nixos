@@ -38,14 +38,16 @@ in
     ];
 
     # Gets overwritten by nixpkgs test tooling
-    services.journald.extraConfig = fclib.mkPlatform ''
-      SystemMaxUse=2G
-      MaxLevelConsole=notice
-      ForwardToWall=no
-      ForwardToConsole=no
-    '';
-
-    services.journald.forwardToSyslog = lib.mkOverride 90 false;
+    services.journald.settings.Journal =
+      lib.mapAttrs (_: v: fclib.mkPlatform v) {
+        SystemMaxUse = "2G";
+        MaxLevelConsole = "notice";
+        ForwardToWall = false;
+        ForwardToConsole = false;
+      }
+      // {
+        ForwardToSyslog = lib.mkOverride 90 false;
+      };
 
     flyingcircus.activationScripts = {
 

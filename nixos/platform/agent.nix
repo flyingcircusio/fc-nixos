@@ -68,7 +68,7 @@ let
   environment = config.nix.envVars // {
     HOME = "/root";
     LANG = "en_US.utf8";
-    NIX_PATH = concatStringsSep ":" config.nix.nixPath;
+    NIX_PATH = concatStringsSep ":" config.nix.settings.nix-path;
   };
 
   logDaysKeep = 180;
