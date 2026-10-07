@@ -1,3 +1,4 @@
+import asyncio
 import fnmatch
 import getpass
 import hashlib
@@ -13,8 +14,55 @@ from fc.ceph.luks import (
     Cryptsetup,
 )
 from fc.ceph.luks.checks import all_checks
-from fc.ceph.lvm import Ext4Volume
+from fc.ceph.lvm import EncryptedLogicalVolume, Ext4Volume
 from fc.ceph.util import console, run
+from rich.progress import Progress
+
+
+def _cpu_count() -> int:
+    # fc-ceph is on Python 3.12: os.process_cpu_count (3.13+) would respect
+    # cgroups and CPU affinity.
+    return os.cpu_count() or 1
+
+
+def default_parallelism() -> int:
+    return max(1, _cpu_count() // 2)
+
+
+async def run_parallel(
+    items: list, jobs, label: str, workers: int
+) -> list[str]:
+    """Run `jobs(item)` for every item, at most `workers` of them at a time.
+
+    Shows a progress bar, reports failures as they happen and returns the
+    names of the items that failed.
+    """
+    semaphore = asyncio.Semaphore(max(1, workers))
+    with Progress() as progress:
+        bar = progress.add_task(label, total=len(items))
+
+        async def run(item):
+            async with semaphore:
+                console.print(f"{label} {item.name} ...")
+                try:
+                    await jobs(item)
+                except Exception as e:
+                    console.print(
+                        f"{label} {item.name} failed: {e}", style="bold red"
+                    )
+                    raise
+                finally:
+                    progress.advance(bar)
+
+        results = await asyncio.gather(
+            *(run(item) for item in items), return_exceptions=True
+        )
+
+    return [
+        item.name
+        for item, result in zip(items, results)
+        if isinstance(result, BaseException)
+    ]
 
 
 class LuksDevice(NamedTuple):
@@ -179,6 +227,7 @@ class LUKSKeyStoreManager(object):
         name_glob: str,
         only_active: bool,
         header: Optional[str],
+        parallel: int,
         slot="local",
     ):
         """Update keyslots, using the opposite key for assurance."""
@@ -198,15 +247,34 @@ class LUKSKeyStoreManager(object):
         else:
             raise ValueError(f"slot={slot}")
 
-        for dev in LuksDevice.filter_cryptvolumes(
+        devices = LuksDevice.filter_cryptvolumes(
             name_glob, only_active=only_active, header=header
-        ):
-            console.print(f"Rekeying {dev.name}")
-            self._do_rekey(slot, device=dev.base_blockdev, header=dev.header)
+        )
+
+        async def rekey(dev: LuksDevice):
+            await self._do_rekey(
+                slot, device=dev.base_blockdev, header=dev.header
+            )
+
+        failures = asyncio.run(
+            run_parallel(devices, rekey, "Rekeying", parallel)
+        )
+
+        if failures:
+            console.print(
+                "Rekeying failed for: " + ", ".join(failures), style="bold red"
+            )
+            return 1
 
         console.print("Key updated.", style="bold green")
+        return 0
 
-    def _do_rekey(self, slot: str, device: str, header: Optional[str]):
+    async def _do_rekey(
+        self,
+        slot: str,
+        device: str,
+        header: Optional[str],
+    ):
         if slot == "local":
             # Rekey a new local key. Use the admin key for verifying.
             key_file_verification = "-"
@@ -221,11 +289,11 @@ class LUKSKeyStoreManager(object):
 
         header_arg = ["--header", header] if header else []
 
-        dump = Cryptsetup.cryptsetup(
+        dump = await Cryptsetup.cryptsetup_async(
             "luksDump", *header_arg, device, encoding="ascii"
         )
         if f"  {slot_id}: luks2" in dump:
-            Cryptsetup.cryptsetup(
+            await Cryptsetup.cryptsetup_async(
                 "luksKillSlot",
                 f"--key-file={key_file_verification}",
                 *header_arg,
@@ -233,7 +301,7 @@ class LUKSKeyStoreManager(object):
                 slot_id,
                 input=kill_input,
             )
-        Cryptsetup.cryptsetup(
+        await Cryptsetup.cryptsetup_async(
             "luksAddKey",
             f"--key-file={key_file_verification}",
             f"--key-slot={slot_id}",
@@ -353,6 +421,49 @@ class LUKSKeyStoreManager(object):
             success = False
 
         return success
+
+    def unlock(self, name_glob: str, parallel: int) -> int:
+        """Unlock matching volumes with the admin key, asking for it once."""
+        self._KEYSTORE.admin_key_for_input(
+            "LUKS admin key for unlocking volumes at this location"
+        )
+
+        matching = EncryptedLogicalVolume.matching(name_glob)
+        locked = []
+        for volume in matching:
+            if volume.is_unlocked():
+                console.print(f"{volume.name} is already unlocked, skipping.")
+            else:
+                locked.append(volume)
+
+        if not locked:
+            if matching:
+                console.print(
+                    f"Note: All volumes matching `{name_glob}` are already "
+                    "unlocked."
+                )
+            else:
+                console.print(
+                    f"Note: The glob `{name_glob}` matches no volume."
+                )
+            return 0
+
+        async def unlock(volume: EncryptedLogicalVolume):
+            await volume.activate_async(self._KEYSTORE.admin_key_for_input())
+
+        failures = asyncio.run(
+            run_parallel(locked, unlock, "Unlocking", parallel)
+        )
+
+        if failures:
+            console.print(
+                "Unlocking failed for: " + ", ".join(failures),
+                style="bold red",
+            )
+            return 1
+
+        console.print("Volumes unlocked.", style="bold green")
+        return 0
 
     def fingerprint(self, verify: bool, confirm: bool) -> int:
         """
