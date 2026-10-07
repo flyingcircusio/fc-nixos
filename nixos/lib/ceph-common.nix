@@ -32,6 +32,7 @@ rec {
       ceph
       ceph-client
       pkgs.xfsprogs
+      pkgs.e2fsprogs # mkfs.ext4 for the key stick
       pkgs.lvm2
       pkgs.util-linux
       pkgs.systemd
