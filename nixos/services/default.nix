@@ -4,6 +4,8 @@ let
     "services/monitoring/prometheus.nix"
     "services/monitoring/prometheus/default.nix"
     "services/web-apps/matomo.nix"
+    "services/security/crowdsec.nix"
+    "services/security/crowdsec-firewall-bouncer.nix"
   ];
 
 in
@@ -14,6 +16,9 @@ in
     ./ceph/client.nix
     ./ceph/server.nix
     ./consul
+    ./crowdsec
+    ./crowdsec/firewall-bouncer.nix
+    ./crowdsec/nginx-bouncer.nix
     ./ferretdb.nix
     ./graylog
     ./haproxy
