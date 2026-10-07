@@ -694,3 +694,89 @@ class XFSVolume(AutomountActivationMixin, GenericCephVolume):
     @property
     def encrypted(self) -> bool:
         return self.lv.encrypted
+
+
+class Ext4Volume(AutomountActivationMixin):
+    MKFS_OPTS = ["-m", "0"]
+    MOUNT_OPTS = "nodev,nosuid,noatime,nodiratime"
+    FSTYPE = "ext4"
+
+    @staticmethod
+    def mkfs(device: str, label: str, opts: list[str], retries: int = 5):
+        """Create ext4 filesystem with retry on 'Device or resource busy' errors."""
+        for attempt in range(retries):
+            try:
+                run.mkfs_ext4("-F", "-L", label, *opts, device)
+                run.sync()
+                return
+            except CalledProcessError as e:
+                stderr = (
+                    e.stderr.decode("ascii", errors="replace")
+                    if e.stderr
+                    else ""
+                )
+                if "Device or resource busy" in stderr:
+                    if attempt < retries - 1:
+                        console.print(
+                            f"Device {device} busy, retrying...",
+                            style="yellow",
+                        )
+                        run.udevadm("settle")
+                        time.sleep(1)
+                        continue
+                raise
+
+    def __init__(self, name: str, mountpoint: str, automount=False):
+        self.name = name
+        self.mountpoint = mountpoint
+        self.automount = automount
+        self.lv = GenericLogicalVolume(self.name)
+
+    @property
+    def device(self):
+        return self.lv.device
+
+    @property
+    def exists(self) -> bool:
+        return self.lv.exists(self.name)
+
+    def create(
+        self,
+        vg_name: str,
+        size: str,
+        disk: Optional[str] = None,
+        encrypt: bool = False,
+    ):
+        """The `disk` argument is optional and only considered for when the
+        VG does not exists yet. If a VG called `vg_name` can be found, `disk`
+        is ignored.
+        """
+        print(f"Creating data volume on {disk or vg_name}...")
+        disk_block = DiskWithSinglePartition.create(disk) if disk else None
+        self.lv = GenericLogicalVolume.create(
+            name=self.name,
+            vg_name=vg_name,
+            base_device=disk_block,
+            encrypt=encrypt,
+            size=size,
+        )
+        # Create OSD filesystem
+        self.mkfs(self.device, self.name, self.MKFS_OPTS)
+        self.activate()
+
+    def activate(self):
+        self.lv.activate()
+
+        super().activate()
+
+    def purge(self, lv_only=False):
+        while os.path.ismount(self.mountpoint):
+            run.umount("-f", self.mountpoint, check=False)
+        if os.path.isdir(self.mountpoint):
+            os.rmdir(self.mountpoint)
+        if self.lv:
+            self.lv.purge(lv_only)
+
+    @property
+    def encrypted(self) -> bool:
+        return self.lv.encrypted

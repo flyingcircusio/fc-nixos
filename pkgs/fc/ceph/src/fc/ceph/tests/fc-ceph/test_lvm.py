@@ -186,3 +186,36 @@ def test_encrypted_activate_lets_cryptsetup_read_the_local_key(monkeypatch):
             {"input": None},
         )
     ]
+def test_ext4_volume_uses_mkfs_ext4(monkeypatch):
+    """mkfs passes ext4's own force flag and options."""
+    from fc.ceph.lvm import Ext4Volume
+
+    mock_mkfs = mock.Mock()
+    monkeypatch.setattr("fc.ceph.lvm.run.mkfs_ext4", mock_mkfs)
+    monkeypatch.setattr("fc.ceph.lvm.run.sync", mock.Mock())
+
+    Ext4Volume.mkfs("/dev/sdj", "keys", Ext4Volume.MKFS_OPTS)
+
+    mock_mkfs.assert_called_once_with("-F", "-L", "keys", "-m", "0", "/dev/sdj")
+
+
+def test_keystore_volume_takes_the_whole_stick(monkeypatch, tmp_path):
+    """The keystore volume is ext4 and sized by the whole VG."""
+    from fc.ceph.luks.manage import LUKSKeyStoreManager
+    from fc.ceph.lvm import Ext4Volume
+
+    monkeypatch.setattr("fc.ceph.lvm.run.json.lvs", lambda *args, **kwargs: [])
+    manager = LUKSKeyStoreManager()
+    requested = {}
+
+    def create(self, vg_name, size, device, **kwargs):
+        requested.update(vg_name=vg_name, size=size, device=device)
+
+    monkeypatch.setattr(Ext4Volume, "create", create)
+    monkeypatch.setattr(manager._KEYSTORE, "local_key_path", lambda: str(tmp_path / "host.key"))
+    monkeypatch.setattr("fc.ceph.luks.manage.shutil.chown", lambda *args, **kwargs: None)
+
+    manager.create("/dev/sdj")
+
+    assert isinstance(manager.volume, Ext4Volume)
+    assert requested == {"vg_name": "vgkeys", "size": "100%vg", "device": "/dev/sdj"}

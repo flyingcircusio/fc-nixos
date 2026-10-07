@@ -24,4 +24,4 @@ branches.
 
 ### NixOS XX.XX platform
 
-- ceph_mon: provide `fc-kvmrescue` helper script to streamline the evacuation of dead KVM hosts (PL-135552)
+- ceph: Provide per-cluster "fcio" orchestration pool (PL-134255)

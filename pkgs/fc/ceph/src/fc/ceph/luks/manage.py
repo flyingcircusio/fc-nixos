@@ -14,7 +14,7 @@ from fc.ceph.luks import (
     Cryptsetup,
 )
 from fc.ceph.luks.checks import all_checks
-from fc.ceph.lvm import EncryptedLogicalVolume, XFSVolume
+from fc.ceph.lvm import EncryptedLogicalVolume, Ext4Volume
 from fc.ceph.util import console, run
 from rich.progress import Progress
 
@@ -168,12 +168,12 @@ class LuksDevice(NamedTuple):
 
 class LUKSKeyStoreManager(object):
     def __init__(self):
-        self.volume = XFSVolume("keys", "/mnt/keys", automount=True)
+        self.volume = Ext4Volume("keys", "/mnt/keys", automount=True)
         self._KEYSTORE = KEYSTORE  # don't use directly, overridable in test
 
     def create(self, device):
         console.print(f"Creating keystore on {device} ...", style="bold")
-        self.volume.create("vgkeys", "1g", device)
+        self.volume.create("vgkeys", "100%vg", device)
         console.print(
             f"Creating secret key in {self._KEYSTORE.local_key_path()} ...",
             style="bold",

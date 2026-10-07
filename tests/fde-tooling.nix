@@ -8,7 +8,10 @@ import ./make-test-python.nix (
         {
 
           virtualisation.emptyDiskImages = [
-            2000 # vdb - key stick
+            # vdb: a key stick as small as the ones we buy - 128M is enough
+            # for ext4 but too small for XFS, which is why the keystore uses
+            # ext4 (PL-135638)
+            128
             2000 # vdc - backup disk 1
             2000 # vdd - backup disk 2
             2000 # vde - backup disk 3

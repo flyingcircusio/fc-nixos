@@ -3,7 +3,7 @@ repos:
 - hooks:
   - id: detect-private-key
   - id: check-added-large-files
-  - exclude: "(?x)^(\n  secrets/|environments/.*/secret.*|\n  .*\\.patch\n)$\n"
+  - exclude: "(?x)^(\n  secrets/|environments/.*/secret.*|\n  adr/.*\\.md|\n  .*\\.patch\n)$\n"
     id: trailing-whitespace
   - exclude: "(?x)^(\n  environments/.*/secret.*|\n  .*\\.patch\n)$\n"
     id: end-of-file-fixer
@@ -36,3 +36,11 @@ repos:
   rev: v0.9.1
   hooks:
     - id: keep-sorted
+- repo: local
+  hooks:
+    - id: adr-index
+      name: check ADR numbers and update adr/README.md
+      entry: adr/update-index.py
+      language: python
+      files: ^adr/
+      pass_filenames: false

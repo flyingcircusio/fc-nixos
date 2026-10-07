@@ -245,6 +245,7 @@ with lib;
       # Our custom services
       sensuclient = 31004;
       powerdns = 31005;
+      skvaider = 31006;
 
       # removed by upstream, we want to keep it
       solr = 309;

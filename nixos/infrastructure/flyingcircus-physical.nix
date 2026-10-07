@@ -37,6 +37,9 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") (
           "tg3"
           # storage drivers, for hardware discovery
           "nvme"
+          # the key stick is a USB device
+          "uas"
+          "usb_storage"
         ];
 
         # We don't know generally which filesystems our machines use for their
