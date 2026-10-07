@@ -53,7 +53,8 @@ in
         internal = true;
         default = {
           device = "/dev/disk/by-label/keys";
-          fsType = "xfs";
+          # xfs on the older machines, ext4 on the small sticks
+          fsType = "auto";
           options = [
             "nofail"
             "auto"

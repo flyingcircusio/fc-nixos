@@ -134,6 +134,7 @@ run = Runner(
         "ceph_mgr": "ceph-mgr",
         "ceph_mon": "ceph-mon",
         "ceph_authtool": "ceph-authtool",
+        "mkfs_ext4": "mkfs.ext4",
         "mkfs_xfs": "mkfs.xfs",
         "rbd_locktool": "rbd-locktool",
         "radosgw_admin": "radosgw-admin",
