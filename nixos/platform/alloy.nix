@@ -26,7 +26,7 @@ in
       environment.etc."alloy/prometheus.alloy".text = ''
         prometheus.remote_write "fcio_rg_prometheus" {
           endpoint {
-            url = "http://${prometheusHost}:${toString prometheusPort}"
+            url = "http://${prometheusHost}:${toString prometheusPort}/api/v1/write"
           }
         }
       '';
@@ -92,6 +92,9 @@ in
 
             client {
                 endpoint = "${tempoHost}:${toString tempoPort}"
+                tls {
+                    insecure = true
+                }
             }
         }
 

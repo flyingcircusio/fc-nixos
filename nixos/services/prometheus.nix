@@ -57,6 +57,7 @@ let
       "--storage.tsdb.path=${dataDir}"
       "--config.file=${prometheusYml}"
       "--web.listen-address=${cfg.listenAddress}"
+      "--web.enable-remote-write-receiver"
     ]
     ++ optional (cfg.webExternalUrl != null) "--web.external-url=${cfg.webExternalUrl}";
 
