@@ -1,3 +1,39 @@
+# Release 2026_041
+
+## Impact
+
+- `pkgs.openssl_3`, pointing to the 3.0.x branch, is now marked as insecure. We recommend updating to `openssl_3_5` (LTS), which is API/ABI-compatible.
+
+
+## NixOS XX.XX platform
+
+- Introduce basic CrowdSec role for NGINX log analysis and WAF. (PL-135572)
+
+- `fc-luks keystore rekey` can now rekey multiple volumes concurrently, defaulting to half the available CPUs and tunable via `-j/--parallel`, with a progress bar and per-volume failure reporting. Each job runs memory-intensive key derivation (~1 GiB). (PL-135511)
+
+- ceph: Provide per-cluster "fcio" orchestration pool (PL-134255)
+
+- The LUKS keystore volume now fits on a small key stick: it is formatted as ext4 and takes the whole volume group instead of a fixed 1g, and the stick is mounted by its `keys` label whichever filesystem it carries. (PL-135638)
+
+- A major rewrite of our AI inference tooling. (PL-134151)
+
+  With the experience we made over almost 9 months we have moved away
+  from AMD and our infrastructure now runs on Nvidia RTX PRO 6000 cards.
+
+  We completely removed AMD (rocm/vulkan) support for now as it introduced
+  major stability issues and we want to drive complexity down and reliability
+  up.
+
+  Also, ollama was a great way to start this journey but hasn't proven
+  a good solution for a service offering. We thus replaced it with vllm
+  and are now coordinating model placement over GPU clusters with our
+  own tooling and can integrate different inference engines for testing
+  and higher flexibility in production environments.
+
+- `fc-luks volume unlock <pattern>` unlocks matching LUKS volumes with the admin key, asking for the passphrase only once. This keeps a machine available when the local key stick fails and cannot be replaced immediately. (PL-135320)
+
+
+
 # Release 2026_040
 
 ## NixOS XX.XX platform
