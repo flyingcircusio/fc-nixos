@@ -231,9 +231,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-157.0",
+    "name": "firefox-157.0.1",
     "pname": "firefox",
-    "version": "157.0"
+    "version": "157.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-15.3.0",
@@ -246,9 +246,9 @@
     "version": "2.3.3"
   },
   "ghostscript": {
-    "name": "ghostscript-with-X-10.07.1",
+    "name": "ghostscript-with-X-10.08.0",
     "pname": "ghostscript-with-X",
-    "version": "10.07.1"
+    "version": "10.08.0"
   },
   "git": {
     "name": "git-2.54.0",
@@ -296,7 +296,7 @@
     "version": "19.3.3"
   },
   "glibc": {
-    "name": "glibc-2.42-84",
+    "name": "glibc-2.42-100",
     "pname": "glibc",
     "version": "2.42"
   },
@@ -311,9 +311,9 @@
     "version": "2.4.9"
   },
   "go": {
-    "name": "go-1.26.7",
+    "name": "go-1.26.8",
     "pname": "go",
-    "version": "1.26.7"
+    "version": "1.26.8"
   },
   "grafana": {
     "name": "grafana-13.0.9",
@@ -331,9 +331,9 @@
     "version": "3.3.11"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.2-31",
+    "name": "imagemagick-7.1.2-32",
     "pname": "imagemagick",
-    "version": "7.1.2-31"
+    "version": "7.1.2-32"
   },
   "inetutils": {
     "name": "inetutils-2.7",
@@ -438,9 +438,9 @@
     "version": "3.8.0"
   },
   "libgcrypt": {
-    "name": "libgcrypt-1.12.2",
+    "name": "libgcrypt-1.12.4",
     "pname": "libgcrypt",
-    "version": "1.12.2"
+    "version": "1.12.4"
   },
   "libjpeg": {
     "name": "libjpeg-turbo-3.1.4",
@@ -555,9 +555,9 @@
     "version": "2.7.2.3"
   },
   "memcached": {
-    "name": "memcached-1.6.42",
+    "name": "memcached-1.6.45",
     "pname": "memcached",
-    "version": "1.6.42"
+    "version": "1.6.45"
   },
   "mongodb": {
     "name": "mongodb-7.0.43",
@@ -667,9 +667,9 @@
     "version": "10.5p1"
   },
   "openssl": {
-    "name": "openssl-3.6.4",
+    "name": "openssl-3.6.5",
     "pname": "openssl",
-    "version": "3.6.4"
+    "version": "3.6.5"
   },
   "openssl_1_1": {
     "name": "openssl-1.1.1w",
@@ -682,9 +682,9 @@
     "version": "3.5.9"
   },
   "openssl_3_6": {
-    "name": "openssl-3.6.4",
+    "name": "openssl-3.6.5",
     "pname": "openssl",
-    "version": "3.6.4"
+    "version": "3.6.5"
   },
   "openssl_4_0": {
     "name": "openssl-4.0.3",
@@ -692,9 +692,9 @@
     "version": "4.0.3"
   },
   "openssl_legacy": {
-    "name": "openssl-3.6.4",
+    "name": "openssl-3.6.5",
     "pname": "openssl",
-    "version": "3.6.4"
+    "version": "3.6.5"
   },
   "openvpn": {
     "name": "openvpn-2.6.23",
@@ -712,9 +712,9 @@
     "version": "8.45"
   },
   "pcre2": {
-    "name": "pcre2-10.48",
+    "name": "pcre2-10.49",
     "pname": "pcre2",
-    "version": "10.48"
+    "version": "10.49"
   },
   "pdns": {
     "name": "pdns-5.0.6",
@@ -787,9 +787,9 @@
     "version": "0.29.2"
   },
   "podman": {
-    "name": "podman-5.8.7",
+    "name": "podman-5.8.8",
     "pname": "podman",
-    "version": "5.8.7"
+    "version": "5.8.8"
   },
   "poetry": {
     "name": "poetry-2.4.1",
@@ -1102,9 +1102,9 @@
     "version": "12.7.7"
   },
   "systemd": {
-    "name": "systemd-260.4",
+    "name": "systemd-260.5",
     "pname": "systemd",
-    "version": "260.4"
+    "version": "260.5"
   },
   "tcpdump": {
     "name": "tcpdump-vxlan-4.99.6",
