@@ -144,6 +144,7 @@ in
   sudo = callTest ./sudo.nix { };
   syslog = callSubTests ./syslog.nix { };
   systemd-service-cycles = callTest ./systemd-service-cycles.nix { };
+  tempo = callTest ./tempo.nix { };
   users = callTest ./users.nix { };
   vxlan = callTest ./vxlan.nix { };
   webproxy = callTest ./webproxy.nix { };
