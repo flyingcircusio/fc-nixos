@@ -10,22 +10,64 @@ import ./make-test-python.nix (
   with testlib;
 
   let
-    server6Srv = fcIP.srv6 1;
-    server6Fe = fcIP.fe6 1;
-    server4Srv = fcIP.srv4 1;
-    server4Fe = fcIP.fe4 1;
-    hosts = {
-      "127.0.0.1" = [ "localhost" ];
-      "::1" = [ "localhost" ];
-      ${server6Fe} = [
-        "server"
-        "other"
-      ];
-      ${server4Fe} = [
-        "server"
-        "other"
-      ];
-    };
+    nixpkgs = (import ../release/versions.nix { }).nixpkgs;
+
+    acmeClient =
+      { nodes, ... }:
+      let
+        caCert = nodes.acme.test-support.acme.caCert;
+        caDomain = nodes.acme.test-support.acme.caDomain;
+
+      in
+      {
+        security.acme = {
+          acceptTerms = true;
+          defaults = {
+            server = "https://${caDomain}/dir";
+          };
+        };
+
+        security.pki.certificateFiles = [ caCert ];
+      };
+
+    netHosts = lib.mkForce (
+      (lib.genAttrs'
+        (lib.crossLists
+          (net: id: {
+            inherit net;
+            inherit id;
+          })
+          [
+            [
+              "fe4"
+              "srv4"
+              "fe6"
+              "srv4"
+            ]
+            (lib.range 2 8)
+          ]
+        )
+        (
+          netId:
+          lib.nameValuePair ((fcIP.${netId.net}) netId.id) [
+            "${
+              builtins.substring 0 (builtins.stringLength netId.net - 1) netId.net
+            }${toString netId.id}.example.local"
+            "both${toString netId.id}.example.local"
+          ]
+        )
+      )
+      // {
+        ${fcIP.fe6 1} = [
+          "server1"
+          "other1"
+        ];
+        ${fcIP.fe4 1} = [
+          "server1"
+          "other1"
+        ];
+      }
+    );
 
     expectedNginxMajorVersion = "1.30";
 
@@ -57,28 +99,10 @@ import ./make-test-python.nix (
       {
         imports = [
           (testlib.fcConfig { inherit id; })
+          acmeClient
         ];
 
-        networking.hosts = mkForce {
-          "127.0.0.1" = [ "localhost" ];
-          "::1" = [ "localhost" ];
-          ${fcIP.srv6 id} = [
-            "srv.local"
-            "both.local"
-          ];
-          ${fcIP.srv4 id} = [
-            "srv.local"
-            "both.local"
-          ];
-          ${fcIP.fe6 id} = [
-            "fe.local"
-            "both.local"
-          ];
-          ${fcIP.fe4 id} = [
-            "fe.local"
-            "both.local"
-          ];
-        };
+        networking.hosts = netHosts;
 
         flyingcircus.services.nginx.enable = true;
         services.nginx.virtualHosts = conf;
@@ -96,14 +120,23 @@ import ./make-test-python.nix (
   {
     name = "nginx";
     nodes = {
+      acme = {
+        imports = [
+          (nixpkgs + "/nixos/tests/common/acme/server")
+          (testlib.fcConfig { id = 10; })
+        ];
+
+        networking.hosts = netHosts;
+      };
       server1 =
         { lib, pkgs, ... }:
         {
           imports = [
             (testlib.fcConfig { id = 1; })
+            acmeClient
           ];
 
-          networking.hosts = lib.mkForce hosts;
+          networking.hosts = netHosts;
 
           environment.etc."proxy.http".text = ''
             HTTP/1.1 200 OK
@@ -134,9 +167,9 @@ import ./make-test-python.nix (
 
           # Vhost for config reload check.
           # Explicitly use flyingcircus option here for regression testing
-          flyingcircus.services.nginx.virtualHosts.server = {
+          flyingcircus.services.nginx.virtualHosts.server1 = {
             root = rootInitial;
-            serverAliases = [ "other" ];
+            serverAliases = [ "other1" ];
             addSSL = true;
             enableACME = true;
             locations."/proxy".proxyPass = "http://127.0.0.1:8008";
@@ -150,7 +183,7 @@ import ./make-test-python.nix (
           # Display the nginx version on the 404 page.
           services.nginx.serverTokens = true;
 
-          security.acme.certs.server.keyType = "rsa4096";
+          security.acme.certs.server1.keyType = "rsa4096";
 
           # To test that sensu rules successfully eval
           flyingcircus.services.sensu-client = {
@@ -160,7 +193,7 @@ import ./make-test-python.nix (
           };
 
           specialisation.brokenconfig.configuration = {
-            flyingcircus.services.nginx.virtualHosts.server.locations."/proxy".extraConfig = ''
+            flyingcircus.services.nginx.virtualHosts.server1.locations."/proxy".extraConfig = ''
               not_existing_option true;
             '';
           };
@@ -169,10 +202,10 @@ import ./make-test-python.nix (
       server2 = mkFCServer {
         id = 2;
         conf = {
-          "both.local" = {
+          "both2.example.local" = {
             serverAliases = [
-              "fe.local"
-              "srv.local"
+              "fe2.example.local"
+              "srv2.example.local"
             ];
             addSSL = true;
             enableACME = true;
@@ -187,10 +220,10 @@ import ./make-test-python.nix (
       server3 = mkFCServer {
         id = 3;
         conf = {
-          "both.local" = {
+          "both3.example.local" = {
             serverAliases = [
-              "fe.local"
-              "srv.local"
+              "fe3.example.local"
+              "srv3.example.local"
             ];
             addSSL = true;
             enableACME = true;
@@ -204,10 +237,10 @@ import ./make-test-python.nix (
       server4 = mkFCServer {
         id = 4;
         conf = {
-          "both.local" = {
+          "both4.example.local" = {
             serverAliases = [
-              "fe.local"
-              "srv.local"
+              "fe4.example.local"
+              "srv4.example.local"
             ];
             addSSL = true;
             enableACME = true;
@@ -228,7 +261,7 @@ import ./make-test-python.nix (
           flyingcircus.services.nginx = {
             enable = true;
             logPerVirtualHost = true;
-            virtualHosts.server = {
+            virtualHosts.server5 = {
               listenAddresses = [ "127.0.0.1" ];
               locations."/".return = "204";
             };
@@ -239,10 +272,10 @@ import ./make-test-python.nix (
         id = 6;
         rateLimit = true;
         conf = {
-          "both.local" = {
+          "both6.example.local" = {
             serverAliases = [
-              "fe.local"
-              "srv.local"
+              "fe6.example.local"
+              "srv6.example.local"
             ];
             addSSL = true;
             enableACME = true;
@@ -271,7 +304,7 @@ import ./make-test-python.nix (
           };
           flyingcircus.roles.webgateway.enable = true;
           flyingcircus.services.nginx = {
-            virtualHosts.server = {
+            virtualHosts.server7 = {
               serverName = "_";
               listenAddresses = [ "127.0.0.1" ];
               locations."/".return = "204";
@@ -297,6 +330,7 @@ import ./make-test-python.nix (
         {
           imports = [
             (testlib.fcConfig { id = 8; })
+            acmeClient
           ];
 
           flyingcircus.services.sensu-client = {
@@ -307,13 +341,13 @@ import ./make-test-python.nix (
 
           flyingcircus.roles.webgateway.enable = true;
           flyingcircus.services.nginx = {
-            virtualHosts.server = {
-              useACMEHost = "server";
+            virtualHosts.server8 = {
+              useACMEHost = "server8";
               forceSSL = true;
               enableACME = false;
             };
           };
-          security.acme.certs.server = {
+          security.acme.certs.server8 = {
             dnsProvider = "pdns";
             environmentFile = pkgs.writeText "pdns-cred" "";
             group = "nginx";
@@ -336,10 +370,6 @@ import ./make-test-python.nix (
             else:
               server1.succeed(f"{path} test")
 
-        def prep(server):
-          server.wait_for_unit('nginx.service')
-          server.wait_for_open_port(81)
-
         def assert_file_permissions(expected, path):
           permissions = server1.succeed(f"stat {path} -c %a:%U:%G").strip()
           assert permissions == expected, f"expected: {expected}, got {permissions}"
@@ -350,20 +380,22 @@ import ./make-test-python.nix (
           assert_file_permissions("644:nginx:nginx", "/var/log/nginx/error.log")
           assert_file_permissions("644:nginx:nginx", "/var/log/nginx/access.log")
 
-        def assert_reachable(server, intf, options = ""):
-          server.succeed(f"curl -k https://{intf}.local --interface eth{intf} {options} | grep TESTOK")
+        def assert_reachable(server, server_id, intf, options = ""):
+          server.succeed(f"curl -k https://{intf}{server_id}.example.local --interface eth{intf} {options} | grep TESTOK")
 
-        def assert_unreachable(server, intf, options = ""):
-          server.fail(f"curl -k https://{intf}.local --interface eth{intf} {options} | grep TESTOK")
+        def assert_unreachable(server, server_id, intf, options = ""):
+          server.fail(f"curl -k https://{intf}{server_id}.example.local --interface eth{intf} {options} | grep TESTOK")
 
         # Prep all servers to avoid hard to read output.
-        prep(server1)
-        prep(server2)
-        prep(server3)
-        prep(server4)
-        prep(server5)
-        prep(server6)
-        prep(server7)
+        acme.start()
+
+        acme.wait_for_unit('pebble.service')
+
+        start_all()
+
+        for i in range(1, 7):
+          globals()[f"server{i}"].wait_for_unit("nginx.service")
+          globals()[f"server{i}"].wait_for_open_port(81)
 
         with subtest("proxy cache directory should be accessible only for nginx"):
           assert_file_permissions("700:nginx:nginx", "/var/cache/nginx/proxy")
@@ -374,15 +406,15 @@ import ./make-test-python.nix (
         with subtest("dependencies between acme services and nginx-config-reload should be present"):
           # pre-renew reloading
           after = server1.succeed("systemctl show --property After --value nginx-config-reload.service")
-          assert "acme-server.service" in after, f"acme-server.service missing: {after}"
-          server1.succeed("stat /etc/systemd/system/acme-server.service.wants/nginx-config-reload.service")
+          assert "acme-server1.service" in after, f"acme-server.service missing: {after}"
+          server1.succeed("stat /etc/systemd/system/acme-server1.service.wants/nginx-config-reload.service")
           before = server1.succeed("systemctl show --property Before --value nginx-config-reload.service")
-          assert "acme-order-renew-server.service" in before, f"acme-order-renew-server.service missing: {before}"
+          assert "acme-order-renew-server1.service" in before, f"acme-order-renew-server.service missing: {before}"
           # post-renew is almost impossible to test now, upstream Nixpkgs includes a test-case that
           # nginx doesn't get restarted when a new certificate is added
 
         with subtest("acme script should have lego calls with custom key-type and required default settings"):
-          lego_calls = server1.succeed("grep lego $(systemctl cat acme-order-renew-server | awk -F '=' '/ExecStart=/ {print $2}')")
+          lego_calls = server1.succeed("grep lego $(systemctl cat acme-order-renew-server1 | awk -F '=' '/ExecStart=/ {print $2}')")
           print("lego calls emitted:")
           print("*" * 20)
           print(lego_calls)
@@ -392,50 +424,53 @@ import ./make-test-python.nix (
           assert "--http.webroot /var/lib/acme/acme-challenge" in lego_calls, "Can't find expected http.webroot option"
           assert "--email admin@flyingcircus.io" in lego_calls, "Can't find expected email option"
 
+        with subtest("Issue of ACME cert should work successful"):
+          server1.systemctl("start acme-order-renew-server1.service")
+
         # This "web server" is used for the next 2 subtests, keeps running forever.
         # proxy.log should be reset at the end of each subtest.
         server1.execute("(while true; do cat /etc/proxy.http | nc -l 8008 -N >> /tmp/proxy.log; done) >&2 &")
 
         with subtest("nginx should forward proxied host and server headers (primary name)"):
-          server1.wait_until_succeeds("curl -sSf http://server/proxy/ && sleep 1 && grep X-Forwarded /tmp/proxy.log")
+          server1.wait_until_succeeds("curl -sSf http://server1/proxy/ && sleep 1 && grep X-Forwarded /tmp/proxy.log")
           _, proxy_log = server1.execute("cat /tmp/proxy.log")
           print(proxy_log)
-          assert 'X-Forwarded-Host: server' in proxy_log, f"expected X-Forwarded-Host not found, got '{proxy_log}'"
+          assert 'X-Forwarded-Host: server1' in proxy_log, f"expected X-Forwarded-Host not found, got '{proxy_log}'"
           assert 'X-Forwarded-Server: server1' in proxy_log, f"expected X-Forwarded-Server not found, got '{proxy_log}'"
           # Reset proxy log
           server1.execute("truncate -s 0 /tmp/proxy.log")
 
         with subtest("nginx should forward proxied host and server headers (alias)"):
-          server1.wait_until_succeeds("curl -sSf http://other/proxy/ && sleep 1 && grep X-Forwarded /tmp/proxy.log")
+          server1.wait_until_succeeds("curl -sSf http://other1/proxy/ && sleep 1 && grep X-Forwarded /tmp/proxy.log")
           _, proxy_log = server1.execute("cat /tmp/proxy.log")
           print(proxy_log)
-          assert 'X-Forwarded-Host: other' in proxy_log, f"expected X-Forwarded-Host not found, got: '{proxy_log}'"
+          assert 'X-Forwarded-Host: other1' in proxy_log, f"expected X-Forwarded-Host not found, got: '{proxy_log}'"
           assert 'X-Forwarded-Server: server1' in proxy_log, f"expected X-Forwarded-Server not found, got: '{proxy_log}'"
           # Reset proxy log
           server1.execute("truncate -s 0 /tmp/proxy.log")
 
         with subtest("nginx should log only anonymized IPs"):
-          server1.succeed("curl -4 server -s -o/dev/null")
+          server1.succeed("curl -4 server1 -s -o/dev/null")
           server1.succeed("cat /var/log/nginx/access.log | grep '^${fcIPMap.fe4.prefix}0 - -'")
-          server1.succeed("curl -6 server -s -o/dev/null")
+          server1.succeed("curl -6 server1 -s -o/dev/null")
           server1.succeed("cat /var/log/nginx/access.log | grep '^${fcIPMap.fe6.prefix} - -'")
 
         with subtest("nginx should have separate log files per vhost"):
           server5.succeed("curl -4 127.0.0.1 -s -o/dev/null")
-          server5.succeed("cat /var/log/nginx/access-server.log | grep '^127.0.0.[0-9]\\+ - -'")
+          server5.succeed("cat /var/log/nginx/access-server5.log | grep '^127.0.0.[0-9]\\+ - -'")
 
         with subtest("nginx should respond with configured content"):
-          server1.succeed("curl server | grep -q 'initial content'")
+          server1.succeed("curl server1 | grep -q 'initial content'")
 
         with subtest("running nginx should have the expected version"):
-          server1.succeed("curl server/404 | grep -q ${expectedNginxMajorVersion}")
+          server1.succeed("curl server1/404 | grep -q ${expectedNginxMajorVersion}")
 
         with subtest("nginx should use changed config after reload"):
           # Replace config symlink with a new config file.
           server1.execute("sed 's#${rootInitial}#${rootChanged}#' /etc/nginx/nginx.conf > /etc/nginx/changed_nginx.conf")
           server1.execute("mv /etc/nginx/changed_nginx.conf /etc/nginx/nginx.conf")
           server1.systemctl("reload nginx")
-          server1.wait_until_succeeds("curl server | grep -q 'changed content'")
+          server1.wait_until_succeeds("curl server1 | grep -q 'changed content'")
 
         with subtest("logs should have correct permissions after reload"):
           assert_logdir()
@@ -456,7 +491,7 @@ import ./make-test-python.nix (
 
 
         with subtest("nginx modsecurity rules apply"):
-          out = server1.wait_until_succeeds("curl -v http://server/?testparam=test")
+          out = server1.wait_until_succeeds("curl -v http://server1/?testparam=test")
           print(out)
 
         with subtest("service user should be able to write to local config dir"):
@@ -491,25 +526,22 @@ import ./make-test-python.nix (
           server1.fail("${sensuCheck "nginx_status"}")
 
         with subtest("[2] fc nginx should listen on fc by default"):
-          prep(server2)
-          assert_reachable(server2, "fe")
-          assert_unreachable(server2, "srv")
+          assert_reachable(server2, 2, "fe")
+          assert_unreachable(server2, 2, "srv")
 
         with subtest("[3] fc nginx with fe4 specified as listen should only listen on fe4"):
-          prep(server3)
-          assert_reachable(server3, "fe")
-          assert_reachable(server3, "fe", "-4")
-          assert_unreachable(server3, "fe", "-6")
-          assert_unreachable(server3, "srv")
+          assert_reachable(server3, 3, "fe")
+          assert_reachable(server3, 3, "fe", "-4")
+          assert_unreachable(server3, 3, "fe", "-6")
+          assert_unreachable(server3, 3, "srv")
 
         with subtest("[4] fc nginx with fe6 specified as listen should only listen on fe6"):
           out = server4.succeed("journalctl -xeu nginx")
           print(out)
-          prep(server4)
-          assert_reachable(server4, "fe")
-          assert_reachable(server4, "fe", "-6")
-          assert_unreachable(server4, "fe" "-4")
-          assert_unreachable(server4, "srv")
+          assert_reachable(server4, 4, "fe")
+          assert_reachable(server4, 4, "fe", "-6")
+          assert_unreachable(server4, 4, "fe" "-4")
+          assert_unreachable(server4, 4, "srv")
 
         with subtest("[5] not rate limiting connections"):
           import re
