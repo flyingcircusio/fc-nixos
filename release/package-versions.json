@@ -231,9 +231,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-157.0.1",
+    "name": "firefox-158.0",
     "pname": "firefox",
-    "version": "157.0.1"
+    "version": "158.0"
   },
   "gcc": {
     "name": "gcc-wrapper-15.3.0",
@@ -256,9 +256,9 @@
     "version": "2.54.0"
   },
   "gitaly": {
-    "name": "gitaly-19.4.1",
+    "name": "gitaly-19.4.2",
     "pname": "gitaly",
-    "version": "19.4.1"
+    "version": "19.4.2"
   },
   "github-runner": {
     "name": "github-runner-2.337.0",
@@ -266,24 +266,24 @@
     "version": "2.337.0"
   },
   "gitlab": {
-    "name": "gitlab-19.4.1",
+    "name": "gitlab-19.4.2",
     "pname": "gitlab",
-    "version": "19.4.1"
+    "version": "19.4.2"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-4.41.0",
+    "name": "gitlab-container-registry-4.42.0",
     "pname": "gitlab-container-registry",
-    "version": "4.41.0"
+    "version": "4.42.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-19.4.1",
+    "name": "gitlab-ee-19.4.2",
     "pname": "gitlab-ee",
-    "version": "19.4.1"
+    "version": "19.4.2"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-19.4.1",
+    "name": "gitlab-pages-19.4.2",
     "pname": "gitlab-pages",
-    "version": "19.4.1"
+    "version": "19.4.2"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-19.0.0",
@@ -291,9 +291,9 @@
     "version": "19.0.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-19.4.1",
+    "name": "gitlab-workhorse-19.4.2",
     "pname": "gitlab-workhorse",
-    "version": "19.4.1"
+    "version": "19.4.2"
   },
   "glibc": {
     "name": "glibc-2.42-100",
@@ -416,9 +416,9 @@
     "version": "1.36.4+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.7.5",
+    "name": "keycloak-26.8.0",
     "pname": "keycloak",
-    "version": "26.7.5"
+    "version": "26.8.0"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.20.2",
@@ -625,9 +625,9 @@
     "version": "4.40"
   },
   "nss_latest": {
-    "name": "nss-3.130",
+    "name": "nss-3.131",
     "pname": "nss",
-    "version": "3.130"
+    "version": "3.131"
   },
   "nvidia-settings": {},
   "nvidia-x11": {},
