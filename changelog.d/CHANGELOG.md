@@ -1,3 +1,24 @@
+# Release 2026_042
+
+## Impact
+
+- A bullet item for the Impact category.
+
+-
+
+
+## NixOS XX.XX platform
+
+- Adjust the Opentelemetry config for alloy to fix a few connectivity bugs. (PL-135750)
+
+- The global Statshost now accepts `nvidia_smi` (Telegraf) metrics, so the Skvaider Inference Host and Gateway Grafana GPU dashboards can be served from the global stats host. (PL-135277)
+
+- Stamina retry logs now selectively redact credential-like values (e.g. S3 secret/access keys), keeping non-sensitive call arguments (e.g. usernames, buckets) for debugging. (PL-135313)
+
+- Reduce output noise for the pending pods monitoring check (FC-53263)
+
+
+
 # Release 2026_041
 
 ## Impact
