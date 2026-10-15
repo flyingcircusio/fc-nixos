@@ -119,7 +119,7 @@ import ./make-test-python.nix (
       NF_CONNTRACK m
       NFSD m
       NFSD_V4 y
-      NR_CPUS 384
+      NR_CPUS 512
       OPENVSWITCH m
       PACKET_DIAG m
       PAGE_POOL y
