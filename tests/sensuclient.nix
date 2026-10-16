@@ -37,8 +37,14 @@ import ./make-test-python.nix (
         flyingcircus.encServices = encServices;
         networking.domain = "gocept.net";
         flyingcircus.services.sensu-client.enable = true;
-        flyingcircus.services.rabbitmq.enable = true;
-        flyingcircus.services.rabbitmq.listenAddress = lib.mkOverride 90 "::";
+        flyingcircus.services.rabbitmq = {
+          enable = true;
+          listenAddress = lib.mkOverride 90 "::";
+          configItems = {
+            "deprecated_features.permit.transient_nonexcl_queues" = "true";
+          };
+        };
+
         systemd.services.prepare-rabbitmq-for-sensu = {
           description = "Prepare rabbitmq for sensu-server.";
           partOf = [ "rabbitmq.service" ];
