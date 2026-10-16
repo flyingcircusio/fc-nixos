@@ -428,7 +428,6 @@ import ./make-test-python.nix (
           _, output = host1.execute("systemctl list-timers | grep fc-qemu-scrub")
           print(output)
           assert "fc-qemu-scrub" in output
-          assert "min left "
           assert not output.startswith("n/a")
           assert output.count("n/a") <= 2
 

@@ -148,11 +148,9 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
     '';
   };
 
-  services.journald.extraConfig = ''
-    SystemMaxUse=2G
-    MaxLevelConsole=notice
-    ForwardToWall=no
-  '';
+  services.journald.settings.Journal = {
+    ForwardToWall = true;
+  };
 
   systemd = {
     ctrlAltDelUnit = "poweroff.target";

@@ -181,9 +181,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   fc = (
     import ./default.nix {
       pkgs = self;
-      # Only used by the agent for now but we should probably use this
-      # for all our Python packages and update Python in sync then.
-      pyPackages = self.python312Packages;
     }
   );
 
@@ -319,9 +316,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       ];
     }
   );
-
-  # TODO: re-evaluate whether this still needs to be vendored without lmdb support (#PL-130446)
-  libmodsecurity = super.callPackage ./libmodsecurity { };
 
   # Change this alias for trying out other kernel packages on non-production
   # machines.
@@ -526,11 +520,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   libxcrypt-with-sha256 = super.libxcrypt.override {
     enableHashes = "strong,sha256crypt";
-  };
-
-  links2_nox = super.links2.override {
-    enableX11 = false;
-    enableFB = false;
   };
 
   lkl = super.lkl.overrideAttrs (_: {
