@@ -160,9 +160,9 @@
     "version": "2.93"
   },
   "docker": {
-    "name": "docker-29.8.1",
+    "name": "docker-29.8.2",
     "pname": "docker",
-    "version": "29.8.1"
+    "version": "29.8.2"
   },
   "docker-compose": {
     "name": "docker-compose-5.6.0",
@@ -180,9 +180,9 @@
     "version": "1.12.30"
   },
   "erlang": {
-    "name": "erlang-28.5.0.7",
+    "name": "erlang-28.5.0.8",
     "pname": "erlang",
-    "version": "28.5.0.7"
+    "version": "28.5.0.8"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -240,9 +240,9 @@
     "version": "19.4.2"
   },
   "github-runner": {
-    "name": "github-runner-2.337.0",
+    "name": "github-runner-2.338.0",
     "pname": "github-runner",
-    "version": "2.337.0"
+    "version": "2.338.0"
   },
   "gitlab": {
     "name": "gitlab-19.4.2",
@@ -400,9 +400,9 @@
     "version": "26.8.1"
   },
   "kubernetes-helm": {
-    "name": "kubernetes-helm-4.3.0",
+    "name": "kubernetes-helm-4.3.1",
     "pname": "kubernetes-helm",
-    "version": "4.3.0"
+    "version": "4.3.1"
   },
   "libffi": {
     "name": "libffi-3.8.0",
@@ -420,9 +420,9 @@
     "version": "3.1.4.1"
   },
   "libmodsecurity": {
-    "name": "libmodsecurity-3.0.14",
+    "name": "libmodsecurity-3.0.16",
     "pname": "libmodsecurity",
-    "version": "3.0.14"
+    "version": "3.0.16"
   },
   "libmysqlclient": {
     "name": "mariadb-connector-c-3.3.5",
@@ -550,19 +550,19 @@
     "version": "3.1.1"
   },
   "nginx": {
-    "name": "nginx-1.30.5",
+    "name": "nginx-1.30.6",
     "pname": "nginx",
-    "version": "1.30.5"
+    "version": "1.30.6"
   },
   "nginxMainline": {
-    "name": "nginx-1.31.6",
+    "name": "nginx-1.31.7",
     "pname": "nginx",
-    "version": "1.31.6"
+    "version": "1.31.7"
   },
   "nginxStable": {
-    "name": "nginx-1.30.5",
+    "name": "nginx-1.30.6",
     "pname": "nginx",
-    "version": "1.30.5"
+    "version": "1.30.6"
   },
   "nix": {
     "name": "nix-2.34.9",
@@ -740,9 +740,9 @@
     "version": "0.29.2"
   },
   "podman": {
-    "name": "podman-5.8.8",
+    "name": "podman-5.8.9",
     "pname": "podman",
-    "version": "5.8.8"
+    "version": "5.8.9"
   },
   "poetry": {
     "name": "poetry-2.4.3",
@@ -1010,9 +1010,9 @@
     "version": "0.11.0"
   },
   "slurm": {
-    "name": "slurm-26-05-4-1",
+    "name": "slurm-26-05-5-1",
     "pname": "slurm",
-    "version": "26-05-4-1"
+    "version": "26-05-5-1"
   },
   "smartmontools": {
     "name": "smartmontools-7.5",
