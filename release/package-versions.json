@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-155.0.8059.39",
+    "name": "chromedriver-unwrapped-155.0.8059.84",
     "pname": "chromedriver-unwrapped",
-    "version": "155.0.8059.39"
+    "version": "155.0.8059.84"
   },
   "chromium": {
-    "name": "chromium-155.0.8059.39",
+    "name": "chromium-155.0.8059.84",
     "pname": "chromium",
-    "version": "155.0.8059.39"
+    "version": "155.0.8059.84"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.5",
@@ -181,9 +181,9 @@
     "version": "2.93"
   },
   "docker": {
-    "name": "docker-29.8.1",
+    "name": "docker-29.8.2",
     "pname": "docker",
-    "version": "29.8.1"
+    "version": "29.8.2"
   },
   "docker-compose": {
     "name": "docker-compose-5.4.0",
@@ -196,14 +196,14 @@
     "version": "2.4.5"
   },
   "element-web": {
-    "name": "element-web-1.12.29",
+    "name": "element-web-1.12.30",
     "pname": "element-web",
-    "version": "1.12.29"
+    "version": "1.12.30"
   },
   "erlang": {
-    "name": "erlang-28.5.0.7",
+    "name": "erlang-28.5.0.8",
     "pname": "erlang",
-    "version": "28.5.0.7"
+    "version": "28.5.0.8"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -261,9 +261,9 @@
     "version": "19.4.2"
   },
   "github-runner": {
-    "name": "github-runner-2.337.0",
+    "name": "github-runner-2.338.0",
     "pname": "github-runner",
-    "version": "2.337.0"
+    "version": "2.338.0"
   },
   "gitlab": {
     "name": "gitlab-19.4.2",
@@ -316,9 +316,9 @@
     "version": "1.26.8"
   },
   "grafana": {
-    "name": "grafana-13.0.9",
+    "name": "grafana-13.0.11",
     "pname": "grafana",
-    "version": "13.0.9"
+    "version": "13.0.11"
   },
   "grub2": {
     "name": "grub-2.12.1",
@@ -416,9 +416,9 @@
     "version": "1.36.4+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.8.0",
+    "name": "keycloak-26.8.1",
     "pname": "keycloak",
-    "version": "26.8.0"
+    "version": "26.8.1"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.20.2",
@@ -495,19 +495,19 @@
     "version": "0.2.5"
   },
   "linuxKernelGPU": {
-    "name": "linux-6.18.56",
+    "name": "linux-6.18.57",
     "pname": "linux",
-    "version": "6.18.56"
+    "version": "6.18.57"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.112",
+    "name": "linux-6.12.113",
     "pname": "linux",
-    "version": "6.12.112"
+    "version": "6.12.113"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.18.56",
+    "name": "linux-6.18.57",
     "pname": "linux",
-    "version": "6.18.56"
+    "version": "6.18.57"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -585,24 +585,24 @@
     "version": "2.9.1"
   },
   "nginx": {
-    "name": "nginx-1.30.5",
+    "name": "nginx-1.30.6",
     "pname": "nginx",
-    "version": "1.30.5"
+    "version": "1.30.6"
   },
   "nginxMainline": {
-    "name": "nginx-1.31.6",
+    "name": "nginx-1.31.7",
     "pname": "nginx",
-    "version": "1.31.6"
+    "version": "1.31.7"
   },
   "nginxStable": {
-    "name": "nginx-1.30.5",
+    "name": "nginx-1.30.6",
     "pname": "nginx",
-    "version": "1.30.5"
+    "version": "1.30.6"
   },
   "nix": {
-    "name": "nix-2.34.8",
+    "name": "nix-2.34.9",
     "pname": "nix",
-    "version": "2.34.8"
+    "version": "2.34.9"
   },
   "nodejs": {
     "name": "nodejs-24.21.0",
@@ -1007,9 +1007,9 @@
     "version": "4.2.9"
   },
   "rclone": {
-    "name": "rclone-1.75.1",
+    "name": "rclone-1.75.2",
     "pname": "rclone",
-    "version": "1.75.1"
+    "version": "1.75.2"
   },
   "re2c": {
     "name": "re2c-4.5.1",
@@ -1117,9 +1117,9 @@
     "version": "1.38.4"
   },
   "tmux": {
-    "name": "tmux-3.6a",
+    "name": "tmux-3.7b",
     "pname": "tmux",
-    "version": "3.6a"
+    "version": "3.7b"
   },
   "tomcat10": {
     "name": "apache-tomcat-10.1.55",
