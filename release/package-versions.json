@@ -545,9 +545,9 @@
     "version": "5.12.0"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-1.162.0",
+    "name": "matrix-synapse-1.163.0",
     "pname": "matrix-synapse",
-    "version": "1.162.0"
+    "version": "1.163.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.3",
@@ -1027,9 +1027,9 @@
     "version": "1.8.1"
   },
   "roundcube": {
-    "name": "roundcube-1.7.4",
+    "name": "roundcube-1.7.5",
     "pname": "roundcube",
-    "version": "1.7.4"
+    "version": "1.7.5"
   },
   "rsync": {
     "name": "rsync-3.5.0",
