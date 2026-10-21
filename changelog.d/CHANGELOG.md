@@ -1,10 +1,22 @@
-# Release 2026_042
+# Release 2026_043
 
 ## Impact
 
-- A bullet item for the Impact category.
+- Machines will schedule a reboot to activate a changed kernel.
 
--
+## NixOS XX.XX platform
+
+- Update Linux kernel to fix CVE-2026-99999 (PL-135766)
+
+- Update PHPs to fix CVE-2026-109618, CVE-2026-109619
+
+- Blacklist `emSign ECC Root CA - G3`, `emSign Root CA - C1`, `emSign ECC Root CA - C3`, `Comodo AAA Services root` certificate authorities (CVE-2026-111943, PL-135771)
+
+  Leaked private key of mentioned emSign CAs, cross signed by `Comodo AAA Services root`.
+
+# Release 2026_042
+
+## Impact
 
 
 ## NixOS XX.XX platform
