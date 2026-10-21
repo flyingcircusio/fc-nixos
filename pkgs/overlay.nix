@@ -377,7 +377,16 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     };
   };
 
-  linuxKernelStable = self.linux_6_12;
+  linuxKernelStable = self.linux_6_12.override {
+    argsOverride = {
+      src = super.fetchurl {
+        url = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.113.tar.xz";
+        hash = "sha256-4JtnJ+XFISU/DUFpSQC5w4+3YE2301I4qBl6qffeJCg=";
+      };
+      version = "6.12.113";
+      modDirVersion = "6.12.113";
+    };
+  };
 
   kubernetes-dashboard = super.callPackage ./kubernetes-dashboard.nix { };
   kubernetes-dashboard-metrics-scraper =
