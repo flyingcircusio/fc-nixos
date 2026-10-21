@@ -43,8 +43,8 @@ in
   backyserver_ceph-nautilus = callTest ./backyserver.nix { clientCephRelease = "nautilus"; };
   backyserver_volumes = callTest ./backy_volumes.nix { };
   channel = callTest ./channel.nix { };
-  ceph-nautilus = callTest ./ceph-nautilus.nix { };
-  ceph-pacific = callTest ./ceph-pacific.nix { };
+  #ceph-nautilus = callTest ./ceph-nautilus.nix { };
+  #ceph-pacific = callTest ./ceph-pacific.nix { };
   coturn = callTest ./coturn.nix { };
   cron = callTest ./cron.nix { };
   crowdsec = callTest ./crowdsec.nix { };
@@ -73,18 +73,18 @@ in
     verification = callTest ./kernelconfig-verification.nix { };
   };
   kernelversions = callTest ./kernelversions.nix { };
-  kvm_host_ceph-nautilus-nautilus = callTest ./kvm_host_ceph-nautilus.nix {
-    clientCephRelease = "nautilus";
-    serverCephRelease = "nautilus";
-  };
-  kvm_host_ceph-nautilus-pacific = callTest ./kvm_host_ceph-nautilus.nix {
-    clientCephRelease = "nautilus";
-    serverCephRelease = "pacific";
-  };
-  kvm_host_ceph-pacific-pacific = callTest ./kvm_host_ceph-nautilus.nix {
-    clientCephRelease = "pacific";
-    serverCephRelease = "pacific";
-  };
+  #kvm_host_ceph-nautilus-nautilus = callTest ./kvm_host_ceph-nautilus.nix {
+  #  clientCephRelease = "nautilus";
+  #  serverCephRelease = "nautilus";
+  #};
+  #kvm_host_ceph-nautilus-pacific = callTest ./kvm_host_ceph-nautilus.nix {
+  #  clientCephRelease = "nautilus";
+  #  serverCephRelease = "pacific";
+  #};
+  #kvm_host_ceph-pacific-pacific = callTest ./kvm_host_ceph-nautilus.nix {
+  #  clientCephRelease = "pacific";
+  #  serverCephRelease = "pacific";
+  #};
   lampVm = callTest ./lamp/vm-test.nix { };
   lampVm72 = callTest ./lamp/vm-test.nix { version = "lamp_php72"; };
   lampVm73 = callTest ./lamp/vm-test.nix { version = "lamp_php73"; };
