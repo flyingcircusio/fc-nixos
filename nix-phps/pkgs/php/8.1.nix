@@ -5,8 +5,14 @@
 
 let
   base = mkPhp {
-    version = "8.1.33";
-    hash = "sha256-tlU0UYQcGlaYZdf9yDAkYh7kQ0zY+/6woxWIrJxwaF8=";
+    version = "8.1.34";
+    hash = "sha256-mOCgig+uN9CN/MovX/ZmSGMJfd5LHTYK8qzIw1QvKg8=";
+    extraPatches = [
+      (prev.fetchpatch {
+        url = "https://github.com/php/php-src/commit/1d7dec178a094e6e75b229ce22754045f8c6070a.patch";
+        hash = "sha256-qiqMcXTW8jhgPkZCs90m1+BG/4zi0Gxvw8XBLJjZg2I=";
+      })
+    ];
   };
 in
 base.withExtensions (
