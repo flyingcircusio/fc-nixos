@@ -7,6 +7,12 @@ let
   base = mkPhp {
     version = "8.0.30";
     hash = "sha256-mKnLag4nppUM30sm3KxI8r4tk21SJKUC8GbPPUzxm5I=";
+    extraPatches = [
+      (prev.fetchpatch {
+        url = "https://github.com/php/php-src/commit/82f8f31b16a035c1b67cc253e79f7cc288f4cc20.patch";
+        hash = "sha256-AcxKFJ1pGrTgxvsBu2kXTDAIBMXdRbnQpiG2O8xmxxk=";
+      })
+    ];
   };
 in
 base.withExtensions (
