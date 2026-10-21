@@ -29,9 +29,10 @@ or
 
 ## Design notes
 
-- [ ] Provide a feature toggle if the change might need to be adjusted/reverted quickly depending on context. Consider whether the default should be `on` or `off`. Example: rate limiting.
-- [ ] All customer-facing features and (NixOS) options need to be discoverable from documentation. Add or update relevant documentation such that hosted and guided customers can understand it as well.
-- [ ] Provide warnings in previous platform version and upgrade notes when introducing a breaking change
+- [ ] ADR? – Consider writing an `adr` if this change has wide-ranging, long-lasting, or strong complexity-increasing impacts.
+- [ ] Feature Toggle? – Provide a feature toggle if the change might need to be adjusted/reverted quickly depending on context. Consider whether the default should be `on` or `off`. Example: rate limiting.
+- [ ] Docs? – All customer-facing features and (NixOS) options need to be discoverable from documentation. Add or update relevant documentation such that hosted and guided customers can understand it as well.
+- [ ] Breaking Changes? – Provide warnings in previous platform version and upgrade notes when introducing a breaking change
 
 ## Security implications
 
