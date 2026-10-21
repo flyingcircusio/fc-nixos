@@ -350,32 +350,14 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   # TODO: re-evaluate whether this still needs to be vendored without lmdb support (#PL-130446)
   libmodsecurity = super.callPackage ./libmodsecurity { };
 
-  linuxKernelGPU = self.linux_6_18.override {
-    argsOverride = {
-      src = super.fetchurl {
-        url = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.57.tar.xz";
-        hash = "sha256-W9ms3ILsXvw3kK6EDlqqQN/efv/yYc9t3pAtxXCs+Yw=";
-      };
-      version = "6.18.57";
-      modDirVersion = "6.18.57";
-    };
-  };
+  linuxKernelGPU = self.linux_6_18;
 
   # Change this alias for trying out other kernel packages on non-production
   # machines.
   # The logic for enabling different kernels on prod and non-prod remains active
   # the whole time. But in the normal case, both kernels point to the same
   # stable kernel packages.
-  linuxKernelVerify = self.linux_6_18.override {
-    argsOverride = {
-      src = super.fetchurl {
-        url = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.57.tar.xz";
-        hash = "sha256-W9ms3ILsXvw3kK6EDlqqQN/efv/yYc9t3pAtxXCs+Yw=";
-      };
-      version = "6.18.57";
-      modDirVersion = "6.18.57";
-    };
-  };
+  linuxKernelVerify = self.linux_6_18;
 
   linuxKernelStable = self.linux_6_12.override {
     argsOverride = {
