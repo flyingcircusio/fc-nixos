@@ -1,3 +1,12 @@
+# Release 2026_043
+
+## NixOS XX.XX platform
+
+- Blacklist `emSign ECC Root CA - G3`, `emSign Root CA - C1`, `emSign ECC Root CA - C3`, `Comodo AAA Services root` certificate authorities (CVE-2026-111943, PL-135771)
+  Leaked private key of mentioned emSign CAs, cross signed by `Comodo AAA Services root`.
+
+
+
 # Release 2026_028
 
 
