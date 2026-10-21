@@ -181,9 +181,9 @@
     "version": "2.93"
   },
   "docker": {
-    "name": "docker-29.8.2",
+    "name": "docker-29.9.1",
     "pname": "docker",
-    "version": "29.8.2"
+    "version": "29.9.1"
   },
   "docker-compose": {
     "name": "docker-compose-5.4.0",
@@ -545,9 +545,9 @@
     "version": "5.12.0"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-1.162.0",
+    "name": "matrix-synapse-1.163.0",
     "pname": "matrix-synapse",
-    "version": "1.162.0"
+    "version": "1.163.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.3",
@@ -560,9 +560,9 @@
     "version": "1.6.45"
   },
   "mongodb": {
-    "name": "mongodb-7.0.43",
+    "name": "mongodb-7.0.45",
     "pname": "mongodb",
-    "version": "7.0.43"
+    "version": "7.0.45"
   },
   "monitoring-plugins": {
     "name": "monitoring-plugins-2.4.0",
@@ -1027,9 +1027,9 @@
     "version": "1.8.1"
   },
   "roundcube": {
-    "name": "roundcube-1.7.4",
+    "name": "roundcube-1.7.5",
     "pname": "roundcube",
-    "version": "1.7.4"
+    "version": "1.7.5"
   },
   "rsync": {
     "name": "rsync-3.5.0",
