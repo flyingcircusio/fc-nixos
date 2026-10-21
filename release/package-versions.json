@@ -757,24 +757,24 @@
     "version": "8.0.30"
   },
   "php82": {
-    "name": "php-with-extensions-8.2.34",
+    "name": "php-with-extensions-8.2.35",
     "pname": "php-with-extensions",
-    "version": "8.2.34"
+    "version": "8.2.35"
   },
   "php83": {
-    "name": "php-with-extensions-8.3.35",
+    "name": "php-with-extensions-8.3.36",
     "pname": "php-with-extensions",
-    "version": "8.3.35"
+    "version": "8.3.36"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.26",
+    "name": "php-with-extensions-8.4.27",
     "pname": "php-with-extensions",
-    "version": "8.4.26"
+    "version": "8.4.27"
   },
   "php85": {
-    "name": "php-with-extensions-8.5.11",
+    "name": "php-with-extensions-8.5.12",
     "pname": "php-with-extensions",
-    "version": "8.5.11"
+    "version": "8.5.12"
   },
   "phpPackages.composer": {
     "name": "composer-2.10.3",
