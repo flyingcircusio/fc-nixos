@@ -1,3 +1,13 @@
+# Release 2026_044
+
+## NixOS XX.XX platform
+
+- router: bind `atftpd` to the management address that DHCP advertises as
+  `next-server`, so TFTP replies for PXE booting use the matching source
+  address instead of an unrelated local one (PL-135554)
+
+
+
 # Release 2026_043
 
 ## Impact
