@@ -502,7 +502,7 @@
   "linuxKernelStable": {
     "name": "linux-6.12.113",
     "pname": "linux",
-    "version": "6.12.113"
+    "version": "6.18.57"
   },
   "linuxKernelVerify": {
     "name": "linux-6.18.57",

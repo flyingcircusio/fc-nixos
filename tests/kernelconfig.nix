@@ -29,7 +29,7 @@ import ./make-test-python.nix (
       CPU_FREQ_GOV_PERFORMANCE y
       CPU_FREQ_GOV_POWERSAVE m
       CRYPTO_AES_NI_INTEL m
-      CRYPTO_CRC32C_INTEL m
+      CRYPTO_CRC32C m
       CRYPTO_SHA256 y
       CRYPTO_SHA512 y
       DEBUG_FS y
