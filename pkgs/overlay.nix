@@ -80,8 +80,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   # Import old php versions from nix-phps.
   inherit (phps)
-    php72
-    php73
     php74
     php80
     php81
@@ -403,28 +401,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   # Those are specialised packages for "direct consumption" use in our LAMP roles.
 
   # PHP versions from vendored nix-phps
-
-  lamp_php72 = self.php72.withExtensions (
-    { enabled, all }:
-    enabled
-    ++ [
-      all.bcmath
-      all.imagick
-      all.memcached
-      all.redis
-    ]
-  );
-
-  lamp_php73 = self.php73.withExtensions (
-    { enabled, all }:
-    enabled
-    ++ [
-      all.bcmath
-      all.imagick
-      all.memcached
-      all.redis
-    ]
-  );
 
   lamp_php74 = (
     self.php74.withExtensions (
