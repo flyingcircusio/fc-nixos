@@ -420,9 +420,9 @@
     "version": "3.1.4.1"
   },
   "libmodsecurity": {
-    "name": "libmodsecurity-3.0.14",
+    "name": "libmodsecurity-3.0.16",
     "pname": "libmodsecurity",
-    "version": "3.0.14"
+    "version": "3.0.16"
   },
   "libmysqlclient": {
     "name": "mariadb-connector-c-3.3.5",
@@ -708,11 +708,6 @@
     "name": "php-with-extensions-8.0.30",
     "pname": "php-with-extensions",
     "version": "8.0.30"
-  },
-  "php82": {
-    "name": "php-with-extensions-8.2.34",
-    "pname": "php-with-extensions",
-    "version": "8.2.34"
   },
   "php83": {
     "name": "php-with-extensions-8.3.35",
