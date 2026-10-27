@@ -79,7 +79,6 @@ let
   ) vhostsWithTLS;
 
   mainConfig = ''
-    worker_processes ${toString cfg.workerProcesses};
     worker_rlimit_nofile 8192;
     worker_shutdown_timeout ${toString cfg.workerShutdownTimeout};
   '';
@@ -529,6 +528,7 @@ in
             statusPage = true;
             virtualHosts = effectiveVirtualHosts;
             defaultListenAddresses = fclib.mkPlatform cfg.defaultListenAddresses;
+            workerProcesses = cfg.workerProcesses;
           };
 
         # We want logs readable for anyone
