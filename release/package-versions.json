@@ -1037,9 +1037,9 @@
     "version": "3.5.0"
   },
   "ruby": {
-    "name": "ruby-3.4.12",
+    "name": "ruby-3.4.9",
     "pname": "ruby",
-    "version": "3.4.12"
+    "version": "3.4.9"
   },
   "runc": {
     "name": "runc-1.4.3",
