@@ -24,11 +24,6 @@
     "pname": "automake",
     "version": "1.18.1"
   },
-  "awscli": {
-    "name": "awscli-1.44.21",
-    "pname": "awscli",
-    "version": "1.44.21"
-  },
   "awscli2": {
     "name": "awscli2-2.36.31",
     "pname": "awscli2",

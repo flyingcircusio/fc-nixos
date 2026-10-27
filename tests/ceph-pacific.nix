@@ -186,7 +186,7 @@ import ./make-test-python.nix (
           virtualisation.vlans = with config.flyingcircus.static.vlanIds; [
             srv
           ];
-          environment.systemPackages = [ pkgs.awscli ];
+          environment.systemPackages = [ pkgs.awscli2 ];
           networking.extraHosts = ''
             ${getIPForVLAN 3 1} s3.host1.fcio.net
             ::1 s3.node.fcio.net
@@ -464,6 +464,7 @@ import ./make-test-python.nix (
             aws_cfg.set(profile, 'endpoint_url', url)
             aws_cfg.set(profile, 'aws_access_key_id', access_key)
             aws_cfg.set(profile, 'aws_secret_access_key', secret_key)
+            aws_cfg.set(profile, 'region', 'us-east-1')
 
           with open("awscfg", "w") as f:
               aws_cfg.write(f)
