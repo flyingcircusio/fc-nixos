@@ -17,7 +17,7 @@ let
   phpExecutionUnit = "phpfpm-${pool}";
   databaseService = "mysql.service";
 
-  phpPackage = pkgs.php82;
+  phpPackage = pkgs.php;
 
   fqdn =
     if config.networking.domain != null then config.networking.fqdn else config.networking.hostName;
