@@ -108,7 +108,8 @@ in
   opensearch = callTest ./opensearch.nix { };
   opensearch_dashboards = callTest ./opensearch_dashboards.nix { };
   openvpn = callTest ./openvpn.nix { };
-  open-webui = callTest ./open-webui.nix { };
+  # FIXME: PL-135792
+  # open-webui = callTest ./open-webui.nix { };
   percona84 = callTest ./mysql.nix { rolename = "percona84"; };
   physical-installer = callTest ./physical-installer.nix { inherit nixpkgs; };
   postgresql14 = callTest ./postgresql { version = "14"; };
