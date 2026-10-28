@@ -33,6 +33,7 @@ in
 
     agentAuthGroup = lib.mkOption {
       type = lib.types.nullOr lib.types.nonEmptyStr;
+      default = null;
       description = "Agent group assigned during enrollment.";
     };
 

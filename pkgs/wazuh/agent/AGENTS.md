@@ -1,38 +1,13 @@
 # Wazuh Agent Package
 
-**Generated:** 2026-06-11
-
-See `../README.md` for patch explanations and build troubleshooting.
+See `../README.md` for patch explanations, build troubleshooting, and the
+decision log. Build flow and patch details are derivable from `default.nix`.
 
 ## Key Files
 
 - `default.nix` — Main derivation. stdenv.mkDerivation from GitHub source, prefetched external deps, custom install
 - `dependencies/external-dependencies.nix` — 29 prefetched tarballs with SRI hashes
 - `dependencies/prefetch-external-dependencies.sh` — Regenerates the .nix file from packages.wazuh.com (dep version 51)
-
-## Patches
-
-| Patch | Purpose |
-|-------|---------|
-| `01-makefile-patch.patch` | DB_LIB linkage, OpenSSL perl/Configure, Privsep_SetUser early return |
-| `02-libbpf-bootstrap.patch` | Disable git/HTTP fetching (sandbox), suppress implicit-function-declaration |
-| `03-cstdint-include.patch` | Missing `#include <cstdint>` in `sqlite_wrapper.h` |
-| `04-snap-onerror-signature.patch` | GCC 15 lambda signature mismatch in `PostRequestParameters.onError` |
-| `05-bpf-helpers-libbpf-1_7.patch` | Remove dead skeleton function-pointer globals + drop wrapper_bpf.h sed in generated skeleton (libbpf ≥ 1.0) |
-
-## Build Flow
-
-1. `fetchFromGitHub` wazuh v4.14.5
-2. `postUnpack` — external deps unpacked into `src/external/`
-3. `dontConfigure = true` — no `./configure`
-4. `preBuild` — `make deps` inside source tree
-5. `installPhase` — `install.sh binary-install` into `$out`
-6. `fixupPhase` — remove libgcc refs, add systemd to rpath for `wazuh-logcollector`
-
-## Troubleshooting
-
-- Build fails with `curl` errors in sandbox: Wazuh tries to download deps at build time. We prefetch them with `fetchurl`, so `curl` failures are expected/harmless. If a new dep is missing, add it to `prefetch-external-dependencies.sh`.
-- `libbpf-bootstrap.tar.gz` changes: Upstream may change tarball structure on `packages.wazuh.com`. Check hash and internal structure if build breaks.
 
 ## Conventions
 

@@ -42,6 +42,10 @@ This error indicates either a missing dependency or an incorrect name. With `cpy
 
 For a missing dependency, add its name under `{url}` in `prefetch-external-dependencies.sh` and run the script.
 
+### libbpf-bootstrap tarball changes
+
+Upstream may change the tarball structure on `packages.wazuh.com` (member paths, `./` prefixes). The `postUnpack` extraction uses `--strip-components=2` accordingly — check the hash and internal structure in `dependencies/external-dependencies.nix` if this step breaks after a dependency bump.
+
 ## Patches
 
 ### 01-makefile-patch.patch
