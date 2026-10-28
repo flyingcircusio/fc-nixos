@@ -20,7 +20,6 @@ import ./make-test-python.nix (
             (testlib.fcConfig { id = 1; })
           ];
 
-          # Generate self-signed cert for fake manager SSL on port 1515.
           systemd.services.wazuh-fake-manager-certs = {
             description = "Generate self-signed cert for fake Wazuh manager";
             before = [ "wazuh-fake-manager.service" ];
@@ -239,8 +238,16 @@ import ./make-test-python.nix (
       configured.succeed("id wazuh")
       rc, grp = configured.execute("getent group wazuh")
       assert rc == 0, f"wazuh group missing: {grp}"
+      # Journal/network access is granted per-service (SupplementaryGroups
+      # on the daemon services), not user-wide.
+      id_out = configured.succeed("id wazuh")
+      assert "systemd-journal" not in id_out, f"wazuh user in systemd-journal: {id_out}"
+      assert "systemd-network" not in id_out, f"wazuh user in systemd-network: {id_out}"
 
       # 5. All 5 daemon services are active
+      expected_gids = {}
+      for grp in ("systemd-journal", "systemd-network"):
+          expected_gids[grp] = configured.succeed(f"getent group {grp}").split(":")[2]
       for daemon in [
           "wazuh-modulesd",
           "wazuh-logcollector",
@@ -249,11 +256,47 @@ import ./make-test-python.nix (
           "wazuh-execd",
       ]:
           configured.succeed(f"systemctl is-active {daemon}.service")
+          sup = configured.succeed(
+              f"systemctl show {daemon}.service --property=SupplementaryGroups --value"
+          )
+          assert "systemd-journal" in sup and "systemd-network" in sup, (
+              f"{daemon}.service missing SupplementaryGroups: {sup}"
+          )
+          # Process-level proof: systemd really applied the groups to the
+          # daemon process credentials (/proc/<pid>/status lists all gids).
+          pid = configured.succeed(
+              f"systemctl show {daemon}.service --property=MainPID --value"
+          ).strip()
+          assert pid != "0", f"{daemon}.service has no MainPID"
+          groups_line = ""
+          for line in configured.succeed(f"cat /proc/{pid}/status").splitlines():
+              if line.startswith("Groups:"):
+                  groups_line = line
+          assert groups_line, f"no Groups: line for {daemon} pid {pid}"
+          pid_gids = groups_line.split()[1:]
+          for grp, gid in expected_gids.items():
+              assert gid in pid_gids, (
+                  f"{daemon} (pid {pid}) missing gid {gid} ({grp}): {groups_line}"
+              )
 
-      # 6. Password file exists with correct owner (permissions are 750 due to upstream find -exec chmod)
+      # 6. Password file exists with correct owner and mode 600
+      # (written after the tree-wide chmod, so the blanket perms don't touch it)
       configured.succeed("test -f /var/ossec/etc/authd.pass")
       rc, owner = configured.execute("stat -c '%U:%G' /var/ossec/etc/authd.pass")
       assert owner.strip() == "wazuh:wazuh", f"Expected wazuh:wazuh, got {owner}"
+      rc, mode = configured.execute("stat -c '%a' /var/ossec/etc/authd.pass")
+      assert mode.strip() == "600", f"Expected 600, got {mode}"
+
+      # 6b. Tree permissions from setup-pre-wazuh (chmod -R u=rwX,g=rX,o=):
+      # dirs 750, data files 640, executables keep 750, ossec.conf 640 wazuh-owned
+      rc, mode = configured.execute("stat -c '%a' /var/ossec/etc")
+      assert mode.strip() == "750", f"/var/ossec/etc mode: {mode}"
+      rc, perms = configured.execute("stat -c '%a %U:%G' /var/ossec/etc/ossec.conf")
+      assert perms.strip() == "640 wazuh:wazuh", f"ossec.conf perms: {perms}"
+      rc, mode = configured.execute("stat -c '%a' /var/ossec/bin/agent-auth")
+      assert mode.strip() == "750", f"agent-auth mode: {mode}"
+      rc, mode = configured.execute("stat -c '%a' /var/ossec/etc/local_internal_options.conf")
+      assert mode.strip() == "640", f"local_internal_options.conf mode: {mode}"
 
       # 7. Config contains the manager address
       conf = configured.succeed("cat /var/ossec/etc/ossec.conf")

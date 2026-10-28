@@ -1,11 +1,3 @@
-# NOTE: Set `agentAuthPassword` to the manager auth password if you need
-# initial enrollment. After the agent has enrolled once, the password is
-# no longer needed. Other than that, the role works out-of-the-box.
-# Just set flyingcircus.roles.wazuh-agent = {
-#   enable = true;
-#   agentAuthPassword = "...";  # optional, only for first enrollment
-# };
-#
 # Enrollment flow:
 #   1. setup-pre-wazuh (root) — copies package state dirs, config, and auth password
 #      into /var/ossec/. Runs only when wazuh-agent-auth is triggered.
@@ -60,9 +52,6 @@ in
       enable = true;
       inherit (cfg) agentAuthGroup agentAuthPassword;
 
-      # Scalar defaults — each leaf wrapped in mkDefault (via mkDefaultDeep)
-      # so users can override individual values at normal priority without
-      # losing any other role default.
       settings = lib.mkMerge [
         (mkDefaultDeep {
           client = {
@@ -111,17 +100,6 @@ in
           logging.log_format = "plain";
         })
 
-        # List-valued defaults — set at normal priority (100), WITHOUT mkDefault.
-        # The upstream module's freeformType (attrsOf xmlValue from
-        # pkgs.formats.xml) CONCATENATES list definitions at equal priority
-        # rather than replacing them. This means a user who writes
-        # `services.wazuh.agent.settings.syscheck.directories = ["/srv/app"]`
-        # AUTOMATICALLY EXTENDS the default `["/etc/local"]` — the result is
-        # `["/etc/local" "/srv/app"]`, not a replacement. Same for localfile
-        # and wodle (lists of attrsets → multiple XML elements).
-        #
-        # To REPLACE a default list entirely, use `lib.mkForce` on the
-        # upstream setting.
         {
           syscheck.directories = [ "/etc/local" ];
           localfile = [

@@ -1,3 +1,4 @@
+# sqlite_wrapper.h: add missing #include <cstdint> (GCC >= 14 requires explicit includes).
 diff --git a/src/shared_modules/dbsync/src/sqlite/sqlite_wrapper.h b/src/shared_modules/dbsync/src/sqlite/sqlite_wrapper.h
 index 3333333..4444444 100644
 --- a/src/shared_modules/dbsync/src/sqlite/sqlite_wrapper.h

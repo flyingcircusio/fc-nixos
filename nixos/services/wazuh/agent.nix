@@ -24,7 +24,6 @@ let
 
   format = pkgs.formats.xml { withHeader = false; };
 
-  #TODO Make this an option either at the top level or under `settings`
   stateDir = "/var/ossec";
   cfg = config.services.wazuh.agent;
 
@@ -45,7 +44,6 @@ let
     after = [ "setup-pre-wazuh.service" ];
 
     partOf = [ "wazuh.target" ];
-    #TODO Why is `/run/current-system` added - is it required for security scanning?
     path =
       cfg.defaultPackages
       ++ cfg.extraPackages
@@ -60,9 +58,15 @@ let
       Type = "exec";
       User = cfg.user;
       Group = cfg.group;
+      # Journal access (logcollector's journald source) and network state,
+      # granted per-service instead of user-wide so non-daemon processes
+      # running as this user (e.g. agent-auth) don't carry them.
+      SupplementaryGroups = [
+        "systemd-journal"
+        "systemd-network"
+      ];
       WorkingDirectory = "${stateDir}/";
       # CAP_DAC_READ_SEARCH: read any file for FIM
-      # AmbientCapabilities passes capabilities to non-root user
       AmbientCapabilities = [
         "CAP_DAC_READ_SEARCH"
         "CAP_NET_BIND_SERVICE"
@@ -189,8 +193,16 @@ in
           Written to `/var/ossec/etc/authd.pass` by `setup-pre-wazuh` and used
           for initial enrollment with the manager.
 
+          Enrollment runs only once per machine: after successful registration
+          `wazuh-agent-auth` touches `/var/ossec/.agent-registered` and never
+          runs again, so changing this value afterwards has no effect on an
+          already enrolled agent.
+
           Note: this value is embedded in the Nix store and the generated
-          system configuration, both of which are world-readable. Set it only
+          system configuration, both of which are world-readable. It stays a
+          stopgap until enrollment secrets can be provisioned through the
+          platform secret (KV) store; the blast radius is limited to
+          superfluous agent registrations on the manager. Set it only
           if that exposure is acceptable.
         '';
       };
@@ -211,14 +223,8 @@ in
     users.users.${cfg.user} = {
       isSystemUser = true;
       inherit (cfg) group;
-      #TODO Determine if the agent should use a separate user than the other microservices
       description = "Wazuh agent user";
       home = stateDir;
-      #TODO This should be set as `SupplementaryGroups` in the systemd service config if only specific daemons need the capabilities
-      extraGroups = [
-        "systemd-journal"
-        "systemd-network"
-      ]; # To read journal entries and network state
     };
 
     users.groups.${cfg.group} = { };
@@ -275,58 +281,62 @@ in
             };
         };
 
-        setup-pre-wazuh = {
-          description = "Sets up wazuh's directory structure";
-          wantedBy = [ "wazuh-agent-auth.service" ];
-          before = [ "wazuh-agent-auth.service" ];
-          serviceConfig = {
-            Type = "oneshot";
-            # Run as root to create /var/ossec directory structure
-            ExecStart = "${pkgs.writeShellScriptBin "wazuh-prestart" ''
-              set -euo pipefail
+        setup-pre-wazuh =
+          let
+            wazuhPreStart = pkgs.writeShellApplication {
+              name = "wazuh-prestart";
+              text = ''
+                ${concatMapStringsSep "\n"
+                  (
+                    dir:
+                    "[ -d ${stateDir}/${dir} ] || cp -Rv --no-preserve=ownership ${cfg.package}/${dir} ${stateDir}/${dir}"
+                  )
+                  [
+                    "active-response"
+                    "agentless"
+                    "bin"
+                    "etc"
+                    "lib"
+                    "logs"
+                    "queue"
+                    "tmp"
+                    "var"
+                    "wodles"
+                  ]
+                }
 
-              ${concatMapStringsSep "\n"
-                (
-                  dir:
-                  "[ -d ${stateDir}/${dir} ] || cp -Rv --no-preserve=ownership ${cfg.package}/${dir} ${stateDir}/${dir}"
-                )
-                [
-                  "active-response"
-                  "agentless"
-                  "bin"
-                  "etc"
-                  "lib"
-                  "logs"
-                  "queue"
-                  "tmp"
-                  "var"
-                  "wodles"
-                ]
-              }
+                chown -R ${cfg.user}:${cfg.group} ${stateDir}
 
-              chown -R ${cfg.user}:${cfg.group} ${stateDir}
+                # Tighten the copied tree: directories 0750, data files 0640,
+                # executables keep 0750. Capital X applies +x only to
+                # directories and to files that already carry an execute bit
+                # (binaries/scripts shipped by the package).
+                chmod -R u=rwX,g=rX,o= ${stateDir}
 
-              find ${stateDir} -type d -exec chmod 770 {} \;
-              find ${stateDir} -type f -exec chmod 750 {} \;
+                # Real file, not a symlink — Wazuh's XML parser has issues with symlinks
+                cp -f ${cfg.config} ${stateDir}/etc/ossec.conf
+                chown ${cfg.user}:${cfg.group} ${stateDir}/etc/ossec.conf
+                chmod 640 ${stateDir}/etc/ossec.conf
 
-              # Copy ossec.conf as real file (Wazuh's XML parser has issues with symlinks)
-              cp -f ${cfg.config} ${stateDir}/etc/ossec.conf
+                ${lib.optionalString (cfg.agentAuthPassword != null) ''
+                  umask 077
+                  cp "${pkgs.writeText "wazuh-authd.pass" cfg.agentAuthPassword}" "${stateDir}/etc/authd.pass"
+                  chmod 600 "${stateDir}/etc/authd.pass"
+                  chown ${cfg.user}:${cfg.group} "${stateDir}/etc/authd.pass"
+                ''}
 
-              # Write auth password (skip if unset — e.g., already enrolled agent).
-              # `pkgs.writeText` materializes the password as a store path that
-              # setup-pre-wazuh copies into place with restrictive permissions.
-              # The password is therefore world-readable in the store — see the
-              # option description for the trade-off.
-              ${lib.optionalString (cfg.agentAuthPassword != null) ''
-                umask 077
-                cp "${pkgs.writeText "wazuh-authd.pass" cfg.agentAuthPassword}" "${stateDir}/etc/authd.pass"
-                chmod 600 "${stateDir}/etc/authd.pass"
-                chown ${cfg.user}:${cfg.group} "${stateDir}/etc/authd.pass"
-              ''}
-
-            ''}/bin/wazuh-prestart";
+              '';
+            };
+          in
+          {
+            description = "Sets up wazuh's directory structure";
+            wantedBy = [ "wazuh-agent-auth.service" ];
+            before = [ "wazuh-agent-auth.service" ];
+            serviceConfig = {
+              Type = "oneshot";
+              ExecStart = lib.getExe wazuhPreStart;
+            };
           };
-        };
       };
     };
   };

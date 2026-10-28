@@ -1,3 +1,4 @@
+# snap parser: onError lambda passes 3 params where 2 are expected — drop the unused one (GCC 15).
 diff --git a/src/data_provider/src/packages/packageLinuxParserSnap.cpp b/src/data_provider/src/packages/packageLinuxParserSnap.cpp
 --- a/src/data_provider/src/packages/packageLinuxParserSnap.cpp
 +++ b/src/data_provider/src/packages/packageLinuxParserSnap.cpp

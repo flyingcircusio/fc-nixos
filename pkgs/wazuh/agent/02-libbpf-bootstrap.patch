@@ -1,3 +1,4 @@
+# libbpf-bootstrap: build from prefetched sources — git/HTTP fetching disabled (no network in sandbox).
 --- a/src/external/libbpf-bootstrap/CMakeLists.txt
 +++ b/src/external/libbpf-bootstrap/CMakeLists.txt
 @@ -13,8 +13,6 @@
@@ -45,21 +46,7 @@
  )
  
  # Set the path to clang (update if necessary)
-@@ -79,10 +76,10 @@
- set(WAZUH_BRANCH "v4.12.0" CACHE STRING "Wazuh branch for modern.bpf.c")
- 
- # Download modern.bpf.c with error checking that verifies file existence and non-zero size
--set(FILE_URL "https://raw.githubusercontent.com/wazuh/wazuh/${WAZUH_BRANCH}/src/syscheckd/src/ebpf/src/modern.bpf.c")
-+#set(FILE_URL "https://raw.githubusercontent.com/wazuh/wazuh/${WAZUH_BRANCH}/src/syscheckd/src/ebpf/src/modern.bpf.c")
- set(DEST_PATH "${CMAKE_CURRENT_SOURCE_DIR}/src/modern.bpf.c")
--file(DOWNLOAD ${FILE_URL} ${DEST_PATH})
--file(SIZE ${DEST_PATH} FILE_SIZE)
-+#file(DOWNLOAD ${FILE_URL} ${DEST_PATH})
-+#file(SIZE ${DEST_PATH} FILE_SIZE)
- if(NOT EXISTS ${DEST_PATH} OR FILE_SIZE EQUAL 0)
-     message(FATAL_ERROR "Failed to download modern.bpf.c from ${FILE_URL}. Please check WAZUH_BRANCH.")
- endif()
-@@ -91,12 +88,14 @@
+@@ -91,12 +88,13 @@
  set(BPFOBJECT_VMLINUX_H ${CMAKE_CURRENT_SOURCE_DIR}/vmlinux.h/include/${ARCH}/vmlinux.h)
  set(LIBBPF_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/libbpf)
  set(LIBBPF_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libbpf/libbpf.a)
@@ -70,7 +57,5 @@
    ${CMAKE_CURRENT_SOURCE_DIR}/vmlinux.h/include/${ARCH}
  )
  
-+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu17 -Wno-error=implicit-function-declaration -Wno-error=int-conversion")
  bpf_object(modern src/modern.bpf.c)
  add_dependencies(modern_skel libbpf-build bpftool-build vmlinux.h)
- 

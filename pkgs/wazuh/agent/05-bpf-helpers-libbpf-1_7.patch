@@ -1,3 +1,4 @@
+# bpf_helpers: delete dlopen-era globals colliding with libbpf >= 1.0 declarations, keep <bpf/libbpf.h> include.
 diff --git a/src/syscheckd/src/ebpf/include/bpf_helpers.h b/src/syscheckd/src/ebpf/include/bpf_helpers.h
 --- a/src/syscheckd/src/ebpf/include/bpf_helpers.h
 +++ b/src/syscheckd/src/ebpf/include/bpf_helpers.h
