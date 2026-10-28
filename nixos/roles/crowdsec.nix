@@ -34,6 +34,13 @@ in
             Port where the AppSec component of CrowdSec listens on.
           '';
         };
+        extraAppSecConfigs = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          description = ''
+            Additional AppSec configs (via the appsec_config option) to be configured
+          '';
+        };
       };
 
       nginxLogAnalysisVirtualHosts = lib.mkOption {
@@ -84,7 +91,7 @@ in
         ]
         ++ lib.optionals (cfg.waf.enable) [
           {
-            appsec_configs = [ "crowdsecurity/appsec-default" ];
+            appsec_configs = [ "crowdsecurity/appsec-default" ] ++ cfg.waf.extraAppSecConfigs;
             labels = {
               "type" = "appsec";
             };
