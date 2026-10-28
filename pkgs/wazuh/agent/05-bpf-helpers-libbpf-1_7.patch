@@ -1,0 +1,38 @@
+diff --git a/src/syscheckd/src/ebpf/include/bpf_helpers.h b/src/syscheckd/src/ebpf/include/bpf_helpers.h
+--- a/src/syscheckd/src/ebpf/include/bpf_helpers.h
++++ b/src/syscheckd/src/ebpf/include/bpf_helpers.h
+@@ -15,6 +15,7 @@
+ #include "logging_helper.h"
+ #include <bounded_queue.hpp>
+ #include <memory>
++#include <bpf/libbpf.h>
+ 
+ typedef __attribute__((aligned(4))) unsigned int __u32;
+ 
+@@ -80,13 +81,6 @@
+ typedef int (*bpf_program__attach_t)(struct bpf_program *prog);
+ typedef int (*bpf_object__find_map_fd_by_name_t)(struct bpf_object *obj, const char *name);
+ 
+-// Function pointers to execute stateless requests to BPF
+-void (*bpf_object__destroy_skeleton)(struct bpf_object_skeleton *obj) = NULL;
+-int (*bpf_object__open_skeleton)(struct bpf_object_skeleton *obj, const struct bpf_object_open_opts *opts) = NULL;
+-int (*bpf_object__load_skeleton)(struct bpf_object_skeleton *obj) = NULL;
+-int (*bpf_object__attach_skeleton)(struct bpf_object_skeleton *obj) = NULL;
+-void (*bpf_object__detach_skeleton)(struct bpf_object_skeleton *obj) = NULL;
+-
+ typedef int(*init_ring_buffer_t)(ring_buffer** rb, ring_buffer_sample_fn sample_cb);
+ typedef void(*ebpf_pop_events_t)(fim::BoundedQueue<std::unique_ptr<dynamic_file_event>>& kernel_queue);
+ typedef int(*check_invalid_kernel_version_t)();
+
+diff --git a/src/external/libbpf-bootstrap/CMakeLists.txt b/src/external/libbpf-bootstrap/CMakeLists.txt
+--- a/src/external/libbpf-bootstrap/CMakeLists.txt
++++ b/src/external/libbpf-bootstrap/CMakeLists.txt
+@@ -102,8 +102,3 @@
+ add_library(modern SHARED src/modern.bpf.c)
+ target_link_libraries(modern modern_skel)
+ 
+-add_custom_target(change_libbpf_include ALL
+-  COMMAND sed -i 's|<bpf/libbpf.h>|"wrapper_bpf.h"|' ${CMAKE_CURRENT_BINARY_DIR}/modern.skel.h
+-  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/modern.skel.h
+-  COMMENT "Change libbpf include by wrapper_bpf.h from skeleton"
+-)

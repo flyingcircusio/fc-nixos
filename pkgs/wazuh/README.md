@@ -132,3 +132,13 @@ Required because modern compilers (GCC 14+) enforce stricter include requirement
 ### 04-snap-onerror-signature.patch
 
 Upstream v4.14.5 passes a 3-parameter lambda `(result, responseCode, responseBody)` as `PostRequestParameters.onError`, but the type signature expects 2 parameters `(result, responseCode)`. GCC 15 rejects this mismatch. The patch drops the `responseBody` parameter.
+
+### 05-bpf-helpers-libbpf-1_7.patch
+
+Upstream v4.14.5 declares five *unused* global function pointers in `src/syscheckd/src/ebpf/include/bpf_helpers.h` (`bpf_object__destroy_skeleton`, `__open_skeleton`, `__load_skeleton`, `__attach_skeleton`, `__detach_skeleton`) — leftovers from the old dlopen-based loading. Their names collide with the real function declarations in `libbpf.h` (libbpf ≥ 1.0). With nixpkgs `libbpf` 1.7.0, `bpf/libbpf.h` gets pulled in before `bpf_helpers.h` (via the generated `modern.skel.h`), and GCC rejects the redeclaration as a different kind of entity, breaking `wazuh-syscheckd`.
+
+The actual runtime code resolves these symbols via `dlsym` into the `w_bpf_helpers_t` struct — the naked globals are referenced nowhere. The patch deletes them and adds `#include <bpf/libbpf.h>` so the header no longer depends on include order for `struct bpf_object_skeleton`.
+
+**CMakeLists part:** Wazuh's vendored `src/external/libbpf-bootstrap/CMakeLists.txt` (from the deps-51 tarball) post-processes the bpftool-generated `modern.skel.h` with a `change_libbpf_include` custom target that rewrites `#include <bpf/libbpf.h>` to `#include "wrapper_bpf.h"`. `wrapper_bpf.h` is the dlopen-era shim that vendors the skeleton structs and declares the same extern function pointers — colliding with `libbpf.h` ≥ 1.0 the same way. The patch removes the custom target so the skeleton keeps the standard `<bpf/libbpf.h>` include; `wrapper_bpf.h` becomes fully unreferenced (it already has no direct consumers in the source tree).
+
+A remaining *warning* (not error) is the 3-arg redefinition of the `bpf_object__for_each_program` macro — harmless, left as-is.
