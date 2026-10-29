@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock, Mock, patch
 
 import fc.manage.manage
 import responses
@@ -64,5 +64,48 @@ def test_channel_wrong_url_should_raise(logger, mocked_responses):
     url = "https://nothing.here/"
     mocked_responses.add(responses.HEAD, expr_url(url), status=404)
 
+    c = Channel(logger, url)
     with raises(HTTPError):
-        Channel(logger, url)
+        c.resolved_url
+
+
+@patch("fc.util.nixos.switch")
+@patch("fc.util.nixos.current_nixos_channel_url")
+def test_switch_without_internet_when_update_channel_false(
+    mock_current_nixos_channel_url,
+    mock_nixos_switch,
+    logger,
+    tmp_path,
+):
+    mock_current_nixos_channel_url.return_value = "https://hydra.flyingcircus.io/build/54522/download/1/nixexprs.tar.xz"
+
+    enc = {
+        "parameters": {
+            "environment_url": (
+                "https://hydra.flyingcircus.io/build/54522/download/1/nixexprs.tar.xz"
+            ),
+            "environment": "fc-21.05-production",
+        }
+    }
+    mock_nixos_switch.return_value = True
+
+    result = fc.manage.manage.switch(
+        log=logger,
+        enc=enc,
+        specialisation="keep-current",
+        lock_dir=tmp_path,
+        update_channel=False,
+    )
+
+    assert result is True
+    # When update_channel=False, switch() must pass channel=None to nixos.switch
+    # so that the system switches using the cached channel without downloading updates.
+    mock_nixos_switch.assert_called_once_with(
+        channel=None,
+        specialisation="keep-current",
+        lock_dir=tmp_path,
+        lazy=False,
+        show_trace=False,
+        intended_switch_type="switch",
+        log=logger,
+    )

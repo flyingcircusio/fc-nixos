@@ -6,15 +6,18 @@ import os.path as p
 import re
 import resource
 import subprocess
+import time
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from subprocess import PIPE, STDOUT
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import requests
 import structlog
 
+from fc.util.channel import Channel
+from fc.util.lock import locked
 from fc.util.subprocess_helper import (
     get_popen_stderr_lines,
     get_popen_stdout_lines,
@@ -217,7 +220,7 @@ def current_nixos_channel_version() -> str:
     return "".join(open(f).read() for f in label_comp)
 
 
-def current_nixos_channel_url(log=_log) -> Optional[str]:
+def current_nixos_channel_url(channel_name="nixos", log=_log) -> Optional[str]:
     if not p.exists("/root/.nix-channels"):
         log.warn(
             "nix-channel-file-missing",
@@ -228,7 +231,7 @@ def current_nixos_channel_url(log=_log) -> Optional[str]:
         with open("/root/.nix-channels") as f:
             for line in f.readlines():
                 url, name = line.strip().split(" ", 1)
-                if name == "nixos":
+                if name == channel_name:
                     log.debug("nixos-channel-found", channel=url)
                     return url
     except OSError:
@@ -303,7 +306,7 @@ def format_unit_change_lines(unit_changes):
 
 def update_system_channel(channel_url, log=_log):
     """Update nixos channel URL if changed and fetch new contents."""
-    current_channel_url = current_nixos_channel_url(log)
+    current_channel_url = current_nixos_channel_url(log=log)
 
     if current_channel_url == channel_url:
         log.debug("system-channel-url-unchanged")
@@ -496,171 +499,6 @@ def _increase_soft_fd_limit():
     resource.setrlimit(resource.RLIMIT_NOFILE, (soft_limit, hard_limit))
 
 
-def build_system(
-    channel_url=None,
-    build_options=None,
-    out_link=None,
-    log=_log,
-    eval_warnings_file=NIX_EVAL_WARNINGS_FILE,
-) -> str:
-    """
-    Build system with this channel. Works like nixos-rebuild build.
-    Does not modify the running system.
-    """
-    rlimit_nofile = resource.getrlimit(resource.RLIMIT_NOFILE)
-
-    log.debug(
-        "system-build-start",
-        channel=channel_url,
-        soft_file_descriptor_limit=rlimit_nofile[0],
-        hard_file_descriptor_limit=rlimit_nofile[1],
-    )
-
-    cmd = [
-        "nix-build",
-        "--no-build-output",
-        "<nixpkgs/nixos>",
-        "-A",
-        "system",
-    ]
-
-    if channel_url:
-        cmd.extend(["-I", channel_url])
-
-    if out_link:
-        cmd.extend(["--out-link", str(out_link)])
-    else:
-        cmd.append("--no-out-link")
-
-    if build_options is not None:
-        cmd.extend(build_options)
-
-    log.debug("system-build-command", cmd=" ".join(cmd))
-
-    proc = subprocess.Popen(
-        cmd,
-        stdout=PIPE,
-        stderr=PIPE,
-        text=True,
-        preexec_fn=_increase_soft_fd_limit,
-    )
-    log.info(
-        "system-build-started",
-        _replace_msg="Nix build command started with PID: {cmd_pid}",
-        cmd_pid=proc.pid,
-    )
-
-    stderr_lines = get_popen_stderr_lines(proc, log, "system-build-out")
-    stderr = "".join(stderr_lines).strip()
-    proc.wait()
-
-    if stderr:
-        changed = True
-        # Write NixOS and nix eval warnings to a file, separated by two newlines.
-        # We use that for `fc-manage check` to display (deprecation) warnings.
-        eval_warnings = find_nix_eval_warnings(stderr)
-        # TODO: make out path parameterisable
-        eval_warnings_file.write_text("\n\n".join(eval_warnings))
-    else:
-        stderr = None
-        changed = False
-
-    if proc.returncode == 0:
-        if changed:
-            msg = "Successfully built new system (closure size {size})."
-        else:
-            msg = "No building needed, wanted system was already present."
-
-        system_path = proc.stdout.read().strip()
-        try:
-            size_bytes = system_closure_size(log, Path(system_path))
-            size_humanized = f"{size_bytes / 1024**3:.1f} GiB"
-        except Exception:
-            size_humanized = None
-
-        log.info(
-            "system-build-succeeded",
-            _replace_msg=msg,
-            changed=changed,
-            build_output=stderr,
-            size=size_humanized,
-        )
-    else:
-        build_error = find_nix_build_error(stderr, log)
-        msg = build_error.replace("}", "}}").replace("{", "{{")
-        stdout = proc.stdout.read().strip() or None
-        log.error(
-            "system-build-failed",
-            # we need to escape the curly braces because _replace_msg is
-            # interpreted as format string.
-            _replace_msg=msg,
-            stdout=stdout,
-            stderr=stderr,
-        )
-        raise BuildFailed(msg=msg, stdout=stdout, stderr=stderr)
-
-    log.debug(
-        "system-build-finished", system=system_path, size_bytes=size_bytes
-    )
-    assert system_path.startswith("/nix/store/"), (
-        f"Output doesn't look like a Nix store path: {system_path}"
-    )
-
-    return system_path
-
-
-def switch_to_system(
-    system_path: str | Path, lazy, switch_type: str, log=_log
-) -> bool:
-    system_path = Path(system_path).resolve()
-    if lazy and Path("/run/current-system").resolve() == system_path:
-        log.info(
-            "system-switch-skip",
-            _replace_msg="Lazy: system config did not change, skipping switch.",
-            system=system_path,
-        )
-        return False
-
-    log.info(
-        "system-switch-start",
-        _replace_msg="Switching to new system configuration: {system}",
-        system=system_path,
-    )
-
-    cmd = [f"{system_path}/bin/switch-to-configuration", switch_type]
-
-    log.debug("system-switch-command", cmd=" ".join(cmd))
-
-    proc = subprocess.Popen(cmd, stdout=PIPE, stderr=STDOUT, text=True)
-    log.info(
-        "system-switch-started",
-        _replace_msg="Switch command started with PID: {cmd_pid}",
-        cmd_pid=proc.pid,
-    )
-
-    stdout_lines = get_popen_stdout_lines(proc, log, "system-switch-out")
-    stdout = "".join(stdout_lines)
-    proc.wait()
-
-    if proc.returncode == 0:
-        log.info(
-            "system-switch-succeeded",
-            _replace_msg="Completed switch to new system configuration.",
-            switch_output=stdout,
-            system=system_path,
-        )
-    else:
-        log.error(
-            "system-switch-failed",
-            _replace_msg="Switching to new system failed!",
-            stdout=stdout,
-            system_path=system_path,
-        )
-        raise SwitchFailed(stdout=stdout)
-
-    return True
-
-
 def dry_activate_system(system_path, log=_log) -> UnitChanges:
     cmd = [f"{system_path}/bin/switch-to-configuration", "dry-activate"]
     log.info(
@@ -744,3 +582,314 @@ def get_specialisation_path_for_system(
         return Path(system_path) / "specialisation" / specialisation_name
     else:
         return system_path
+
+
+def build(
+    channel: Optional["Channel"] = None,
+    build_options: list[str] = [],
+    out_link: str | Path | None = None,
+    show_trace: bool = False,
+    eval_warnings_file=NIX_EVAL_WARNINGS_FILE,
+    log=_log,
+) -> str:
+    """
+    Build system with channel or channel_url. Works like nixos-rebuild build.
+    Does not modify the running system.
+    """
+    rlimit_nofile = resource.getrlimit(resource.RLIMIT_NOFILE)
+
+    channel_url = None
+    if channel:
+        channel_url = channel.resolved_url
+        log.debug(
+            "channel-build-start",
+            url=channel_url,
+            name=channel.name,
+            environment=channel.environment,
+            is_local=channel.is_local,
+        )
+        if channel.is_local:
+            channel.check_local_channel()
+
+    if show_trace:
+        build_options.append("--show-trace")
+
+    log.debug(
+        "system-build-start",
+        channel=channel_url,
+        soft_file_descriptor_limit=rlimit_nofile[0],
+        hard_file_descriptor_limit=rlimit_nofile[1],
+    )
+
+    cmd = [
+        "nix-build",
+        "--no-build-output",
+        "<nixpkgs/nixos>",
+        "-A",
+        "system",
+    ]
+
+    if channel_url:
+        cmd.extend(["-I", channel_url])
+
+    if out_link:
+        cmd.extend(["--out-link", str(out_link)])
+    else:
+        cmd.append("--no-out-link")
+
+    if build_options:
+        cmd.extend(build_options)
+
+    log.debug("system-build-command", cmd=" ".join(cmd))
+
+    proc = subprocess.Popen(
+        cmd,
+        stdout=PIPE,
+        stderr=PIPE,
+        text=True,
+        preexec_fn=_increase_soft_fd_limit,
+    )
+    log.info(
+        "system-build-started",
+        _replace_msg="Nix build command started with PID: {cmd_pid}",
+        cmd_pid=proc.pid,
+    )
+
+    stderr_lines = get_popen_stderr_lines(proc, log, "system-build-out")
+    stderr = "".join(stderr_lines).strip()
+    proc.wait()
+
+    if stderr:
+        changed = True
+        # Write NixOS and nix eval warnings to a file, separated by two newlines.
+        # We use that for `fc-manage check` to display (deprecation) warnings.
+        eval_warnings = find_nix_eval_warnings(stderr)
+        # TODO: make out path parameterisable
+        eval_warnings_file.write_text("\n\n".join(eval_warnings))
+    else:
+        stderr = None
+        changed = False
+
+    if proc.returncode == 0:
+        if changed:
+            msg = "Successfully built new system (closure size {size})."
+        else:
+            msg = "No building needed, wanted system was already present."
+
+        system_path = proc.stdout.read().strip()
+        try:
+            size_bytes = system_closure_size(log, Path(system_path))
+            size_humanized = f"{size_bytes / 1024**3:.1f} GiB"
+        except Exception:
+            size_humanized = None
+
+        log.info(
+            "system-build-succeeded",
+            _replace_msg=msg,
+            changed=changed,
+            build_output=stderr,
+            size=size_humanized,
+        )
+    else:
+        build_error = find_nix_build_error(stderr, log)
+        msg = build_error.replace("}", "}}").replace("{", "{{")
+        stdout = proc.stdout.read().strip() or None
+        log.error(
+            "system-build-failed",
+            # we need to escape the curly braces because _replace_msg is
+            # interpreted as format string.
+            _replace_msg=msg,
+            stdout=stdout,
+            stderr=stderr,
+        )
+        raise BuildFailed(msg=msg, stdout=stdout, stderr=stderr)
+
+    log.debug(
+        "system-build-finished", system=system_path, size_bytes=size_bytes
+    )
+    assert system_path.startswith("/nix/store/"), (
+        f"Output doesn't look like a Nix store path: {system_path}"
+    )
+
+    if channel:
+        channel.system_path = system_path
+
+    return system_path
+
+
+def switch_to_system(
+    system_path: str | Path, lazy, switch_type: str, log=_log
+) -> bool:
+    """
+    This is the interal implementation that actually switches to a built system.
+
+    NOTE: Consumers outside of this module should use switch_to_configuration
+    or switch if they don't implement the release path and locking logic themself.
+    """
+    system_path = Path(system_path).resolve()
+    if lazy and Path("/run/current-system").resolve() == system_path:
+        log.info(
+            "system-switch-skip",
+            _replace_msg="Lazy: system config did not change, skipping switch.",
+            system=system_path,
+        )
+        return False
+
+    log.info(
+        "system-switch-start",
+        _replace_msg="Switching to new system configuration: {system}",
+        system=system_path,
+    )
+
+    cmd = [f"{system_path}/bin/switch-to-configuration", switch_type]
+
+    log.debug("system-switch-command", cmd=" ".join(cmd))
+
+    proc = subprocess.Popen(cmd, stdout=PIPE, stderr=STDOUT, text=True)
+    log.info(
+        "system-switch-started",
+        _replace_msg="Switch command started with PID: {cmd_pid}",
+        cmd_pid=proc.pid,
+    )
+
+    stdout_lines = get_popen_stdout_lines(proc, log, "system-switch-out")
+    stdout = "".join(stdout_lines)
+    proc.wait()
+
+    if proc.returncode == 0:
+        log.info(
+            "system-switch-succeeded",
+            _replace_msg="Completed switch to new system configuration.",
+            switch_output=stdout,
+            system=system_path,
+        )
+    else:
+        log.error(
+            "system-switch-failed",
+            _replace_msg="Switching to new system failed!",
+            stdout=stdout,
+            system_path=system_path,
+        )
+        raise SwitchFailed(stdout=stdout)
+
+    return True
+
+
+def switch_to_configuration(
+    system_path: Path | str,
+    specialisation: str | Specialisation,
+    lock_dir: Path,
+    lazy: bool = True,
+    intended_switch_type: str = "switch",
+    reboot_delay: int = 10,
+    log=_log,
+) -> bool:
+    """
+    Runs switch-to-configuration for the given system path and specialisation.
+    The system must already be built.
+    The system generation doesn't get registered as system profile.
+
+    The 'intended_switch type' can be any action that the target's switch-to-configuration supports.
+    When it's set to 'test', the machine will reboot after switch-to-configuration ran.
+    """
+    switch_path = get_specialisation_path_for_system(
+        Path(system_path), specialisation, log
+    )
+
+    current_release = os_release()["VERSION_ID"]
+    next_release = os_release(Path(switch_path))["VERSION_ID"]
+
+    if current_release != next_release or (intended_switch_type == "boot"):
+        if current_release != next_release:
+            log.warning(
+                "release-change-requires-reboot",
+                current_release=current_release,
+                next_release=next_release,
+            )
+        else:
+            log.warning(
+                "activate-with-reboot",
+                _replace_msg="Activating new system with reboot.",
+            )
+        while reboot_delay:
+            log.warning(
+                "reboot-scheduled",
+                _replace_msg=f"WILL REBOOT IN {reboot_delay} SECONDS. PRESS Ctrl-C TO ABORT.",
+            )
+            time.sleep(1)
+            reboot_delay -= 1
+        with locked(log, lock_dir, "switch_to_configuration.lock"):
+            if not switch_to_system(switch_path, lazy, "boot", log):
+                return False
+        log.warning(
+            "reboot-scheduled",
+            _replace_msg="System switched. Triggering reboot NOW.",
+        )
+        subprocess.check_call(["reboot"])
+        return True
+    else:
+        with locked(log, lock_dir, "switch_to_configuration.lock"):
+            return switch_to_system(
+                switch_path, lazy, intended_switch_type, log
+            )
+
+
+def switch(
+    specialisation: str | Specialisation,
+    lock_dir: Path,
+    channel: Optional["Channel"] = None,
+    lazy: bool = True,
+    show_trace: bool = False,
+    intended_switch_type: str = "switch",
+    log=_log,
+) -> bool:
+    """
+    Build system with this channel and switch to it.
+    Replicates the behaviour of nixos-rebuild switch and adds
+    a "lazy mode" which only switches to the built system if it actually
+    changed.
+
+    When a channel is given, the system is build and switched with the new channel.
+    Otherwise, the channel that is currently active on the machine gets used for the build.
+
+    The 'intended_switch type' can be any action that the target's switch-to-configuration supports.
+    When it's set to 'test', the machine will reboot after switch-to-configuration ran.
+    """
+    log.debug("system-switch-start", channel=str(channel))
+
+    out_link = "/run/fc-agent-built-system"
+    system_path = build(
+        channel=channel,
+        out_link=out_link,
+        show_trace=show_trace,
+        log=log,
+    )
+    register_system_profile(system_path, log)
+    if os.path.exists(out_link) or os.path.islink(out_link):
+        os.unlink(out_link)
+
+    return switch_to_configuration(
+        system_path=system_path,
+        specialisation=specialisation,
+        lock_dir=lock_dir,
+        lazy=lazy,
+        intended_switch_type=intended_switch_type,
+        log=log,
+    )
+
+
+def dry_activate_channel(
+    channel: Optional["Channel"] = None,
+    system_path: str | Path | None = None,
+    show_trace: bool = False,
+    log=_log,
+) -> UnitChanges:
+    if channel and log is _log:
+        log = channel.log
+    if system_path is None:
+        system_path = build(
+            channel=channel,
+            show_trace=show_trace,
+            log=log,
+        )
+    return dry_activate_system(system_path, log=log)
