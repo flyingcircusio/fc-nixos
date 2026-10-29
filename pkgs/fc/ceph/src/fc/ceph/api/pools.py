@@ -6,6 +6,8 @@ from typing import Any, Self
 from .cluster import Cluster
 from .rbdimage import RBDImage
 
+ORCHESTRATION_POOL_NAME = "fcio"
+
 
 class Pools(object):
     """Container for Ceph pool listings.
@@ -50,6 +52,10 @@ class Pools(object):
     def __iter__(self):
         """Short form for `for i in pools.all():`."""
         return self.all()
+
+    def rados_lock_pool(self):
+        if ORCHESTRATION_POOL_NAME in self.names():
+            return RadosObjectPool(ORCHESTRATION_POOL_NAME, self.cluster)
 
     def pick(self):
         """Returns randomly picked pool (as Pool object)."""
@@ -312,3 +318,18 @@ class Pool(object):
         """
         if not self.pg_num_min:
             self.pg_num_min = 1
+
+
+class RadosObjectPool(object):
+    def __init__(self, poolname: str, cluster: Cluster):
+        self.name = poolname
+        self.cluster: Cluster = cluster
+
+    def object_list(self, namespace: str):
+        objects = self.cluster.rados_json(
+            "ls", "-p", self.name, "-N", namespace
+        )
+        return [obj["name"] for obj in objects]
+
+    def object_remove(self, namespace: str, objectname: str):
+        self.cluster.rados("rm", "-p", self.name, "-N", namespace, objectname)
