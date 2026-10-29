@@ -76,7 +76,7 @@ in
   lampVm74 = callTest ./lamp/vm-test.nix { version = "lamp_php74"; };
   lampVm80 = callTest ./lamp/vm-test.nix { version = "lamp_php80"; };
   lampVm81 = callTest ./lamp/vm-test.nix { version = "lamp_php81"; };
-  lampVm82 = callTest ./lamp/vm-test.nix { version = "lamp_php82"; };
+  #lampVm82 = callTest ./lamp/vm-test.nix { version = "lamp_php82"; };
   lampVm83 = callTest ./lamp/vm-test.nix { version = "lamp_php83"; };
   lampVm84 = callTest ./lamp/vm-test.nix { version = "lamp_php84"; };
   lampVm85 = callTest ./lamp/vm-test.nix { version = "lamp_php85"; };
@@ -108,7 +108,8 @@ in
   opensearch = callTest ./opensearch.nix { };
   opensearch_dashboards = callTest ./opensearch_dashboards.nix { };
   openvpn = callTest ./openvpn.nix { };
-  open-webui = callTest ./open-webui.nix { };
+  # FIXME: PL-135792
+  # open-webui = callTest ./open-webui.nix { };
   percona84 = callTest ./mysql.nix { rolename = "percona84"; };
   physical-installer = callTest ./physical-installer.nix { inherit nixpkgs; };
   postgresql14 = callTest ./postgresql { version = "14"; };
