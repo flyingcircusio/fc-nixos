@@ -116,6 +116,8 @@ This change affects the configuration options:
 - `services.phpfpm.extraConfig`
 - `services.phpfpm.settings`
 
+PHP 7.2 and 7.3 have been removed as they are end-of-life for a prolonged period of time.
+
 ## GitLab
 
 The database metadata backend for the container registry is now enabled by default on new installations.
