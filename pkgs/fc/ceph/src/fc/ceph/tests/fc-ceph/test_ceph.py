@@ -56,6 +56,7 @@ def pools(cluster, monkeypatch):
         )
         images["{}.swap".format(name)] = RBDImage("{}.swap".format(name), 100)
         images["{}.tmp".format(name)] = RBDImage("{}.tmp".format(name), 100)
+        images["{}.cidata".format(name)] = RBDImage("{}.cidata".format(name), 100)
     monkeypatch.setattr(
         fc.ceph.api.pools.Pool,
         "load",
@@ -82,6 +83,7 @@ def test_node_deletion(
         mock.call("-c", "/etc/ceph/ceph.conf", "rm", "rbd.hdd/node03.root"),
         mock.call("-c", "/etc/ceph/ceph.conf", "rm", "rbd.hdd/node03.swap"),
         mock.call("-c", "/etc/ceph/ceph.conf", "rm", "rbd.hdd/node03.tmp"),
+        mock.call("-c", "/etc/ceph/ceph.conf", "rm", "rbd.hdd/node03.cidata"),
         # purge
         mock.call(
             "-c",
@@ -93,4 +95,5 @@ def test_node_deletion(
         mock.call("-c", "/etc/ceph/ceph.conf", "rm", "rbd.ssd/node04.root"),
         mock.call("-c", "/etc/ceph/ceph.conf", "rm", "rbd.ssd/node04.swap"),
         mock.call("-c", "/etc/ceph/ceph.conf", "rm", "rbd.ssd/node04.tmp"),
+        mock.call("-c", "/etc/ceph/ceph.conf", "rm", "rbd.ssd/node04.cidata"),
     ]
