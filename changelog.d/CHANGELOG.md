@@ -1,3 +1,11 @@
+# Release 2026_046
+
+## NixOS XX.XX platform
+
+- crowdsec: allow defining custom appsec configs and enabling more appsec configs (PL-135572 / PL-135763)
+
+
+
 # Release 2026_044
 
 ## NixOS XX.XX platform
