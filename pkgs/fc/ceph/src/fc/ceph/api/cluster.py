@@ -31,6 +31,12 @@ class Cluster(object):
     def rbd_json(self, *args: str, **kwargs) -> Any:
         return run.json.rbd("-c", self.ceph_conf, *args, **kwargs)
 
+    def rados(self, *args: str, **kwargs) -> Any:
+        return run.rados("-c", self.ceph_conf, *args, **kwargs)
+
+    def rados_json(self, *args: str, **kwargs) -> Any:
+        return run.json.rados("-c", self.ceph_conf, *args, **kwargs)
+
     def parse_config(self):
         self.config = configparser.ConfigParser()
         with open(self.ceph_conf) as f:
