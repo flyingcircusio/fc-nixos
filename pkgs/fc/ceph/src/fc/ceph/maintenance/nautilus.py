@@ -9,7 +9,7 @@ import traceback
 from subprocess import CalledProcessError
 
 import fc.util.directory
-from fc.ceph.api import Cluster, Pools
+from fc.ceph.api import ORCHESTRATION_POOL_NAME, Cluster, Pools
 from fc.ceph.maintenance import noup_workaround
 from fc.ceph.maintenance.images_nautilus import (
     load_vm_images as load_vm_images_task,
@@ -20,7 +20,6 @@ from fc.ceph.util import run
 class ResourcegroupPoolEquivalence(object):
     """Ensure that required Ceph pools exist."""
 
-    ORCHESTRATION_POOL_NAME = "fcio"
     REQUIRED_POOLS = ["rbd", "rbd.hdd", ORCHESTRATION_POOL_NAME]
 
     def __init__(self, directory, cluster):
@@ -47,7 +46,7 @@ class ResourcegroupPoolEquivalence(object):
                 print("Continuing...", file=sys.stderr)
                 status_code = 12
 
-        orchestration = self.pools[self.ORCHESTRATION_POOL_NAME]
+        orchestration = self.pools[ORCHESTRATION_POOL_NAME]
         try:
             orchestration.size = 5
         except ValueError as e:
@@ -68,12 +67,18 @@ class ResourcegroupPoolEquivalence(object):
 
 
 class VolumeDeletions(object):
+    """Ensure that the volumes of deleted VMs are correctly removed."""
+
+    ORCHESTRATION_LOCK_NAMESPACE = "node"
+
     def __init__(self, directory, cluster):
         self.directory = directory
-        self.pools = Pools(cluster)
+        self.cluster = cluster
+        self.pools = Pools(self.cluster)
 
     def ensure(self) -> int:
         status_code = 0
+        lock_pool = self.pools.rados_lock_pool()
         deletions = self.directory.deletions("vm")
         for name, node in list(deletions.items()):
             print(name, node)
@@ -125,6 +130,35 @@ class VolumeDeletions(object):
                         traceback.print_exc()
                         status_code = max(status_code, 11)
                         print("Continuing...", file=sys.stderr)
+
+            # ensure that advisory lock objects also get cleaned upon
+            # vm deletion
+            if lock_pool:
+                objects = lock_pool.object_list(
+                    self.ORCHESTRATION_LOCK_NAMESPACE
+                )
+                if name not in objects:
+                    continue
+
+                print(
+                    "Deleting rados lock object: pool={}, namespace={}, object={}".format(
+                        lock_pool.name,
+                        self.ORCHESTRATION_LOCK_NAMESPACE,
+                        name,
+                    )
+                )
+                try:
+                    lock_pool.object_remove(
+                        self.ORCHESTRATION_LOCK_NAMESPACE, name
+                    )
+                except CalledProcessError:
+                    print(
+                        "The following error occurred at lock object deletion:",
+                        file=sys.stderr,
+                    )
+                    traceback.print_exc()
+                    status_code = max(status_code, 12)
+                    print("Continuing...", file=sys.stderr)
 
         return status_code
 

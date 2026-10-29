@@ -84,6 +84,9 @@ class JSONRunner(object):
     def rbd(self, *args, **kw):
         return self.__run__("rbd", "--format", "json", *args, **kw)
 
+    def rados(self, *args, **kw):
+        return self.__run__("rados", "--format", "json", *args, **kw)
+
 
 class Runner(object):
     def __init__(
