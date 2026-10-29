@@ -86,7 +86,7 @@ class VolumeDeletions(object):
                     # The pool doesn't exist. Ignore. Nothing to delete anyway.
                     continue
 
-                for image in ["{}.root", "{}.swap", "{}.tmp"]:
+                for image in ["{}.root", "{}.swap", "{}.tmp", "{}.cidata"]:
                     image = image.format(name)
                     base_image = None
                     for rbd_image in images:
