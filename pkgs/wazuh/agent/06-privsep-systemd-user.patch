@@ -1,0 +1,36 @@
+# privsep: systemd already set User=/Group= — matching identity is success, keeping root is an error.
+--- a/src/shared/privsep_op.c	2026-05-13 00:22:13.774340297 +0200
++++ b/src/shared/privsep_op.c	2026-05-13 00:22:39.721388623 +0200
+@@ -132,6 +132,18 @@
+ 
+ int Privsep_SetUser(uid_t uid)
+ {
++    // NixOS: systemd sets User= in serviceConfig before exec.
++    // Validate that we're running as the expected user.
++    if (getuid() == uid) {
++        // Already running as target user - systemd did its job
++        return (OS_SUCCESS);
++    }
++    if (uid != 0 && getuid() == 0) {
++        // Security: Running as root when we shouldn't be
++        merror("Privsep_SetUser: Running as root but target uid=%d. Check systemd User= setting.", uid);
++        return (OS_INVALID);
++    }
++
+     if (setuid(uid) < 0) {
+         return (OS_INVALID);
+     }
+@@ -147,6 +159,13 @@
+ 
+ int Privsep_SetGroup(gid_t gid)
+ {
++    // NixOS: systemd sets Group= in serviceConfig before exec.
++    // Validate that we're running as the expected group.
++    if (getgid() == gid) {
++        // Already running as target group - systemd did its job
++        return (OS_SUCCESS);
++    }
++
+     if (setgroups(1, &gid) == -1) {
+         return (OS_INVALID);
+     }

@@ -776,4 +776,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       in
       if dependencies == [ ] then python3Writer else pathWrapper;
   };
+
+  wazuh-agent = self.callPackage ./wazuh/agent { };
 }

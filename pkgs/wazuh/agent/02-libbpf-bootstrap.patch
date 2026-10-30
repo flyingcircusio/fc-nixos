@@ -1,0 +1,61 @@
+# libbpf-bootstrap: build from prefetched sources — git/HTTP fetching disabled (no network in sandbox).
+--- a/src/external/libbpf-bootstrap/CMakeLists.txt
++++ b/src/external/libbpf-bootstrap/CMakeLists.txt
+@@ -13,8 +13,6 @@
+ include(ExternalProject)
+ ExternalProject_Add(libbpf
+   PREFIX libbpf
+-  GIT_REPOSITORY https://github.com/libbpf/libbpf.git
+-  GIT_TAG v1.7.0  # v1.4.0: f11758a7807893330cc87481a7a16cf956326ab3
+   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libbpf
+   CONFIGURE_COMMAND ""
+   BUILD_COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/libbpf/src && make CFLAGS="-fPIC${CFLAGS}" LDFLAGS="-lelf${LDFLAGS}"
+@@ -26,32 +24,31 @@
+     install install_uapi_headers
+   BUILD_IN_SOURCE TRUE
+   INSTALL_COMMAND ""
++  DOWNLOAD_COMMAND ""
+   STEP_TARGETS build
+ )
+ 
+ # Clone bpftool repository
+ ExternalProject_Add(bpftool
+   PREFIX bpftool
+-  GIT_REPOSITORY https://github.com/libbpf/bpftool.git
+-  GIT_TAG v7.7.0
+   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bpftool
+   CONFIGURE_COMMAND ""
+   BUILD_COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/bpftool/src && make bootstrap
+     OUTPUT=${CMAKE_CURRENT_BINARY_DIR}/bpftool/
+   BUILD_IN_SOURCE TRUE
+   INSTALL_COMMAND ""
++  DOWNLOAD_COMMAND ""
+   STEP_TARGETS build
+ )
+ 
+ # Clone vmlinux.h repository
+ ExternalProject_Add(vmlinux.h
+   PREFIX vmlinux.h
+-  GIT_REPOSITORY https://github.com/libbpf/vmlinux.h.git
+-  GIT_TAG main
+   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vmlinux.h
+   CONFIGURE_COMMAND ""
+   BUILD_COMMAND ""
+   INSTALL_COMMAND ""
++  DOWNLOAD_COMMAND ""
+ )
+ 
+ # Set the path to clang (update if necessary)
+@@ -91,12 +88,13 @@
+ set(BPFOBJECT_VMLINUX_H ${CMAKE_CURRENT_SOURCE_DIR}/vmlinux.h/include/${ARCH}/vmlinux.h)
+ set(LIBBPF_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/libbpf)
+ set(LIBBPF_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libbpf/libbpf.a)
++set(LIBBPF_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/libbpf/src)
+ find_package(BpfObject REQUIRED)
+ 
+ include_directories(
+   ${CMAKE_CURRENT_SOURCE_DIR}/vmlinux.h/include/${ARCH}
+ )
+ 
+ bpf_object(modern src/modern.bpf.c)
+ add_dependencies(modern_skel libbpf-build bpftool-build vmlinux.h)
