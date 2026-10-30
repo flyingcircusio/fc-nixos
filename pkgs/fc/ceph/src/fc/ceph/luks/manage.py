@@ -38,7 +38,7 @@ async def run_parallel(
     names of the items that failed.
     """
     semaphore = asyncio.Semaphore(max(1, workers))
-    with Progress() as progress:
+    with Progress(console=console) as progress:
         bar = progress.add_task(label, total=len(items))
 
         async def run(item):
