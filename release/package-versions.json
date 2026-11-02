@@ -684,16 +684,6 @@
     "pname": "percona-xtrabackup",
     "version": "8.4.0-7"
   },
-  "php72": {
-    "name": "php-with-extensions-7.2.34",
-    "pname": "php-with-extensions",
-    "version": "7.2.34"
-  },
-  "php73": {
-    "name": "php-with-extensions-7.3.33",
-    "pname": "php-with-extensions",
-    "version": "7.3.33"
-  },
   "php74": {
     "name": "php-with-extensions-7.4.33",
     "pname": "php-with-extensions",
@@ -703,6 +693,11 @@
     "name": "php-with-extensions-8.0.30",
     "pname": "php-with-extensions",
     "version": "8.0.30"
+  },
+  "php81": {
+    "name": "php-with-extensions-8.1.34",
+    "pname": "php-with-extensions",
+    "version": "8.1.34"
   },
   "php83": {
     "name": "php-with-extensions-8.3.36",

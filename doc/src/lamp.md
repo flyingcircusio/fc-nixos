@@ -209,8 +209,6 @@ CLI.
 
 Supported packages:
 
-- `pkgs.lamp_php72` ([outdated](https://www.php.net/supported-versions.php) but provided for legacy applications)
-- `pkgs.lamp_php73` ([outdated](https://www.php.net/supported-versions.php) but provided for legacy applications)
 - `pkgs.lamp_php74` ([outdated](https://www.php.net/supported-versions.php) but provided for legacy applications)
 - `pkgs.lamp_php80` ([outdated](https://www.php.net/supported-versions.php) but provided for legacy applications)
 - `pkgs.lamp_php81`
@@ -228,10 +226,10 @@ PHP extensions, currently:
 - memcached
 
 There are more pre-packaged extension that can be added via Nix code. For example,
-to add the apcu extension along with the ones provided by lamp_php82, use:
+to add the apcu extension along with the ones provided by lamp_php84, use:
 
 ```Nix
-php = pkgs.lamp_php82.withExtensions ({ enabled, all }:
+php = pkgs.lamp_php84.withExtensions ({ enabled, all }:
   enabled ++ [
     all.apcu
   ]);
