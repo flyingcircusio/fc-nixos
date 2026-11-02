@@ -100,6 +100,7 @@ in
       server = config.flyingcircus.roles.k3s-server.enable;
       agent = config.flyingcircus.roles.k3s-agent.enable;
       frontend = config.flyingcircus.roles.webgateway.enable;
+      single-node = config.flyingcircus.roles.k3s-single-node.enable;
     in
     lib.mkMerge [
       {
@@ -136,6 +137,16 @@ in
             ];
           }
         ];
+      })
+
+      (lib.mkIf (server || single-node) {
+        extraKubeProxyConfig = {
+          nodePortAddresses = [
+            "127.0.0.1/8"
+            "::1/128"
+          ];
+          clientConnection.kubeconfig = "/var/lib/k3s/agent/kubeproxy.kubeconfig";
+        };
       })
 
       (lib.mkIf (server && (!builtins.isNull lokiServer)) {
