@@ -137,6 +137,11 @@ need to be updated to this version before upgrading cluster VM's to the 26.11
 platform. See the role documentation for {ref}`cluster version updates
 <nixos-k3s-update-versions>`.
 
+### Webproxy (Vinyl Cache / Varnish Cache)
+
+The support for Varnish Cache has been removed.
+Please migrate to Vinyl Cache 9.
+
 ## Other notable changes
 
 - The `security.dhparams` module has been removed. Remove any uses of DHE and migrate to ECDHE (RFC 8422, 2018) and Hybrid PQ (draft-ietf-tls-ecdhe-mlkem, 2026) key exchange algorithms.

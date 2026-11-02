@@ -133,5 +133,4 @@ in
   users = callTest ./users.nix { };
   vxlan = callTest ./vxlan.nix { };
   webproxy = callTest ./webproxy.nix { };
-  webproxy-legacy = callTest ./webproxy-legacy.nix { };
 }
