@@ -26,10 +26,18 @@ let
   vrfInterfaces = lib.filterAttrs (_: v: v.linktype == "routed") fclib.network;
   vrfV6Resolvers = iface: map (net: "${net.network}1") iface.v6.networkAttrs;
 
-  ubuntuUpdateScript = pkgs.writeShellApplication {
-    name = "fc-update-ubuntu";
-    runtimeInputs = with pkgs; [ wget ];
-    text = (lib.readFile ./update-ubuntu.sh);
+  ubuntuUpdateScript = pkgs.writers.writePython3BinFromFile ./fc-update-ubuntu.py {
+    dependencies = [
+      cephPkgs.ceph-client
+      cephPkgs.qemu
+      pkgs.wget
+      pkgs.coreutils
+      pkgs.gnugrep
+    ];
+    flakeIgnore = [
+      "E501"
+      "E265"
+    ];
   };
 
   noopScript = {
