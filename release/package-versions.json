@@ -10,9 +10,9 @@
     "version": "2.4.69"
   },
   "asterisk": {
-    "name": "asterisk-22.8.2",
+    "name": "asterisk-22.11.0",
     "pname": "asterisk",
-    "version": "22.8.2"
+    "version": "22.11.0"
   },
   "auditbeat7-oss": {
     "name": "auditbeat-oss-7.17.27",
@@ -271,9 +271,9 @@
     "version": "19.5.3"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-4.42.0",
+    "name": "gitlab-container-registry-4.43.0",
     "pname": "gitlab-container-registry",
-    "version": "4.42.0"
+    "version": "4.43.0"
   },
   "gitlab-ee": {
     "name": "gitlab-ee-19.5.3",
