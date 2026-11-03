@@ -4,6 +4,7 @@ from pathlib import Path
 from socket import gethostname
 from subprocess import DEVNULL, CalledProcessError, run
 from sys import exit
+from tempfile import TemporaryDirectory
 from typing import NamedTuple
 
 
@@ -18,14 +19,18 @@ UBUNTU_RELEASES = [
         environment="24.04-lts-noble-numbat",
         base="https://cloud-images.ubuntu.com/noble/current",
         image="noble-server-cloudimg-amd64.img",
-    )
+    ),
+    UbuntuReleaseMetadata(
+        environment="26.04-lts-resolute-raccoon",
+        base="https://cloud-images.ubuntu.com/resolute/current",
+        image="resolute-server-cloudimg-amd64.img",
+    ),
 ]
 
 
 def update_ubuntu_release(release: UbuntuReleaseMetadata) -> int:
 
-    # XXX: in principle this is insecure, because /tmp/ is world-rw and thus the images could be tampered with
-    chdir("/tmp/")
+    print(f"Updating {release.environment}")
     try:
         run(
             "rbd namespace list rbd.hdd | grep -q images-ubuntu",
@@ -71,7 +76,7 @@ def update_ubuntu_release(release: UbuntuReleaseMetadata) -> int:
     print("Downloading new image ...")
     run(["wget", "-q", f"{release.base}/{release.image}"], check=True)
     got_checksum = run(
-        f'sha256sum "/tmp/{release.image}" | cut -d " " -f 1',
+        f'sha256sum "./{release.image}" | cut -d " " -f 1',
         shell=True,
         text=True,
         capture_output=True,
@@ -121,7 +126,11 @@ def update_ubuntu_release(release: UbuntuReleaseMetadata) -> int:
 def main():
     returncode = 0
     for release in UBUNTU_RELEASES:
-        returncode = max(returncode, update_ubuntu_release(release))
+        with TemporaryDirectory() as tmpdir:
+            # always work in a fresh directory per release, to avoid issues
+            # with conflicting file names
+            chdir(tmpdir)
+            returncode = max(returncode, update_ubuntu_release(release))
 
     exit(returncode)
 
