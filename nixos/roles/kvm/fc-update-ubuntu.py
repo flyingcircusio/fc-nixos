@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
+from hashlib import file_digest
 from os import chdir
 from pathlib import Path
 from socket import gethostname
-from subprocess import DEVNULL, CalledProcessError, run
+from subprocess import DEVNULL, run
 from sys import exit
 from tempfile import TemporaryDirectory
 from typing import NamedTuple
@@ -31,15 +32,13 @@ UBUNTU_RELEASES = [
 def update_ubuntu_release(release: UbuntuReleaseMetadata) -> int:
 
     print(f"Updating {release.environment}")
-    try:
-        run(
-            "rbd namespace list rbd.hdd | grep -q images-ubuntu",
-            shell=True,
-            check=True,
-            text=True,
-            capture_output=True,
-        )
-    except CalledProcessError:
+    namespaces = run(
+        ["rbd", "namespace", "list", "rbd.hdd"],
+        check=True,
+        text=True,
+        capture_output=True,
+    ).stdout.splitlines()
+    if "images-ubuntu" not in (n.strip() for n in namespaces):
         print("ERROR: missing namespace `images-ubuntu`")
         return 2
 
@@ -52,12 +51,14 @@ def update_ubuntu_release(release: UbuntuReleaseMetadata) -> int:
         create_flags.append("-n")
 
     run(["wget", "-q", f"{release.base}/SHA256SUMS"], check=True)
-    checksum = run(
-        f"grep {release.image} SHA256SUMS | cut -d ' ' -f 1",
-        shell=True,
-        text=True,
-        capture_output=True,
-    ).stdout.strip()
+    checksums = Path("SHA256SUMS").read_text().splitlines()
+    checksum = None
+    for line in checksums:
+        if release.image not in line:
+            continue
+        checksum = line.split(" ")[0]
+        break
+    assert checksum
 
     if not run(
         [
@@ -75,12 +76,8 @@ def update_ubuntu_release(release: UbuntuReleaseMetadata) -> int:
 
     print("Downloading new image ...")
     run(["wget", "-q", f"{release.base}/{release.image}"], check=True)
-    got_checksum = run(
-        f'sha256sum "./{release.image}" | cut -d " " -f 1',
-        shell=True,
-        text=True,
-        capture_output=True,
-    ).stdout.strip()
+    with open(release.image, "rb") as imgfile:
+        got_checksum = file_digest(imgfile, "sha256").hexdigest()
 
     if got_checksum != checksum:
         print(

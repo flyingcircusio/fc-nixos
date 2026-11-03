@@ -31,8 +31,6 @@ let
       cephPkgs.ceph-client
       cephPkgs.qemu
       pkgs.wget
-      pkgs.coreutils
-      pkgs.gnugrep
     ];
     flakeIgnore = [
       "E501"
