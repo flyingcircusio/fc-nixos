@@ -1,5 +1,6 @@
 {
   config,
+  options,
   lib,
   pkgs,
   ...
@@ -39,6 +40,15 @@ in
         type = lib.types.listOf lib.types.str;
         defaultText = "the addresses of the networks `lo` and `srv` (IPv4 & IPv6)";
         default = fclib.network.srv.dualstack.addressesQuoted ++ fclib.network.lo.dualstack.addressesQuoted;
+      };
+
+      package = mkOption {
+        inherit (options.services.varnish.package)
+          defaultText
+          default
+          description
+          type
+          ;
       };
 
     };
@@ -109,6 +119,10 @@ in
         }) (lib.unique fccfg.listenAddresses);
         fallbackConfig = lib.mkIf (varnishCfg != null) varnishCfg;
       };
+
+      # lower priority, in case this was customised via services.varnish.package before.
+      # This mainly exists for migrating to 26.05 while keeping varnish enabled.
+      services.varnish.package = fclib.mkPlatform fccfg.package;
 
       systemd.services = {
         varnishncsa = rec {
