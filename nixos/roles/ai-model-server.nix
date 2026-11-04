@@ -19,16 +19,7 @@ let
       "127.0.0.1"
     else
       skvaiderInferenceHost;
-  skvaiderMaintenanceUrl = "http://${skvaiderMaintenanceHost}:${toString cfg.skvaider-inference.settings.server.port}/manager/maintenance";
-
-  skvaiderMaintenance = pkgs.writeShellApplication {
-    name = "skvaider-maintenance";
-    runtimeInputs = with pkgs; [
-      curl
-      jq
-    ];
-    text = lib.readFile ./ai-model-server-maintenance.sh;
-  };
+  skvaiderMaintenanceUrl = "http://${skvaiderMaintenanceHost}:${toString cfg.skvaider-inference.settings.server.port}";
 
 in
 {
@@ -342,17 +333,15 @@ in
 
       {
         # Move the models away before the machine reboots or updates and let
-        # the proxy place them here again afterwards (PL-135777). The enter
-        # command waits for the drain and only then lets the maintenance
-        # continue; if the models cannot be moved (not enough capacity
-        # elsewhere), it returns EXIT_TEMPFAIL and the agent retries later.
-        environment.systemPackages = lib.mkIf cfg.skvaider-inference.enable [
-          skvaiderMaintenance
-        ];
+        # the proxy place them here again afterwards (PL-135777). The client
+        # waits for the drain and only then lets the maintenance continue; if
+        # the models cannot be moved (not enough capacity elsewhere), it
+        # exits with EXIT_TEMPFAIL and the agent retries later. The client
+        # comes from pkgs.fc.skvaider, so client and server stay in sync.
         flyingcircus.agent.maintenance = lib.mkIf cfg.skvaider-inference.enable {
           skvaider-model-drain = {
-            enter = "SKVAIDER_MAINTENANCE_URL=${skvaiderMaintenanceUrl} SKVAIDER_MAINTENANCE_TIMEOUT=${toString config.flyingcircus.agent.maintenancePreparationSeconds} ${lib.getExe skvaiderMaintenance} enter";
-            leave = "SKVAIDER_MAINTENANCE_URL=${skvaiderMaintenanceUrl} ${lib.getExe skvaiderMaintenance} leave";
+            enter = "${lib.getExe' pkgs.fc.skvaider "skvaider-maintenance"} enter --url ${skvaiderMaintenanceUrl} --wait ${toString config.flyingcircus.agent.maintenancePreparationSeconds}";
+            leave = "${lib.getExe' pkgs.fc.skvaider "skvaider-maintenance"} leave --url ${skvaiderMaintenanceUrl}";
           };
         };
       }
