@@ -17,9 +17,9 @@ let
       src = pkgs.fetchFromGitHub {
         owner = "flyingcircusio";
         repo = "backy-extract";
-        # 1.1.0, NixOS >= 25.05
-        rev = "293296ebbb8bb37e3f6ef6faf26c68d71103e7c0";
-        hash = "sha256-fhfPNiFnmFEamhv18eneGoKYaW3GH/n75HZvV8uZxCo=";
+        # 1.1.0, NixOS >= 25.05 + fuse3
+        rev = "eb0ed0f4ffac301669bccb7dae2f86f304f2b5f5";
+        hash = "sha256-DtqPRMnhiNBje3Cxv7ERThE8ijiYnM7OMxTKkr45fQY=";
       };
     in
     pkgs.callPackage src { };
