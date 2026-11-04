@@ -669,9 +669,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   percona84 = self.percona-server_8_4;
 
-  # Has been renamed upstream, backy-extract still wants to use it.
-  pkgconfig = super.pkg-config;
-
   # fetched from a different flake input, but make easily available via our overlay
   inherit poetry2nix;
 
