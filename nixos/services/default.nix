@@ -34,7 +34,6 @@ in
     ./sensu/client.nix
     ./solr.nix
     ./telegraf
-    ./varnish
     ./vinyl-cache
 
     (mkRemovedOptionModule [
