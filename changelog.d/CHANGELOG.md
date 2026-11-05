@@ -1,3 +1,21 @@
+# Release 2026_047
+
+## Impact
+
+- A bullet item for the Impact category.
+
+
+## NixOS XX.XX platform
+
+- webproxy: simplify upgrade to fc-nixos-26.05 while keeping Varnish as package (PL-135684)
+
+    As fc-nixos-26.05 [changes the underlying webproxy implementation to vinyl-cache](https://doc.flyingcircus.io/roles/fc-26.05-production/upgrade.html#nixos-upgrade-webproxy) by default, the config `flyingcircus.roles.webproxy.package = pkgs.varnish80` needs to be set to keep using varnish.
+    This option is now already available on fc-nixos-25.11 and can be set ahead of the upgrade.
+
+- Update Linux kernels to fix CVE-2026-98432 (PL-135798)
+
+
+
 # Release 2026_043
 
 ## NixOS XX.XX platform
