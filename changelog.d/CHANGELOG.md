@@ -1,3 +1,11 @@
+# Release 2026_047
+
+## NixOS XX.XX platform
+
+- Update Linux kernels to fix CVE-2026-98432 (PL-135798)
+
+
+
 # Release 2026_022
 
 
