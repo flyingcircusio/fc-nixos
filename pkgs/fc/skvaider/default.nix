@@ -12,8 +12,8 @@ let
   src = fetchFromGitHub {
     owner = "flyingcircusio";
     repo = "skvaider";
-    rev = "abc806a5ae480e0111de47440051195c5df5d499"; # origin/main
-    hash = "sha256-S6Lan6QwpIpxMqzCloks8XmSeonPAOw6xQi1czMFmyM=";
+    rev = "78e96b289b7f955e1a2973d428ce636e60240e73"; # origin/PL-135551-fixes-for-model-progression
+    hash = "sha256-QV85QISHaGQAAxZGja7w1hFUrM7KA38uSorH9miNCzM=";
   };
 
   # Load a uv workspace from a workspace root.
