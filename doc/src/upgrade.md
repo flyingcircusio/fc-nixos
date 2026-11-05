@@ -485,7 +485,8 @@ The update happens in place when upgrading the VM with the opensearch role to fc
 The Varnish Cache open-source project renamed itself to Vinyl Cache.
 We follow this rename and use Vinyl Cache 9 as the new default package for the `webproxy` role.
 We still allow using Varnish Cache 8 in this release, but will remove this option with fc-nixos 26.11,
-read the [role documentation](#nixos-webproxy) for more information on how to use Varnish Cache 8.
+read the {ref}`role documentation <nixos-webproxy-keep-varnish>`
+for more information on how to use Varnish Cache 8.
 
 The project [`varnish-modules`](https://github.com/varnish/varnish-modules), which is published under `pkgs.varnish80Packages.modules` is not available for Vinyl Cache 9, as it is incompatible.
 
