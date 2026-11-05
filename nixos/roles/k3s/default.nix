@@ -140,7 +140,7 @@ in
       })
 
       (lib.mkIf (server || single-node) {
-        extraKubeProxyConfig = {
+        services.k3s.extraKubeProxyConfig = {
           nodePortAddresses = [
             "127.0.0.1/8"
             "::1/128"
