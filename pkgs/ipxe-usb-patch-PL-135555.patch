@@ -1,0 +1,33 @@
+From 2dba543f7e9cdbe026feb301b47a4692a74dfbb7 Mon Sep 17 00:00:00 2001
+From: Leona Maroni <lm@flyingcircus.io>
+Date: Thu, 29 Oct 2026 11:03:12 +0100
+Subject: [PATCH] Remove usb drivers from the EFI build
+
+Some newer hosts crash in IPXE with `invalid opcode` when USB drivers
+are enabled.
+
+https://github.com/ipxe/ipxe/issues/1747
+
+PL-135555
+---
+ src/Makefile.efi | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/src/Makefile.efi b/src/Makefile.efi
+index ce6892733..cbb2243f6 100644
+--- a/src/Makefile.efi
++++ b/src/Makefile.efi
+@@ -28,10 +28,6 @@ NON_AUTO_MEDIA	+= efirom
+ DRIVERS_ipxe	+= $(DRIVERS_pci_net)
+ DRIVERS_ipxe	+= $(DRIVERS_pci_infiniband)
+ 
+-# Include USB drivers in the all-drivers build
+-#
+-DRIVERS_ipxe	+= $(DRIVERS_usb_net)
+-
+ # Include SNP and MNP drivers in the all-drivers build
+ #
+ DRIVERS_ipxe	+= $(DRIVERS_efi_net)
+-- 
+2.55.0
+
