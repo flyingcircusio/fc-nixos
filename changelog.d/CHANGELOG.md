@@ -1,3 +1,6 @@
+# Release 2026_047
+
+
 # Release 2026_046
 
 ## NixOS XX.XX platform
