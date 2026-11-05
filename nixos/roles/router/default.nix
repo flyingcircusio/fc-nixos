@@ -114,19 +114,23 @@ in
 
       dnsForwarders = mkOption {
         type = types.listOf types.str;
-        default = [
-          "9.9.9.9"
-          "149.112.112.112"
-          "2620:fe::fe"
-          "2620:fe::9"
-        ];
-        description = "IP addresses to be used as upstream DNS resolvers (default Quad9)";
+        default = [ ];
+        # # quad9
+        # "9.9.9.9"
+        # "2620:fe::fe"
+        # # cloudflare
+        # "1.1.1.1"
+        # "2606:4700:4700::1111"
+        # # google
+        # "8.8.8.8"
+        # "2001:4860:4860::8888"
+        description = "IP addresses to be used as upstream DNS resolvers (default: quad9, cloudflare, and google)";
       };
     };
   };
 
   imports = [
-    ./bind
+    ./kresd
     ./bird2
     ./keepalived
     ./bird2-vrf-bridge.nix
@@ -252,6 +256,11 @@ in
           # We generally allow all traffic on FE
           ip46tables -A fc-router-forward -o ${fclib.network.fe.interface} -j ACCEPT
 
+          #############
+          # DNS resolver access: internal networks only
+          ip46tables -A nixos-fw -i ethtr+ -p udp --dport 53 -j DROP
+          ip46tables -A nixos-fw -p udp --dport 53 -j ACCEPT
+
           # XXX we don't want accidents but need to allow traffic to the outside
           # but don't generally know which transfer interfaces are active.
           # If we can limit the open forwarding towards the internet and have a
@@ -330,6 +339,12 @@ in
           interval = 60;
           command = "${pkgs.fc.neighbour-cache-monitor}/bin/neighbour-cache-monitor sensu-check -s /run/sensuclient/neighbour_cache_state.json";
         };
+
+        resolver_stale = {
+          notification = "Resolver shows stale responses";
+          interval = 60;
+          command = "${pkgs.fc.sensuplugins}/bin/check_resolver_stale";
+        };
       }
       // (listToAttrs (
         lib.forEach (filter (iface: iface.policy == "vxlan") gatewayInterfaces) (
@@ -373,8 +388,9 @@ in
 
     flyingcircus.agent = {
       extraPreCommands = ''
-        # Updates files in /etc/bind and /etc/bind/pri where also Nix-generated config exists.
-        fc-zones
+        # Update hosts file with assignments of private ip space which doesn't
+        # have public rDNS
+        fc-kresd-rfc1918 -o /etc/nixos/rfc1918-hosts -r
       '';
 
       maintenance.router = {
