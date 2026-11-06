@@ -685,6 +685,16 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     cyrus_sasl = self.cyrus_sasl-legacyCrypt;
   };
 
+  # FC-58615
+  proftpd = super.proftpd.overrideAttrs (oldAttrs: {
+    patches = (oldAttrs.patches or [ ]) ++ [
+      (self.fetchpatch {
+        url = "https://github.com/proftpd/proftpd/commit/933abc9ae115ffc59e4b2a98495ec267bf341d23.diff?full_index=1";
+        hash = "sha256-f7TFjKX1/q1YFA1q2/K4KB+LPDaFGkyf75f6vjLDkXA=";
+      })
+    ];
+  });
+
   python27 = super.python27.overrideAttrs (prev: {
     buildInputs = prev.buildInputs ++ [ super.libxcrypt-legacy ];
     NIX_LDFLAGS = "-lcrypt";
