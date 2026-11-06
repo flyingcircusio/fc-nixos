@@ -75,7 +75,7 @@ let
 
   configFromLocalConfigDir = fclib.configFromFile "${localConfigDir}/elasticsearch.yml" "";
 
-  currentMemory = fclib.currentMemory 1024;
+  currentMemory = fclib.currentAvailableMemory 1024;
 
   esHeap = fclib.min [
     (currentMemory * cfg.heapPercentage / 100)

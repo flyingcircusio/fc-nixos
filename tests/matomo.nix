@@ -21,7 +21,7 @@ import ./make-test-python.nix (
         ];
 
         virtualisation.diskSize = 1024;
-        virtualisation.memorySize = 2048;
+        virtualisation.memorySize = 3072;
 
         networking.domain = "test";
 
