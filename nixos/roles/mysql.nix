@@ -54,9 +54,9 @@ in
 
           bufferMemoryPercentage = lib.mkOption {
             type = lib.types.ints.between 0 100;
-            default = 70;
+            default = 90;
             description = ''
-              Percentage of the host's memory used by InnoDB for buffering.
+              Percentage of the host's memory minus the system overhead used by InnoDB for buffering.
               This is the primary memory use source of MySQL/Percona.
             '';
           };
@@ -101,7 +101,6 @@ in
       cfg = config.flyingcircus.roles.mysql;
       fclib = config.fclib;
 
-      current_memory = fclib.currentMemory 256;
       cores = fclib.currentCores 1;
 
       localConfigPath = /etc/local/mysql;
@@ -190,6 +189,7 @@ in
             enable = true;
             inherit package;
             dataDir = "/srv/mysql";
+            bufferMemoryPercentage = cfg.bufferMemoryPercentage;
             extraOptions =
               let
                 charset = "utf8mb4";
@@ -248,7 +248,7 @@ in
                 mysql_native_password = ON
 
                 # * InnoDB
-                innodb_buffer_pool_size         = ${toString (current_memory * cfg.bufferMemoryPercentage / 100)}M
+                # buffer_pool_size is set in unit preStart
                 innodb_log_buffer_size          = 64M
                 innodb_file_per_table           = 1
                 innodb_read_io_threads          = ${toString (cores * 4)}

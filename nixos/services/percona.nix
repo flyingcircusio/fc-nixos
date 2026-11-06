@@ -60,6 +60,14 @@ let
 
     mkdir -m 0755 -p ${cfg.pidDir}
     chown -R ${cfg.user} ${cfg.pidDir}
+
+    # Set buffer size dynamically
+    cp ${myCnf} /run/mysqld/my.cnf
+    mem_total=$(${lib.getExe pkgs.gawk} '/^MemTotal:/ {print $2}' /proc/meminfo)
+    mem_to_use=$((($mem_total - ${
+      toString (config.flyingcircus.vmMemoryOverhead * 1024)
+    }) * ${toString cfg.bufferMemoryPercentage} / 100 ))
+    echo "innodb_buffer_pool_size = ''${mem_to_use}K" >> /run/mysqld/.my.cnf
   '';
 
 in
@@ -190,6 +198,14 @@ in
           description = "Port number on which the MySQL master server runs";
         };
       };
+      bufferMemoryPercentage = lib.mkOption {
+        type = lib.types.ints.between 0 100;
+        default = 70;
+        description = ''
+          Percentage of the host's memory used by InnoDB for buffering.
+          This is the primary memory use source of Percona.
+        '';
+      };
     };
 
   };
@@ -216,7 +232,7 @@ in
       unitConfig.RequiresMountsFor = "${cfg.dataDir}";
 
       serviceConfig = {
-        ExecStart = "${mysql}/bin/mysqld --defaults-extra-file=${myCnf} ${mysqldOptions}";
+        ExecStart = "${mysql}/bin/mysqld --defaults-extra-file=/run/mysqld/my.cnf ${mysqldOptions}";
         Restart = "always";
         # MySQL may have a lot of dirty pages to flush at shutdown or do a
         # recovery on startup. This value affects both start and stop timeouts.
