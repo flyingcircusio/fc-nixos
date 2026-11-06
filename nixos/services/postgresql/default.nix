@@ -21,7 +21,7 @@ let
 
   listenAddresses = fclib.network.lo.dualstack.addresses ++ fclib.network.srv.dualstack.addresses;
 
-  currentMemory = fclib.currentMemory 256;
+  currentMemory = fclib.currentAvailableMemory 256;
   sharedMemoryMax = currentMemory / 2 * 1048576;
 
   sharedBuffers = fclib.min [

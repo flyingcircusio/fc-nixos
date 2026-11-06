@@ -7,7 +7,7 @@ let
 
 in
 with lib;
-{
+rec {
 
   # Return the currently available memory. That is the minimum of the "should"
   # and the "actual" memory.
@@ -23,6 +23,15 @@ with lib;
       ];
     in
     if options == [ ] then default else head (sort lessThan options);
+
+  # Returns the
+  # This method is discouraged, as it leads to issues after reboot when the kernel
+  # allocates memory for internal structures slightly differently.
+  # Additionally it also changes *directly* when the memory in the directory goes down.
+  # Not all services however support specifying memory in ExecStartPre. In the future
+  # we may support scenarios like this with explicit configs on memory changes
+  # PL-135498
+  currentAvailableMemory = default: (currentMemory default) - cfg.vmMemoryOverhead;
 
   currentCores = default: if cfg.systemState ? cores then cfg.systemState.cores else default;
 
