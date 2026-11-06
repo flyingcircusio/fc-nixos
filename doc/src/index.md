@@ -24,6 +24,7 @@ logrotate
 firewall
 monitoring
 fc_collect_garbage_userscan
+service_memory
 ```
 
 (nixos-components)=
