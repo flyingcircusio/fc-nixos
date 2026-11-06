@@ -10,3 +10,4 @@
 | 2 | Accepted | [Let fc.qemu handle network configuration directly](0002-let-fc-qemu-handle-network-configuration-directly.md) |
 | 3 | Accepted | [Physical machine and rack information visibility](0003-physical-machine-and-rack-visibility.md) |
 | 4 | Accepted | [Use sentence case](0004-use-sentence-case.md) |
+| 5 | Accepted | [Calculate service memory limits from usable service memory](0005-calculate-service-memory-limits-from-usable-service-memory.md) |
