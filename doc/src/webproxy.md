@@ -51,6 +51,8 @@ option. Arguments specified using this option (which may be defined
 multiple times) will be merged into the list of arguments passed to
 Vinyl Cache along with the role defaults.
 
+(nixos-webproxy-keep-varnish)=
+
 ### Use Varnish Cache 8
 
 The migration from Varnish Cache 8 to Vinyl Cache 9 can cause problems for some setups.
