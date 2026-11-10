@@ -90,14 +90,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-156.0.8078.79",
+    "name": "chromedriver-unwrapped-157.0.8103.38",
     "pname": "chromedriver-unwrapped",
-    "version": "156.0.8078.79"
+    "version": "157.0.8103.38"
   },
   "chromium": {
-    "name": "chromium-156.0.8078.79",
+    "name": "chromium-157.0.8103.38",
     "pname": "chromium",
-    "version": "156.0.8078.79"
+    "version": "157.0.8103.38"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.5",
@@ -186,9 +186,9 @@
     "version": "29.9.2"
   },
   "docker-compose": {
-    "name": "docker-compose-5.4.0",
+    "name": "docker-compose-5.6.1",
     "pname": "docker-compose",
-    "version": "5.4.0"
+    "version": "5.6.1"
   },
   "dovecot": {
     "name": "dovecot-2.4.5",
@@ -231,9 +231,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-159.0",
+    "name": "firefox-159.0.1",
     "pname": "firefox",
-    "version": "159.0"
+    "version": "159.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-15.3.0",
@@ -261,9 +261,9 @@
     "version": "19.5.3"
   },
   "github-runner": {
-    "name": "github-runner-2.338.0",
+    "name": "github-runner-2.338.2",
     "pname": "github-runner",
-    "version": "2.338.0"
+    "version": "2.338.2"
   },
   "gitlab": {
     "name": "gitlab-19.5.3",
@@ -416,9 +416,9 @@
     "version": "1.36.4+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.8.1",
+    "name": "keycloak-26.8.2",
     "pname": "keycloak",
-    "version": "26.8.1"
+    "version": "26.8.2"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.20.2",
@@ -495,19 +495,19 @@
     "version": "0.2.5"
   },
   "linuxKernelGPU": {
-    "name": "linux-6.18.60",
+    "name": "linux-6.18.62",
     "pname": "linux",
-    "version": "6.18.60"
+    "version": "6.18.62"
   },
   "linuxKernelStable": {
-    "name": "linux-6.18.60",
+    "name": "linux-6.18.62",
     "pname": "linux",
-    "version": "6.18.60"
+    "version": "6.18.62"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.18.60",
+    "name": "linux-6.18.62",
     "pname": "linux",
-    "version": "6.18.60"
+    "version": "6.18.62"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -535,9 +535,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.6.10",
+    "name": "mastodon-4.6.11",
     "pname": "mastodon",
-    "version": "4.6.10"
+    "version": "4.6.11"
   },
   "matomo": {
     "name": "matomo-5.12.0",
@@ -545,9 +545,9 @@
     "version": "5.12.0"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-1.163.2",
+    "name": "matrix-synapse-1.164.2",
     "pname": "matrix-synapse",
-    "version": "1.163.2"
+    "version": "1.164.2"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.3",
@@ -1172,14 +1172,14 @@
     "version": "9.2.1252"
   },
   "vinyl-cache": {
-    "name": "vinyl-cache-9.0.1",
+    "name": "vinyl-cache-9.0.2",
     "pname": "vinyl-cache",
-    "version": "9.0.1"
+    "version": "9.0.2"
   },
   "vinyl-cache_9": {
-    "name": "vinyl-cache-9.0.1",
+    "name": "vinyl-cache-9.0.2",
     "pname": "vinyl-cache",
-    "version": "9.0.1"
+    "version": "9.0.2"
   },
   "wget": {
     "name": "wget-1.25.0",
