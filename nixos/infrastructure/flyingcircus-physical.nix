@@ -108,6 +108,8 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") (
         pciutils
         smartmontools
         usbutils
+        sdparm
+        sg3_utils
       ];
 
       fileSystems = {
