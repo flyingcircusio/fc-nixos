@@ -230,6 +230,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") (
     (lib.mkIf (config.flyingcircus.boot-style == "bios") {
       boot.loader.grub = {
         device = fclib.mkPlatform "/dev/sda";
+        copyKernels = true;
         fsIdentifier = "provided";
         extraConfig = ''
           # `console` output is sufficiently forwarded through IPMI SOL and even
