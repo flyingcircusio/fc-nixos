@@ -261,9 +261,9 @@
     "version": "19.5.3"
   },
   "github-runner": {
-    "name": "github-runner-2.338.0",
+    "name": "github-runner-2.338.2",
     "pname": "github-runner",
-    "version": "2.338.0"
+    "version": "2.338.2"
   },
   "gitlab": {
     "name": "gitlab-19.5.3",
@@ -416,9 +416,9 @@
     "version": "1.36.4+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.8.1",
+    "name": "keycloak-26.8.2",
     "pname": "keycloak",
-    "version": "26.8.1"
+    "version": "26.8.2"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.20.2",
@@ -495,19 +495,19 @@
     "version": "0.2.5"
   },
   "linuxKernelGPU": {
-    "name": "linux-6.18.60",
+    "name": "linux-6.18.62",
     "pname": "linux",
-    "version": "6.18.60"
+    "version": "6.18.62"
   },
   "linuxKernelStable": {
-    "name": "linux-6.18.60",
+    "name": "linux-6.18.62",
     "pname": "linux",
-    "version": "6.18.60"
+    "version": "6.18.62"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.18.60",
+    "name": "linux-6.18.62",
     "pname": "linux",
-    "version": "6.18.60"
+    "version": "6.18.62"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -1172,14 +1172,14 @@
     "version": "9.2.1252"
   },
   "vinyl-cache": {
-    "name": "vinyl-cache-9.0.1",
+    "name": "vinyl-cache-9.0.2",
     "pname": "vinyl-cache",
-    "version": "9.0.1"
+    "version": "9.0.2"
   },
   "vinyl-cache_9": {
-    "name": "vinyl-cache-9.0.1",
+    "name": "vinyl-cache-9.0.2",
     "pname": "vinyl-cache",
-    "version": "9.0.1"
+    "version": "9.0.2"
   },
   "wget": {
     "name": "wget-1.25.0",
