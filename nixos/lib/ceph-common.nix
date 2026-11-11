@@ -42,6 +42,12 @@ rec {
       pkgs.cryptsetup # full-disk encryption
       pkgs.mdadm # fc-luks, backup RAID
       pkgs.parted # partprobe
+
+      # ceph daemons (mon, osd) call these device diagnostic tools via sudo.
+      # The daemons have fc-ceph as their ExecStart, hence the PATH is set by fc-ceph.
+      "/run/wrappers"
+      pkgs.smartmontools
+      pkgs.nvme-cli
     ];
 
     fc-qemu = pkgs.fc."qemu-${release}";
