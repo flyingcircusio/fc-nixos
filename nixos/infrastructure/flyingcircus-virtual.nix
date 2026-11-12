@@ -48,6 +48,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
 
     loader.grub = {
       device = "/dev/disk/device-by-alias/root";
+      copyKernels = true;
       fsIdentifier = "provided";
       extraConfig = ''
         # output goes to serial such that qemu can log it
