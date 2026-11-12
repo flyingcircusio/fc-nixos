@@ -115,12 +115,16 @@ class CephStatus(object):
         except KeyError:
             return 0.0
 
+    @property
+    def muted_checks(self) -> list[str]:
+        return [mute["code"] for mute in self.status["health"]["mutes"]]
+
 
 class Ceph(nagiosplugin.Resource):
     """Status data aquisition and parsing."""
 
     def __init__(self, status):
-        self.stat = status
+        self.stat: CephStatus = status
         self.summary = ""
         self.usage_ratio = 0.0
 
@@ -188,9 +192,10 @@ class Ceph(nagiosplugin.Resource):
 class CephLog(nagiosplugin.Resource):
     """Scan log file for blocked requests."""
 
-    def __init__(self, logfile, statefile):
+    def __init__(self, logfile, statefile, status):
         self.logfile = logfile
         self.cookie = nagiosplugin.Cookie(statefile)
+        self.stat = status
 
     r_slow_req = re.compile(
         r" (\d+) slow requests.*; oldest blocked for > ([0-9.]+) secs"
@@ -235,6 +240,25 @@ class UsageSummary(nagiosplugin.Summary):
         )
 
 
+class MuteableScalarContext(nagiosplugin.ScalarContext):
+    """A scalar context that is aware of its related ceph health message name,
+    and if that one is muted at ceph level also mutes its evaluation result.
+    """
+
+    def __init__(self, *args, mute_code: str, **kwargs):
+        self.mute_code = mute_code
+        super().__init__(*args, **kwargs)
+
+    def evaluate(self, metric, resource):
+        try:
+            mutes = resource.stat.muted_checks
+            if self.mute_code in mutes:
+                return self.result_cls(nagiosplugin.Ok, "muted", metric)
+        except AttributeError:
+            pass
+        return super().evaluate(metric, resource)
+
+
 class CheckCeph:
     @nagiosplugin.guarded
     def main(
@@ -251,11 +275,13 @@ class CheckCeph:
         verbose,
         timeout,
     ) -> int:
+        status = CephStatus(command)
         check = nagiosplugin.Check(
-            Ceph(CephStatus(command)),
+            Ceph(status),
             HealthContext("health"),
-            nagiosplugin.ScalarContext(
+            MuteableScalarContext(
                 "nearfull",
+                mute_code="OSD_NEARFULL",
                 critical="0:0",
                 fmt_metric="{value} near full osd(s)",
             ),
@@ -263,12 +289,18 @@ class CheckCeph:
         )
         if log:
             check.add(
-                CephLog(log, state),
-                nagiosplugin.ScalarContext(
-                    "req_blocked", warn_requests, crit_requests
+                CephLog(log, state, status),
+                MuteableScalarContext(
+                    "req_blocked",
+                    warn_requests,
+                    crit_requests,
+                    mute_code="SLOW_OPS",
                 ),
-                nagiosplugin.ScalarContext(
-                    "req_blocked_age", warn_blocked_age, crit_blocked_age
+                MuteableScalarContext(
+                    "req_blocked_age",
+                    warn_blocked_age,
+                    crit_blocked_age,
+                    mute_code="SLOW_OPS",
                 ),
             )
         return check.main(verbose, timeout)
