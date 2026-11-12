@@ -1,5 +1,5 @@
 #! /usr/bin/env nix-shell
-#! nix-shell -i bash -p bash nixfmt
+#! nix-shell -i bash -p bash nixfmt nurl
 
 set -euo pipefail
 
@@ -57,8 +57,7 @@ echo "[" >> "$OUT"
 
 for dep in "${EXTERNAL_DEPS[@]}"; do
     HASH=$(
-        nix-prefetch-url "$BASE_URL/$dep.tar.gz" --type sha256 |
-            xargs nix hash convert --from nix32 --to sri --hash-algo sha256 --extra-experimental-features nix-command
+        nurl -f fetchurl -H "$BASE_URL/$dep.tar.gz"
     )
     [ -n "$HASH" ] || {
         echo "error: prefetch or hash conversion failed for $dep" >&2
