@@ -48,10 +48,15 @@ let
 
   relayRGNodes =
     let
-      enc_relays = lib.mapAttrsToList (n: _: {
+      enc_relays = lib.mapAttrsToList (n: v: {
         job_name = n;
-        proxy_url = "http://${n}.fcio.net:9090";
-      }) (enc.role_configuration."statshost-relay".relay_from_details or { });
+        proxy_url =
+          let
+            # find the first v4 or fall back to host
+            host = lib.findFirst (x: lib.hasInfix "." x) "${n}.fcio.net" (v.addresses or [ ]);
+          in
+          "http://${host}:9090";
+      }) (enc.role_configuration."statshost-master".relay_from_details or { });
       local_relays = fclib.jsonFromFile "${localDir}/relays.json" "[]";
     in
     local_relays ++ enc_relays;
@@ -354,8 +359,7 @@ in
           ];
           script = concatStringsSep "\n" (
             map (relayNode: ''
-              curl -s -o /var/cache/.statshost-relay-${relayNode.job_name}.json.download \
-              ${relayNode.proxy_url}/scrapeconfig.json && \
+              curl -s -o /var/cache/.statshost-relay-${relayNode.job_name}.json.download ${relayNode.proxy_url}/scrapeconfig.json
               mv /var/cache/.statshost-relay-${relayNode.job_name}.json.download /var/cache/statshost-relay-${relayNode.job_name}.json
             '') relayRGNodes
           );

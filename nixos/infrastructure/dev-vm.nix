@@ -34,6 +34,7 @@ in
 
         loader.grub = {
           device = "/dev/disk/device-by-alias/root";
+          copyKernels = true;
           fsIdentifier = "provided";
           gfxmodeBios = "text";
         };

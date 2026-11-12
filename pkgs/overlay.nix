@@ -437,6 +437,12 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     }
   );
 
+  ipxe = super.ipxe.overrideAttrs (oA: {
+    patches = (oA.patches or [ ]) ++ [
+      ./ipxe-usb-patch-PL-135555.patch
+    ];
+  });
+
   # Those are specialised packages for "direct consumption" use in our LAMP roles.
 
   # PHP versions from vendored nix-phps
@@ -786,4 +792,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       in
       if dependencies == [ ] then python3Writer else pathWrapper;
   };
+
+  wazuh-agent = self.callPackage ./wazuh/agent { };
 }
