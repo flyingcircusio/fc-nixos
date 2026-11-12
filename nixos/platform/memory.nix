@@ -1,7 +1,12 @@
 { config, lib, ... }: {
   options = {
     flyingcircus.vmMemoryOverhead = lib.mkOption {
-      default = 2304;
+      # We have VMs that don't have less memory than the defined memory overhead.
+      # For these, we need to
+      default = if (config.fclib.currentMemory 0) > 2560 then 2304 else 0;
+      defaultText = lib.literalExpression ''
+        if (config.fclib.currentMemory 0) > 2560 then 2304 else 0;
+      '';
       type = lib.types.int;
       description = ''
         Memory overhead of the VM used for the system and operating system components.
@@ -10,6 +15,8 @@
 
         This is equivalent to https://doc.flyingcircus.io/platform/infrastructure/vms/index.html#minimum-memory-requirements-nixos-based-vms-only
         without the kernel structures as these are already subtracted from the memory available to the OS.
+
+        When the VM has less than 2.5GiB of memory, this is set to 0, using the old method without including overhead for all services.
       '';
     };
   };
@@ -128,6 +135,9 @@
             )
           }";
         }
+      ];
+      warnings = lib.optionals ((config.fclib.currentMemory 0) < 2560) [
+        "This machine has less memory than our defined system overhead. Services on this machine might run out-of-memory more often. Consider increasing the system memory."
       ];
     };
 }

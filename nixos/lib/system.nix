@@ -9,7 +9,7 @@ in
 with lib;
 rec {
 
-  # Return the currently available memory. That is the minimum of the "should"
+  # Return the current host memory. That is the minimum of the "should"
   # and the "actual" memory.
   currentMemory =
     default:
@@ -24,7 +24,9 @@ rec {
     in
     if options == [ ] then default else head (sort lessThan options);
 
-  # Returns the
+  # Returns the currently available memory. This is the minimum of the should and actual memory minus
+  # a defined overhead in flyingcircus.vmMemoryOverhead.
+  #
   # This method is discouraged, as it leads to issues after reboot when the kernel
   # allocates memory for internal structures slightly differently.
   # Additionally it also changes *directly* when the memory in the directory goes down.
