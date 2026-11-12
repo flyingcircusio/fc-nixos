@@ -50,6 +50,9 @@ let
     # we use the default value of max. number of automatically corrected errors
     # "osd_scrub_auto_repair_num_errors": "5",
 
+    bdevEnableDiscard = true;
+    bdevAsyncDiscard = true;
+
     # Various
 
     msDispatchThrottleBytes = 1048576000;
