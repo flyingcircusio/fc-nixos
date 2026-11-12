@@ -1,0 +1,35 @@
+# src/Makefile sandbox fixes: $(DB_LIB) linkage, OpenSSL via perl ./Configure, drop strip on copied libs.
+--- a/src/Makefile	2026-05-13 00:20:31.089974326 +0200
++++ b/src/Makefile	2026-05-13 00:22:03.760323863 +0200
+@@ -826,13 +826,11 @@
+ ${WAZUH_LIB_OUTPUT_PATH}${LIBSTDCPP_NAME}: ${libstdc++_path}
+ 	cp $< $@
+ ifneq (${uname_S},AIX)
+-	${STRIP_TOOL} -x $@
+ endif
+ 
+ ${WAZUH_LIB_OUTPUT_PATH}${LIBGCC_S_NAME}: ${libgcc_s_path}
+ 	cp $< $@
+ ifneq (${uname_S},AIX)
+-	${STRIP_TOOL} -x $@
+ endif
+ 
+ .PHONY: server local hybrid agent selinux
+@@ -989,7 +987,7 @@
+ ifeq ($(CHECK_CENTOS5),YES)
+ EXTERNAL_LIBS += $(PROCPS_LIB)
+ else
+-EXTERNAL_LIBS += $(PROCPS_LIB) $(LIBALPM_LIB) $(LIBARCHIVE_LIB)
++EXTERNAL_LIBS += $(PROCPS_LIB) $(LIBALPM_LIB) $(LIBARCHIVE_LIB) $(DB_LIB)
+ endif
+ endif
+ endif
+@@ -1067,7 +1065,7 @@
+ 	cd ${EXTERNAL_OPENSSL} && ./Configure $(OPENSSL_FLAGS) solaris-sparcv9-gcc && ${MAKE} build_libs
+ endif
+ else
+-	cd ${EXTERNAL_OPENSSL} && ./config $(OPENSSL_FLAGS) && ${MAKE} build_libs
++	cd ${EXTERNAL_OPENSSL} && perl ./Configure $(OPENSSL_FLAGS) && ${MAKE} build_libs
+ endif
+ endif
+ endif
