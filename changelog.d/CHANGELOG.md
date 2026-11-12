@@ -1,3 +1,26 @@
+# Release 2026_048
+
+## NixOS XX.XX platform
+
+- Adjust where the statshost role fetches relay information from for cross-rg relays (FC-56679)
+
+- `configure-ipmi-controller.service` is retried by systemd with geometric
+  backoff: `Restart=on-failure`, 5s up to 60s delay, at most six attempts, 30
+  seconds timeout per attempt. A late-appearing IPMI device no longer leaves
+  the unit failed until it is restarted manually. (PL-133838)
+
+- router: patch out usb support in ipxe to workaround crashes on newer hardware hosts (PL-135555)
+
+- Enable that grub kernel and initrd are copied to the /boot directory on the disk (PL-135828)
+
+  This resolves some boot issues we have seen.
+
+- Add experimental Wazuh agent role and package at version 4.14.5. (PL-135426)
+
+- cloud-init Ubuntu VMs: We will soon provide images for Ubuntu 26.04 LTS out of the box
+
+
+
 # Release 2026_047
 
 
