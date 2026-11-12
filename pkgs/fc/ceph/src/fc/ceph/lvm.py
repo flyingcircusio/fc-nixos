@@ -420,6 +420,7 @@ class LogicalVolume(GenericLogicalVolume):
         else:
             run.vgremove("-f", self._vg_name, check=False)
             run.pvremove(pv["pv_name"], check=False)
+            run.sgdisk("-Z", pv["pv_name"], check=False)
 
         # XXX this doesn't really fit the abstraction, but IMHO it's fine to
         # assume that the data volume has an overarching meaning. we
