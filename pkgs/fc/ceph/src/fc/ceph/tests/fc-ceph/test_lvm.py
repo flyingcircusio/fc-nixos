@@ -208,8 +208,8 @@ def test_keystore_volume_takes_the_whole_stick(monkeypatch, tmp_path):
     manager = LUKSKeyStoreManager()
     requested = {}
 
-    def create(self, vg_name, size, device, **kwargs):
-        requested.update(vg_name=vg_name, size=size, device=device)
+    def create(self, vg_name, size, *, disk, **kwargs):
+        requested.update(vg_name=vg_name, size=size, disk=disk)
 
     monkeypatch.setattr(Ext4Volume, "create", create)
     monkeypatch.setattr(manager._KEYSTORE, "local_key_path", lambda: str(tmp_path / "host.key"))
@@ -218,4 +218,8 @@ def test_keystore_volume_takes_the_whole_stick(monkeypatch, tmp_path):
     manager.create("/dev/sdj")
 
     assert isinstance(manager.volume, Ext4Volume)
-    assert requested == {"vg_name": "vgkeys", "size": "100%vg", "device": "/dev/sdj"}
+    assert requested == {
+        "vg_name": "vgkeys",
+        "size": "100%vg",
+        "disk": "/dev/sdj",
+    }
