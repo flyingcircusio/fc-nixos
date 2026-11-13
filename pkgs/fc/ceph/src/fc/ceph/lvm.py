@@ -29,6 +29,7 @@ class GenericBlockDevice:
         self.name = name
 
     # create cannot be a generic method, as it requires different params depending on the type
+    # XXX: make this a pre-configured factory then?
     @property
     def blockdevice(self) -> str:
         raise NotImplementedError
@@ -42,6 +43,9 @@ class GenericBlockDevice:
         the stacked disk abstractions, to match the filesystem or volume manager
         used at the partition level.
         """
+        raise NotImplementedError
+
+    def purge(self):
         raise NotImplementedError
 
 
@@ -61,6 +65,8 @@ class MdraidDevice(GenericBlockDevice):
         # GenericBlockDevices itself, but for simplicity directly use
         # concrete string device paths here.
         blockdevices: list[str],
+        *,
+        discard: bool,
     ):
         if len(blockdevices) < cls.RAID_MIN_DISKS:
             raise RuntimeError(
@@ -69,6 +75,9 @@ class MdraidDevice(GenericBlockDevice):
         main_disks = blockdevices[: -cls.RAID_SPARE]
         spare_disk = blockdevices[-cls.RAID_SPARE]
         obj = cls(name)
+        if discard:
+            for dev in blockdevices:
+                run.blkdiscard(dev)
         run.mdadm(
             "--create",
             obj.name,
@@ -83,8 +92,8 @@ class MdraidDevice(GenericBlockDevice):
         run.mdadm("--add", obj.blockdevice, spare_disk)
         return obj
 
-    def __init__(self, name: str):
-        self.name = name
+    # XXX: purge() not implemented yet as we do not stack anything that uses it
+    # on top of a raid. Should be straight forward to implement though.
 
     @property
     def blockdevice(self) -> str:
@@ -121,13 +130,15 @@ class DiskWithSinglePartition(GenericBlockDevice):
     blockdevice: returns the path to the partition, e.g. /dev/sda1
     """
 
+    PARTITION_SUFFIXES = ["1", "p1"]
+
     def __init__(self, name: str):
         super().__init__(name)
         self._blockdevice: Optional[str] = None
 
-    @staticmethod
-    def _partition_candidates(disk: str) -> list[str]:
-        return [f"{disk}1", f"{disk}p1"]
+    @classmethod
+    def _partition_candidates(cls, disk: str) -> list[str]:
+        return [f"{disk}{suffix}" for suffix in cls.PARTITION_SUFFIXES]
 
     @property
     def blockdevice(self):
@@ -141,24 +152,48 @@ class DiskWithSinglePartition(GenericBlockDevice):
         return self._blockdevice
 
     @classmethod
-    def create(cls, disk: str) -> "DiskWithSinglePartition":
+    def from_partition_path(
+        cls, partition_path: str
+    ) -> "DiskWithSinglePartition":
+        """Inverse of cls.blockdevice. The `name` of the the instance is the path
+        to the *whole* disk, but what is used by storage layers on top of us
+        is actual the partition blockdevice. When wanting to re-create an
+        instance from what base blockdevice such an upper layer reports to us,
+        we need to strip away the partitioning suffix.
+        """
+        for suffix in cls.PARTITION_SUFFIXES:
+            candidate = partition_path.removesuffix(suffix)
+            if candidate != partition_path and os.path.exists(candidate):
+                return cls(candidate)
+
+        raise RuntimeError(
+            f"Could not find full disk parent for {partition_path}."
+        )
+
+    @classmethod
+    def create(cls, disk: str, *, discard: bool) -> "DiskWithSinglePartition":
         obj = cls(disk)
         run.sgdisk("-Z", disk)
+        if discard:
+            run.blkdiscard(disk)
         run.sgdisk("-a", "8192", "-n", "1:0:0", disk)
         # Some devices (like loopback) do not automatically cause the
         # kernel to see the new partitions.
         run.partprobe(disk)
         return obj
 
+    def purge(self):
+        run.sgdisk("-Z", self.name, check=False)
+
     def ensure_partition_type(self, hexcode: str):
         run.sgdisk("-t", f"1:{hexcode}", self.name)
 
     @classmethod
-    def ensure(cls, disk: str):
+    def ensure(cls, disk: str, *, discard: bool):
         if cls.exists(disk):
             return cls(disk)
         else:
-            return cls.create(disk)
+            return cls.create(disk, discard=discard)
 
     @classmethod
     def exists(cls, disk) -> bool:
@@ -387,8 +422,11 @@ class LogicalVolume(GenericLogicalVolume):
     @staticmethod
     def ensure_vg(vg_name: str, base_device: Optional[GenericBlockDevice]):
         if vg_name in vg_names():
+            print(f"re-using existing VG {vg_name}")
             return
 
+        # XXX: base_device should be a factory function that allows *creating*
+        # the base_device here when needed, only when the desired vg_name was not found.
         if not base_device:
             raise RuntimeError(
                 f"VG {vg_name} not found and no base block device has been specified to create it on. Aborting."
@@ -420,12 +458,17 @@ class LogicalVolume(GenericLogicalVolume):
         else:
             run.vgremove("-f", self._vg_name, check=False)
             run.pvremove(pv["pv_name"], check=False)
-            run.sgdisk("-Z", pv["pv_name"], check=False)
 
-        # XXX this doesn't really fit the abstraction, but IMHO it's fine to
-        # assume that the data volume has an overarching meaning. we
-        # call purge on the other volumes, too. Ideally OSDs should clean
-        # up the other volumes first, I guess.
+            # XXX this doesn't really fit the abstraction, but IMHO it's fine to
+            # assume that the data volume has an overarching meaning. we
+            # call purge on the other volumes, too. Ideally OSDs should clean
+            # up the other volumes first, I guess.
+            # So far we alway build the PV on top of a `DiskWithSinglePartition`,
+            # so let's re-create its handle.
+            base_disk = DiskWithSinglePartition.from_partition_path(
+                pv["pv_name"]
+            )
+            base_disk.purge()
 
         # Force remove old mapper files
         delete_paths = (
@@ -586,8 +629,10 @@ class GenericCephVolume:
         self,
         vg_name: str,
         size: str,
+        *,
         disk: Optional[str] = None,
         encrypt: bool = False,
+        discard: bool = False,
     ):
         """The `disk` argument is optional and only considered for when the
         VG does not exists yet. If a VG called `vg_name` can be found, `disk`
@@ -659,15 +704,27 @@ class XFSVolume(AutomountActivationMixin, GenericCephVolume):
         self,
         vg_name: str,
         size: str,
+        *,
         disk: Optional[str] = None,
         encrypt: bool = False,
+        discard: bool = False,
     ):
-        """The `disk` argument is optional and only considered for when the
-        VG does not exists yet. If a VG called `vg_name` can be found, `disk`
-        is ignored.
-        """
+        # XXX: There used to be the following docstring:
+        # """The `disk` argument is optional and only considered for when the
+        # VG does not exists yet. If a VG called `vg_name` can be found, `disk`
+        # is ignored.
+        # """
+        # This is desired behavior, but obviously not the case, as
+        # DiskWithSinglePartition is always eagerly ensured/created before
+        # GenericLogicalVolume even checks for VG existence.
+        # To achieve this behaviour, ensure_vg should receive a disk *factory*
+        # instead of an actual created base disk.
         print(f"Creating data volume on {disk or vg_name}...")
-        disk_block = DiskWithSinglePartition.create(disk) if disk else None
+        disk_block = (
+            DiskWithSinglePartition.ensure(disk, discard=discard)
+            if disk
+            else None
+        )
         self.lv = GenericLogicalVolume.create(
             name=self.name,
             vg_name=vg_name,
@@ -745,15 +802,18 @@ class Ext4Volume(AutomountActivationMixin):
         self,
         vg_name: str,
         size: str,
+        *,
         disk: Optional[str] = None,
         encrypt: bool = False,
+        discard: bool = False,
     ):
-        """The `disk` argument is optional and only considered for when the
-        VG does not exists yet. If a VG called `vg_name` can be found, `disk`
-        is ignored.
-        """
         print(f"Creating data volume on {disk or vg_name}...")
-        disk_block = DiskWithSinglePartition.create(disk) if disk else None
+        # XXX: see XFSVolume.create
+        disk_block = (
+            DiskWithSinglePartition.ensure(disk, discard=discard)
+            if disk
+            else None
+        )
         self.lv = GenericLogicalVolume.create(
             name=self.name,
             vg_name=vg_name,

@@ -86,6 +86,12 @@ def ceph(args=sys.argv[1:]):
         default=True,
         help="Set up OSD disk volumes with encryption",
     )
+    parser_create_bs.add_argument(
+        "--discard",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Run `blkdiscard` on the base disk to TRIM all empty blocks before creation.",
+    )
     parser_create_bs.set_defaults(action="create_bluestore")
 
     parser_activate = osd_sub.add_parser(
@@ -168,6 +174,12 @@ def ceph(args=sys.argv[1:]):
         "ids",
         help="IDs of OSD to migrate. Use `all` to rebuild all local OSDs.",
     )
+    parser_rebuild.add_argument(
+        "--discard",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Run `blkdiscard` on the base disk to TRIM all empty blocks before creation.",
+    )
     parser_rebuild.set_defaults(action="rebuild")
 
     parser_prepare_journal = osd_sub.add_parser(
@@ -175,6 +187,12 @@ def ceph(args=sys.argv[1:]):
     )
     parser_prepare_journal.add_argument(
         "device", help="Block device to create a journal VG on."
+    )
+    parser_prepare_journal.add_argument(
+        "--discard",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Run `blkdiscard` on the base disk to TRIM all empty blocks before creation.",
     )
     parser_prepare_journal.set_defaults(action="prepare_journal")
 
@@ -205,6 +223,12 @@ def ceph(args=sys.argv[1:]):
         action=argparse.BooleanOptionalAction,
         default=True,
         help="Set up manager volumes with encryption",
+    )
+    parser_create.add_argument(
+        "--discard",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Run `blkdiscard` on the base disk to TRIM all empty blocks before creation.",
     )
     parser_create.set_defaults(action="create")
 
@@ -255,6 +279,12 @@ def ceph(args=sys.argv[1:]):
         action=argparse.BooleanOptionalAction,
         default=True,
         help="Set up manager volumes with encryption",
+    )
+    parser_create.add_argument(
+        "--discard",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Run `blkdiscard` on the base disk to TRIM all empty blocks before creation.",
     )
     parser_create.set_defaults(action="create")
 

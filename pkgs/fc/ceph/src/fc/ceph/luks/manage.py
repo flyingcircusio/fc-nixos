@@ -173,7 +173,7 @@ class LUKSKeyStoreManager(object):
 
     def create(self, device):
         console.print(f"Creating keystore on {device} ...", style="bold")
-        self.volume.create("vgkeys", "100%vg", device)
+        self.volume.create("vgkeys", "100%vg", disk=device)
         console.print(
             f"Creating secret key in {self._KEYSTORE.local_key_path()} ...",
             style="bold",

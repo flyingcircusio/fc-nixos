@@ -77,7 +77,13 @@ class OSDManager(object):
         return list(ids_all)
 
     def create_bluestore(
-        self, device: str, wal: str, crush_location: str, encrypt: bool
+        self,
+        device: str,
+        *,
+        wal: str,
+        crush_location: str,
+        encrypt: bool,
+        discard: bool,
     ):
         assert "=" in crush_location
         assert wal in ["internal", "external"]
@@ -94,6 +100,7 @@ class OSDManager(object):
             encrypt=encrypt,
             wal_location=wal,
             crush_location=crush_location,
+            discard=discard,
         )
         self._activate_single(osd, as_systemd_unit=False)
 
@@ -228,9 +235,11 @@ class OSDManager(object):
     def rebuild(
         self,
         ids: str,
+        *,
         no_safety_check: bool,
         strict_safety_check: bool,
         encrypt: Optional[bool],
+        discard: bool,
         # unused, keeping this for future new OSD types
         target_objectstore_type: Optional[str] = None,
     ):
@@ -244,12 +253,13 @@ class OSDManager(object):
                     target_objectstore_type=target_objectstore_type,
                     strict_safety_check=strict_safety_check,
                     encrypt=encrypt,
+                    discard=discard,
                 )
             except Exception:
                 traceback.print_exc()
 
-    def prepare_journal(self, device: str):
-        JournalVG.prepare_ext_vg(device)
+    def prepare_journal(self, device: str, discard: bool):
+        JournalVG.prepare_ext_vg(device, discard=discard)
 
 
 def OSD(id_, type=None):
@@ -279,7 +289,10 @@ class JournalVG:
     """
 
     @staticmethod
-    def prepare_ext_vg(device: str):
+    def prepare_ext_vg(
+        device: str,
+        discard: bool,
+    ):
         """
         create the volume group used for placing external WALs or mon/mgr storage.
         """
@@ -314,6 +327,8 @@ class JournalVG:
 
         # TODO: could be switched to DiskWithSinglePartition as well
         run.sgdisk("-Z", device)
+        if discard:
+            run.blkdiscard(device)
         run.sgdisk("-n", "1::", "-t", "1:8e00", device)
         # Some devices (like loopback) do not automatically cause the
         # kernel to see the new partitions.
@@ -354,8 +369,8 @@ class WALVolume:
             f"ceph-osd-{self.osd_id}-wal-backup"
         )
 
-    def create(self, disk: str, encrypt: bool, location: str):
-        disk_block = DiskWithSinglePartition.ensure(disk)
+    def create(self, disk: str, *, encrypt: bool, location: str, discard: bool):
+        disk_block = DiskWithSinglePartition.ensure(disk, discard=discard)
         # External WAL
         if location == "external":
             lvm_wal_vg = JournalVG.get_largest_free()
@@ -456,9 +471,16 @@ class BlockVolume(GenericCephVolume):
         self.name = f"ceph-osd-{self.osd_id}-block"
         self.lv = GenericLogicalVolume(self.name)
 
-    def create(self, disk: str, encrypt: bool, size: str = "100%vg"):
+    def create(
+        self,
+        disk: str,
+        *,
+        encrypt: bool,
+        discard: bool,
+        size: str = "100%vg",
+    ):
         print(f"Creating block volume on {disk}...")
-        disk_block = DiskWithSinglePartition.ensure(disk)
+        disk_block = DiskWithSinglePartition.ensure(disk, discard=discard)
         self.lv = GenericLogicalVolume.create(
             name=self.name,
             vg_name=self.vg_name,
@@ -629,6 +651,7 @@ class GenericOSD(object):
 
     def _destroy_and_rebuild_to(
         self,
+        *,
         target_osd_type: str,
         journal: str,
         no_safety_check: bool,
@@ -636,6 +659,7 @@ class GenericOSD(object):
         device: str,
         crush_location: str,
         encrypt: bool,
+        discard: bool,
     ):
         """Helper function that destroys the current OSD and creates a new one with the
         specified parameters; useful for OSD rebuilding.
@@ -657,7 +681,8 @@ class GenericOSD(object):
                 f"fc-ceph osd create-bluestore {device} "
                 f"--wal={journal} "
                 f"--crush-location={crush_location} "
-                f"{'--encrypt' if encrypt else '--no-encrypt'}"
+                f"{'--encrypt' if encrypt else '--no-encrypt'}",
+                f"{'--discard' if discard else '--no-discard'}",
             )
 
             manager.create_bluestore(
@@ -665,6 +690,7 @@ class GenericOSD(object):
                 wal=journal,
                 crush_location=crush_location,
                 encrypt=encrypt,
+                discard=discard,
             )
         else:
             raise RuntimeError(
@@ -690,13 +716,23 @@ class BlueStoreOSD(GenericOSD):
     def create(
         self,
         disk: str,
+        *,
         encrypt: bool,
         wal_location: str,
         crush_location: str,
+        discard: bool,
     ):
-        self.wal_volume.create(disk, encrypt, wal_location)
-        self.data_volume.create(f"vgosd-{self.id}", "1g", disk, encrypt)
-        self.block_volume.create(disk, encrypt)
+        self.wal_volume.create(
+            disk, encrypt=encrypt, location=wal_location, discard=discard
+        )
+        self.data_volume.create(
+            f"vgosd-{self.id}",
+            "1g",
+            disk=disk,
+            encrypt=encrypt,
+            discard=discard,
+        )
+        self.block_volume.create(disk, encrypt=encrypt, discard=discard)
 
         os.symlink(
             self.block_volume.device, f"{self.data_volume.mountpoint}/block"
@@ -746,10 +782,12 @@ class BlueStoreOSD(GenericOSD):
 
     def rebuild(
         self,
+        *,
         no_safety_check: bool,
         strict_safety_check: bool,
         target_objectstore_type: Optional[str],
         encrypt: Optional[bool],
+        discard: bool,
     ):
         """Fully destroy and create the OSD again with the same properties,
         optionally converting it to another OSD type.
@@ -774,5 +812,6 @@ class BlueStoreOSD(GenericOSD):
             journal=journal,
             no_safety_check=no_safety_check,
             strict_safety_check=strict_safety_check,
+            discard=discard,
             **oldosd_properties,
         )
