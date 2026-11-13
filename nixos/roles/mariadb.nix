@@ -74,7 +74,7 @@ in
       cfg = config.flyingcircus.roles.mariadb;
       fclib = config.fclib;
 
-      current_memory = fclib.currentMemory 256;
+      current_memory = fclib.currentAvailableMemory 256;
       cores = fclib.currentCores 1;
 
       localConfigPath = /etc/local/mariadb;

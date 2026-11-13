@@ -9,7 +9,7 @@ let
   cfg = config.flyingcircus.roles.webproxy;
   fclib = config.fclib;
 
-  cacheMemory = (fclib.currentMemory 256) / 100 * cfg.mallocMemoryPercentage;
+  cacheMemory = (fclib.currentAvailableMemory 256) / 100 * cfg.mallocMemoryPercentage;
 
   kill = "${pkgs.coreutils}/bin/kill";
 

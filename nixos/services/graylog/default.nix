@@ -245,7 +245,7 @@ in
           javaHeap = "${
             toString (
               fclib.max [
-                ((fclib.currentMemory 1024) * cfg.heapPercentage / 100)
+                ((fclib.currentAvailableMemory 1024) * cfg.heapPercentage / 100)
                 768
               ]
             )

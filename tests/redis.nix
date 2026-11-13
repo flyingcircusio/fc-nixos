@@ -10,6 +10,7 @@ import ./make-test-python.nix (
             ../nixos
             ../nixos/roles
           ];
+          virtualisation.memorySize = 3072;
           flyingcircus.roles.redis.enable = true;
 
           services.redis.servers.gitlab = {
