@@ -6,7 +6,6 @@
   ...
 }:
 let
-  inherit (config) fclib;
   cfg = config.flyingcircus.services.vinyl-cache;
   vcfg = config.services.vinyl-cache;
   vadm = "${vcfg.package}/bin/vinyladm";
@@ -75,10 +74,8 @@ let
     }
   '';
 
-  allVirtualHosts = lib.recursiveUpdate config.flyingcircus.services.varnish.virtualHosts cfg.virtualHosts;
-
   vhosts = map mkHostSelection (
-    (builtins.attrValues allVirtualHosts)
+    (builtins.attrValues cfg.virtualHosts)
     ++ (lib.optionals (cfg.fallbackConfig != "") [
       {
         config = cfg.fallbackConfig;
@@ -143,7 +140,7 @@ in
 {
   options.flyingcircus.services.vinyl-cache = {
     enable = mkEnableOption "Vinyl-cache Cache";
-    package = mkPackageOption pkgs "varnish" { };
+    package = mkPackageOption pkgs "vinyl-cache" { };
     extraCommandLine = mkOption {
       type = types.separatedString " ";
       default = "";
@@ -218,9 +215,6 @@ in
           cfg.package == config.flyingcircus.roles.webproxy.package && cfg.package == vcfg.package;
         message = "Please modify the Vinyl Cache package with the option `flyingcircus.roles.webproxy.package`.";
       }
-    ];
-    warnings = lib.optionals (config.flyingcircus.services.varnish.virtualHosts != { }) [
-      "Vinyl Cache is still configured using flyingcircus.services.varnish.virtualHosts. Please migrate to flyingcircus.services.vinyl-cache"
     ];
     services.vinyl-cache = {
       inherit (cfg)
