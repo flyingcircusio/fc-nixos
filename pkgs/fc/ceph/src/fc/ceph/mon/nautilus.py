@@ -54,13 +54,12 @@ class Monitor(object):
         lvm_vg=None,
         bootstrap_cluster=False,
         encrypt: bool = False,
-        discard: bool = False,
     ):
         print(f"Creating MON {self.id}...")
 
         if not lvm_vg:
             lvm_vg = find_vg_for_mon()
-        self.volume.create(lvm_vg, size, encrypt=encrypt, discard=discard)
+        self.volume.create(lvm_vg, size, encrypt=encrypt)
 
         tmpdir = tempfile.mkdtemp()
 

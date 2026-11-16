@@ -224,12 +224,6 @@ def ceph(args=sys.argv[1:]):
         default=True,
         help="Set up manager volumes with encryption",
     )
-    parser_create.add_argument(
-        "--discard",
-        action=argparse.BooleanOptionalAction,
-        default=False,
-        help="Run `blkdiscard` on the base disk to TRIM all empty blocks before creation.",
-    )
     parser_create.set_defaults(action="create")
 
     parser_activate = mon_sub.add_parser(
@@ -279,12 +273,6 @@ def ceph(args=sys.argv[1:]):
         action=argparse.BooleanOptionalAction,
         default=True,
         help="Set up manager volumes with encryption",
-    )
-    parser_create.add_argument(
-        "--discard",
-        action=argparse.BooleanOptionalAction,
-        default=False,
-        help="Run `blkdiscard` on the base disk to TRIM all empty blocks before creation.",
     )
     parser_create.set_defaults(action="create")
 

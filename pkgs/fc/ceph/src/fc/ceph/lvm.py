@@ -6,7 +6,7 @@ import os.path
 import re
 import time
 from subprocess import CalledProcessError
-from typing import Optional
+from typing import Optional, Self
 
 import fc.ceph.luks
 from fc.ceph.luks import Cryptsetup
@@ -141,7 +141,7 @@ class DiskWithSinglePartition(GenericBlockDevice):
         return [f"{disk}{suffix}" for suffix in cls.PARTITION_SUFFIXES]
 
     @property
-    def blockdevice(self):
+    def blockdevice(self) -> str:
         if not self._blockdevice:
             for partition in self._partition_candidates(self.name):
                 if os.path.exists(partition):
@@ -171,7 +171,7 @@ class DiskWithSinglePartition(GenericBlockDevice):
         )
 
     @classmethod
-    def create(cls, disk: str, *, discard: bool) -> "DiskWithSinglePartition":
+    def create(cls, disk: str, *, discard: bool) -> Self:
         obj = cls(disk)
         run.sgdisk("-Z", disk)
         if discard:
@@ -182,14 +182,14 @@ class DiskWithSinglePartition(GenericBlockDevice):
         run.partprobe(disk)
         return obj
 
-    def purge(self):
+    def purge(self) -> None:
         run.sgdisk("-Z", self.name, check=False)
 
-    def ensure_partition_type(self, hexcode: str):
+    def ensure_partition_type(self, hexcode: str) -> None:
         run.sgdisk("-t", f"1:{hexcode}", self.name)
 
     @classmethod
-    def ensure(cls, disk: str, *, discard: bool):
+    def ensure(cls, disk: str, *, discard: bool) -> Self:
         if cls.exists(disk):
             return cls(disk)
         else:
@@ -200,6 +200,22 @@ class DiskWithSinglePartition(GenericBlockDevice):
         return any(
             [os.path.exists(part) for part in cls._partition_candidates(disk)]
         )
+
+    @classmethod
+    def realise_base_disk(cls, disk: str | None, discard: bool) -> Self | None:
+        """Realise the base disk instance by creating it and its Python object instance.
+        Condiditional on the provided device path being not None.
+
+        """
+        if disk:
+            return cls.ensure(disk, discard=discard)
+        if discard:
+            console.print(
+                "WARNING: ignoring discard, there is no base disk to discard; "
+                "this volume is created on an already existing VG.",
+                style="yellow",
+            )
+        return None
 
 
 class AutomountActivationMixin:
@@ -709,21 +725,19 @@ class XFSVolume(AutomountActivationMixin, GenericCephVolume):
         encrypt: bool = False,
         discard: bool = False,
     ):
-        # XXX: There used to be the following docstring:
-        # """The `disk` argument is optional and only considered for when the
-        # VG does not exists yet. If a VG called `vg_name` can be found, `disk`
-        # is ignored.
-        # """
-        # This is desired behavior, but obviously not the case, as
-        # DiskWithSinglePartition is always eagerly ensured/created before
-        # GenericLogicalVolume even checks for VG existence.
-        # To achieve this behaviour, ensure_vg should receive a disk *factory*
-        # instead of an actual created base disk.
         print(f"Creating data volume on {disk or vg_name}...")
-        disk_block = (
-            DiskWithSinglePartition.ensure(disk, discard=discard)
-            if disk
-            else None
+
+        # The volume is placed on an LV. The LV creation process looks up the
+        # existing VGs and re-uses a matching existing one. That causes the `disk` to be ignored.
+        # So the intended contract is: `disk` is only relevant while the VG does not exist
+        # yet; once a VG of the wanted name can be found, `disk` should be ignored.
+
+        # XXX: that is not what happens -- `ensure_vg` should receive this as a
+        # *factory*, so the disk is only touched when the desired VG turns out to be
+        # missing. In fact now the `disk` is always eagerly partitioned if not None,
+        # even when it is not used for the VG later.
+        disk_block: DiskWithSinglePartition | None = (
+            DiskWithSinglePartition.realise_base_disk(disk, discard)
         )
         self.lv = GenericLogicalVolume.create(
             name=self.name,
@@ -808,11 +822,8 @@ class Ext4Volume(AutomountActivationMixin):
         discard: bool = False,
     ):
         print(f"Creating data volume on {disk or vg_name}...")
-        # XXX: see XFSVolume.create
-        disk_block = (
-            DiskWithSinglePartition.ensure(disk, discard=discard)
-            if disk
-            else None
+        disk_block: DiskWithSinglePartition | None = (
+            DiskWithSinglePartition.realise_base_disk(disk, discard)
         )
         self.lv = GenericLogicalVolume.create(
             name=self.name,
