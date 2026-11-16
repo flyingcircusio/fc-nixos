@@ -1,8 +1,8 @@
 (nixos-webproxy)=
 
-# Vinyl Cache / Varnish (Webproxy)
+# Vinyl Cache (Webproxy)
 
-This role provides Vinyl Cache / Varnish Cache, the high-performance HTTP accelerator, in the latest version provided by NixOS, which is 9 at the moment. We also still support Varnish Cache 8, see below for more information about this.
+This role provides Vinyl Cache, the high-performance HTTP accelerator, in the latest version provided by NixOS, which is 9 at the moment.
 
 ## How we differ from what you are used to
 
@@ -39,10 +39,6 @@ Alternatively, you can also put your verbatim Vinyl Cache configuration into {fi
 This configuration is used as a fallback config, which means that it triggers
 on all requests, if no more specific match was found in the configuration via Nix.
 
-When you still have configuration in the `/etc/local/varnish/default.vcl` file,
-this configuration will only be used as long as there is no nonempty
-`/etc/local/vinyl-cache/default.vcl` file.
-
 The role passes a handful of command line arguments to Vinyl Cache to
 ensure reasonable default behaviour. If you wish to pass extra command
 line arguments to the executable, then you should use the provided
@@ -50,21 +46,6 @@ line arguments to the executable, then you should use the provided
 option. Arguments specified using this option (which may be defined
 multiple times) will be merged into the list of arguments passed to
 Vinyl Cache along with the role defaults.
-
-### Use Varnish Cache 8
-
-The migration from Varnish Cache 8 to Vinyl Cache 9 can cause problems for some setups.
-To ease the migration to fc-nixos 26.05, we also support Varnish Cache 8 for this release.
-This support will be removed in fc-nixos 26.11.
-
-To use Varnish Cache 8, set the following NixOS option
-```
-flyingcircus.roles.webproxy.package = pkgs.varnish80;
-```
-
-Please configure Varnish Cache 8 using the `flyingcircus.services.varnish` NixOS module or the {file}`/etc/local/varnish/default.vcl` file.
-
-The `/etc/local/vinyl-cache/default.vcl` file has no effect if you didn't migrate to Vinyl Cache yet.
 
 ### Monitoring
 

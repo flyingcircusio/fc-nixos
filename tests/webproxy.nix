@@ -56,65 +56,6 @@ import ./make-test-python.nix (
           };
         };
 
-      webproxy_config_varnish_namespace_module =
-        { lib, ... }:
-        let
-          serverport = 8080;
-        in
-        {
-          imports = [ (testlib.fcConfig { id = 4; }) ];
-
-          flyingcircus.roles.webproxy.enable = true;
-
-          flyingcircus.services.varnish.virtualHosts.foo = {
-            condition = "true";
-            config = ''
-              vcl 4.0;
-
-              backend test {
-                .host = "127.0.0.1";
-                .port = "${builtins.toString serverport}";
-              }
-            '';
-          };
-
-          systemd.services.helloserver = {
-            wantedBy = [ "multi-user.target" ];
-            script = ''
-              echo 'Hello World!' > hello.txt
-              ${pkgs.python3.interpreter} -m http.server ${builtins.toString serverport} >&2
-            '';
-          };
-        };
-
-      webproxy_config_varnish_namespace_file =
-        { lib, ... }:
-        let
-          serverport = 8080;
-        in
-        {
-          imports = [ (testlib.fcConfig { id = 5; }) ];
-
-          flyingcircus.roles.webproxy.enable = true;
-
-          environment.etc."local/varnish/default.vcl".text = ''
-            vcl 4.0;
-
-            backend test {
-              .host = "127.0.0.1";
-              .port = "${builtins.toString serverport}";
-            }
-          '';
-
-          systemd.services.helloserver = {
-            wantedBy = [ "multi-user.target" ];
-            script = ''
-              echo 'Hello World!' > hello.txt
-              ${pkgs.python3.interpreter} -m http.server ${builtins.toString serverport} >&2
-            '';
-          };
-        };
-
       webproxy_old_vinyl =
         { lib, ... }:
         let
@@ -254,21 +195,6 @@ import ./make-test-python.nix (
           webproxy_old_vinyl.wait_until_succeeds(f"{curl} | grep -q 'Hello World!'")
           webproxy_old_vinyl.systemctl("reload vinyl")
           webproxy_old_vinyl.wait_until_succeeds(f"{curl} | grep -q 'Hello World!'")
-
-        with subtest("Vinyl should still support configuring via Varnish file"):
-          webproxy_config_varnish_namespace_file.wait_for_unit("vinyl-cache.service")
-          webproxy_config_varnish_namespace_file.wait_for_unit("helloserver.service")
-          webproxy_config_varnish_namespace_file.wait_until_succeeds(f"{curl} | grep -q 'Hello World!'")
-          webproxy_config_varnish_namespace_file.systemctl("reload vinyl")
-          webproxy_config_varnish_namespace_file.wait_until_succeeds(f"{curl} | grep -q 'Hello World!'")
-
-
-        with subtest("Vinyl should still support configuring via Varnish NixOS module"):
-          webproxy_config_varnish_namespace_module.wait_for_unit("vinyl-cache.service")
-          webproxy_config_varnish_namespace_module.wait_for_unit("helloserver.service")
-          webproxy_config_varnish_namespace_module.wait_until_succeeds(f"{curl} | grep -q 'Hello World!'")
-          webproxy_config_varnish_namespace_module.systemctl("reload vinyl")
-          webproxy_config_varnish_namespace_module.wait_until_succeeds(f"{curl} | grep -q 'Hello World!'")
 
         with subtest("vinyl reloads with cold vcl and the cold vcl is discarded"):
           webproxy.succeed("vinyladm vcl.list | grep \"0 boot\"")

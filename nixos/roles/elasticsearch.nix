@@ -435,7 +435,7 @@ in
           User = "nobody";
           Restart = "always";
           PrivateTmp = true;
-          WorkingDirectory = /tmp;
+          WorkingDirectory = "/tmp";
           ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";
         };
       };

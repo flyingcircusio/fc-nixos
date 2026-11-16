@@ -1,9 +1,6 @@
 {
   lib,
   stdenv,
-  fetchurl,
-  lzo,
-  fuse,
   autoPatchelfHook,
 }:
 

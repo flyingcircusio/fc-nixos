@@ -45,9 +45,9 @@ in
           services.telegraf.extraConfig.
         '';
         example = {
-          varnish = [
+          vinyl-cache = [
             {
-              binary = "${pkgs.varnish}/bin/varnishstat";
+              binary = "${pkgs.vinyl-cache}/bin/vinylstat";
               stats = [ "all" ];
             }
           ];
