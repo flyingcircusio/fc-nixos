@@ -35,7 +35,8 @@ in
   # The skvaider tests are generally limited by the fact that VLLM can't really
   # do much on a CPU. See PL-135538. Both tests need to be augmented once
   # we have more leverage here.
-  skvaider = callTest ./skvaider.nix { };
+  # FIXME PL-135851 (vllm broken in nixpkgs)
+  #skvaider = callTest ./skvaider.nix { };
   #skvaider-pytest = callTest ./skvaider-pytest.nix { };
   alloy = callTest ./alloy.nix { };
   antivirus = callTest ./antivirus.nix { };
