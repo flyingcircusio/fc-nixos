@@ -16,6 +16,7 @@ in
     ./ceph/rgw.nix
     ./consul
     ./coturn.nix
+    ./crowdsec.nix
     ./devhost
     ./docker.nix
     ./elasticsearch.nix
@@ -55,6 +56,7 @@ in
     ./webdata_blackbee.nix
     ./webgateway.nix
     ./webproxy.nix
+    ./wazuh-agent.nix
 
     # Removed
     (mkRemovedOptionModule [

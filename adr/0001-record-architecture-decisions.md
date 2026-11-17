@@ -1,10 +1,7 @@
-# 1. Record architecture decisions
+# ADR 1 - Record architecture decisions
 
-Date: 2026-07-20
-
-## Status
-
-Accepted
+Date: 2026-07-20  
+Status: Accepted
 
 ## Context
 

@@ -7,7 +7,7 @@ from pathlib import Path
 from socket import gethostname
 from typing import Optional
 
-from fc.ceph.util import console, mlockall, prompt_bool, run
+from fc.ceph.util import console, mlockall, prompt_bool, run, run_async
 
 
 def memoize(func):
@@ -142,6 +142,24 @@ class Cryptsetup:
             "luksAddKey",
             *args, **kwargs,
         )  # fmt: skip
+
+    @classmethod
+    async def cryptsetup_async(
+        cls,
+        *args: str,
+        input: Optional[bytes] = None,
+        check: bool = True,
+        encoding: Optional[str] = None,
+    ) -> bytes:
+        """Like `cryptsetup`, but async."""
+        return await run_async.cryptsetup(
+            "-q",
+            *cls.cryptsetup_tunables,
+            *args,
+            input=input,
+            check=check,
+            encoding=encoding,
+        )
 
 
 KEYSTORE = LUKSKeyStore()

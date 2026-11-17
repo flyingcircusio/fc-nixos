@@ -249,7 +249,7 @@ in
       # Allow applying config and restarting services to service users
       {
         commands = [ "bin/systemctl" ];
-        package = pkgs.systemd;
+        package = config.systemd.package;
         groups = [
           "admins"
           "sudo-srv"

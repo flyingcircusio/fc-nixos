@@ -1,3 +1,5 @@
+import asyncio
+import fnmatch
 import glob
 import os
 import os.path
@@ -453,6 +455,23 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
     def exists(cls, name):
         return LogicalVolume.exists(name + cls.SUFFIX)
 
+    @classmethod
+    def matching(cls, name_glob: str) -> list["EncryptedLogicalVolume"]:
+        """All encrypted volumes whose name matches `name_glob`.
+
+        A locked volume has no mapper name of its own, so we go by the LVM
+        volume names: the mapper name is the volume name without its suffix.
+        """
+        names = [
+            name[: -len(cls.SUFFIX)]
+            for name in lv_names()
+            if name.endswith(cls.SUFFIX)
+        ]
+        return [cls(name) for name in names if fnmatch.fnmatch(name, name_glob)]
+
+    def is_unlocked(self) -> bool:
+        return os.path.exists(self.device_path)
+
     @property
     def device(self) -> str:
         if not self._ready:
@@ -512,14 +531,22 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
         return True
 
     def activate(self):
+        asyncio.run(self.activate_async(fc.ceph.luks.KEYSTORE.local_key_path()))
+
+    async def activate_async(self, key: bytes | str):
+        """Open the volume with `key`: the admin passphrase, or the path of a
+        key file that cryptsetup reads itself."""
         self.underlay.activate()
         if not os.path.exists(self.device_path):
-            Cryptsetup.cryptsetup(
+            key_file = key if isinstance(key, str) else "-"
+            stdin = None if isinstance(key, str) else key
+            await Cryptsetup.cryptsetup_async(
                 "--allow-discards",  # pass through TRIM commands to disk
                 "open",
-                "-d", fc.ceph.luks.KEYSTORE.local_key_path(),
+                f"--key-file={key_file}",
                 self.underlay.device,
                 self.name,
+                input=stdin,
             )  # fmt: skip
             run.udevadm("settle")
         self._ready = True
@@ -594,6 +621,92 @@ class XFSVolume(AutomountActivationMixin, GenericCephVolume):
         for attempt in range(retries):
             try:
                 run.mkfs_xfs("-f", "-L", label, *opts, device)
+                run.sync()
+                return
+            except CalledProcessError as e:
+                stderr = (
+                    e.stderr.decode("ascii", errors="replace")
+                    if e.stderr
+                    else ""
+                )
+                if "Device or resource busy" in stderr:
+                    if attempt < retries - 1:
+                        console.print(
+                            f"Device {device} busy, retrying...",
+                            style="yellow",
+                        )
+                        run.udevadm("settle")
+                        time.sleep(1)
+                        continue
+                raise
+
+    def __init__(self, name: str, mountpoint: str, automount=False):
+        self.name = name
+        self.mountpoint = mountpoint
+        self.automount = automount
+        self.lv = GenericLogicalVolume(self.name)
+
+    @property
+    def device(self):
+        return self.lv.device
+
+    @property
+    def exists(self) -> bool:
+        return self.lv.exists(self.name)
+
+    def create(
+        self,
+        vg_name: str,
+        size: str,
+        disk: Optional[str] = None,
+        encrypt: bool = False,
+    ):
+        """The `disk` argument is optional and only considered for when the
+        VG does not exists yet. If a VG called `vg_name` can be found, `disk`
+        is ignored.
+        """
+        print(f"Creating data volume on {disk or vg_name}...")
+        disk_block = DiskWithSinglePartition.create(disk) if disk else None
+        self.lv = GenericLogicalVolume.create(
+            name=self.name,
+            vg_name=vg_name,
+            base_device=disk_block,
+            encrypt=encrypt,
+            size=size,
+        )
+        # Create OSD filesystem
+        self.mkfs(self.device, self.name, self.MKFS_OPTS)
+        self.activate()
+
+    def activate(self):
+        self.lv.activate()
+
+        super().activate()
+
+    def purge(self, lv_only=False):
+        while os.path.ismount(self.mountpoint):
+            run.umount("-f", self.mountpoint, check=False)
+        if os.path.isdir(self.mountpoint):
+            os.rmdir(self.mountpoint)
+        if self.lv:
+            self.lv.purge(lv_only)
+
+    @property
+    def encrypted(self) -> bool:
+        return self.lv.encrypted
+
+
+class Ext4Volume(AutomountActivationMixin):
+    MKFS_OPTS = ["-m", "0"]
+    MOUNT_OPTS = "nodev,nosuid,noatime,nodiratime"
+    FSTYPE = "ext4"
+
+    @staticmethod
+    def mkfs(device: str, label: str, opts: list[str], retries: int = 5):
+        """Create ext4 filesystem with retry on 'Device or resource busy' errors."""
+        for attempt in range(retries):
+            try:
+                run.mkfs_ext4("-F", "-L", label, *opts, device)
                 run.sync()
                 return
             except CalledProcessError as e:

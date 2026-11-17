@@ -32,7 +32,11 @@ in
   # When in doubt, it's better to write our own test or copy&paste from nixpkgs.
   # inherit (pkgs.nixosTests)
 
-  ai-api-gateway = callTest ./ai-api-gateway.nix { };
+  # The skvaider tests are generally limited by the fact that VLLM can't really
+  # do much on a CPU. See PL-135538. Both tests need to be augmented once
+  # we have more leverage here.
+  skvaider = callTest ./skvaider.nix { };
+  #skvaider-pytest = callTest ./skvaider-pytest.nix { };
   alloy = callTest ./alloy.nix { };
   antivirus = callTest ./antivirus.nix { };
   audit = callTest ./audit.nix { };
@@ -42,6 +46,7 @@ in
   ceph-pacific = callTest ./ceph-pacific.nix { };
   coturn = callTest ./coturn.nix { };
   cron = callTest ./cron.nix { };
+  crowdsec = callTest ./crowdsec.nix { };
   docker = callTest ./docker.nix { };
   fcagent = callTest ./fcagent.nix { };
   fde-tooling = callTest ./fde-tooling.nix { };
@@ -63,6 +68,7 @@ in
   k3s_monitoring = callTest ./k3s/monitoring.nix { };
   kernelconfig = {
     default = callTest ./kernelconfig.nix { };
+    gpu = callTest ./kernelconfig-gpu.nix { };
     verification = callTest ./kernelconfig-verification.nix { };
   };
   kernelversions = callTest ./kernelversions.nix { };
@@ -130,7 +136,9 @@ in
   sudo = callTest ./sudo.nix { };
   syslog = callSubTests ./syslog.nix { };
   systemd-service-cycles = callTest ./systemd-service-cycles.nix { };
+  tempo = callTest ./tempo.nix { };
   users = callTest ./users.nix { };
   vxlan = callTest ./vxlan.nix { };
+  wazuh-agent = callTest ./wazuh-agent.nix { };
   webproxy = callTest ./webproxy.nix { };
 }

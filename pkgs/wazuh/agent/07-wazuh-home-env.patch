@@ -1,0 +1,19 @@
+# w_homedir: WAZUH_HOME env first — /proc/self/exe resolves into the store, runtime state is /var/ossec.
+--- a/src/shared/file_op.c	2026-05-13 00:19:17.597828305 +0200
++++ b/src/shared/file_op.c	2026-05-13 00:19:59.664897979 +0200
+@@ -3276,6 +3276,15 @@
+     struct stat buff_stat;
+     char * delim = "/bin";
+     os_calloc(PATH_MAX, sizeof(char), buff);
++    // NixOS: WAZUH_HOME takes priority — /proc/self/exe resolves to /nix/store
++    // but runtime state (config, data) lives at /var/ossec
++    {
++        char * home_env = getenv(WAZUH_HOME_ENV);
++        if (home_env != NULL) {
++            snprintf(buff, PATH_MAX, "%s", home_env);
++            return buff;
++        }
++    }
+ #ifdef __MACH__
+     pid_t pid = getpid();
+     if (proc_pidpath(pid, buff, PATH_MAX) > 0) {

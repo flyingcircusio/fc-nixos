@@ -492,6 +492,7 @@ import ../make-test-python.nix (
         let
           feInterface = nodes.primary.fclib.network.fe.interface;
           srvInterface = nodes.primary.fclib.network.srv.interface;
+          mgmAddress = builtins.head nodes.primary.fclib.network.mgm.v4.defaultGateways;
         in
         mkTestScript nodes ''
           pp = rich.print
@@ -535,9 +536,11 @@ import ../make-test-python.nix (
 
           with subtest("tftp daemon (atftpd) is running and serves files"):
             primary.wait_for_unit("atftpd")
-            primary.succeed("${pkgs.inetutils}/bin/tftp -v 127.0.0.1 <<< 'get flyingcircus.ipxe'")
+            # Make sure tftp is listening on the right address
+            primary.succeed("ss -lunp | grep '${mgmAddress}:69'")
+            primary.succeed("${pkgs.inetutils}/bin/tftp -v ${mgmAddress} <<< 'get flyingcircus.ipxe'")
             primary.succeed("stat flyingcircus.ipxe")
-            primary.succeed("${pkgs.inetutils}/bin/tftp -v 127.0.0.1 <<< 'get undionly.kpxe'")
+            primary.succeed("${pkgs.inetutils}/bin/tftp -v ${mgmAddress} <<< 'get undionly.kpxe'")
             primary.succeed("stat undionly.kpxe")
 
           with subtest("pmacctd should be running for fe and srv interfaces"):

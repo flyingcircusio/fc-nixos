@@ -129,6 +129,27 @@
     "pname": "coturn",
     "version": "4.17.2"
   },
+  "crowdsec": {
+    "name": "crowdsec-1.8.2",
+    "pname": "crowdsec",
+    "version": "1.8.2"
+  },
+  "cuda-merged": {},
+  "cuda_cccl": {},
+  "cuda_cudart": {},
+  "cuda_cuobjdump": {},
+  "cuda_cupti": {},
+  "cuda_cuxxfilt": {},
+  "cuda_gdb": {},
+  "cuda_nvcc": {},
+  "cuda_nvdisasm": {},
+  "cuda_nvml_dev": {},
+  "cuda_nvprune": {},
+  "cuda_nvrtc": {},
+  "cuda_nvtx": {},
+  "cuda_profiler_api": {},
+  "cuda_sanitizer_api": {},
+  "cudnn": {},
   "curl": {
     "name": "curl-8.23.0",
     "pname": "curl",
@@ -399,6 +420,13 @@
     "pname": "kubernetes-helm",
     "version": "4.3.1"
   },
+  "libcublas": {},
+  "libcufft": {},
+  "libcufile": {},
+  "libcurand": {},
+  "libcusolver": {},
+  "libcusparse": {},
+  "libcusparse_lt": {},
   "libffi": {
     "name": "libffi-3.8.0",
     "pname": "libffi",
@@ -424,6 +452,8 @@
     "pname": "mariadb-connector-c",
     "version": "3.3.5"
   },
+  "libnpp": {},
+  "libnvjitlink": {},
   "libressl": {
     "name": "libressl-4.3.2",
     "pname": "libressl",
@@ -459,10 +489,15 @@
     "pname": "libyaml",
     "version": "0.2.5"
   },
-  "linuxKernelStable": {
-    "name": "linux-6.12.116",
+  "linuxKernelGPU": {
+    "name": "linux-6.18.62",
     "pname": "linux",
-    "version": "6.12.116"
+    "version": "6.18.62"
+  },
+  "linuxKernelStable": {
+    "name": "linux-6.18.62",
+    "pname": "linux",
+    "version": "6.18.62"
   },
   "linuxKernelVerify": {
     "name": "linux-6.18.62",
@@ -589,6 +624,8 @@
     "pname": "nss",
     "version": "3.132"
   },
+  "nvidia-settings": {},
+  "nvidia-x11": {},
   "nvme-cli": {
     "name": "nvme-cli-2.16",
     "pname": "nvme-cli",
@@ -823,6 +860,11 @@
     "name": "postgresql-18.6",
     "pname": "postgresql",
     "version": "18.6"
+  },
+  "proftpd": {
+    "name": "proftpd-1.3.9e",
+    "pname": "proftpd",
+    "version": "1.3.9e"
   },
   "prometheus": {
     "name": "prometheus-3.16.0",

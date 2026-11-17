@@ -69,7 +69,9 @@
               inherit system;
               overlays = [ (import ./pkgs/overlay.nix) ];
               config = {
-                inherit (nixpkgsConfig) permittedInsecurePackages;
+                inherit (nixpkgsConfig)
+                  permittedInsecurePackages
+                  ;
 
                 allowUnfreePredicate = pkg: elem (getName pkg) nixpkgsConfig.allowedUnfreePackageNames;
               };

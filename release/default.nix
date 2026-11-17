@@ -155,6 +155,7 @@ let
     "elasticsearch6-oss"
     "graylogFrozen"
     "mc"
+    "vllm-cuda" # only builds via the nixpkgs cuda config on ai model servers and the test.
   ];
 
   overlay = import ../pkgs/overlay.nix pkgs pkgs;

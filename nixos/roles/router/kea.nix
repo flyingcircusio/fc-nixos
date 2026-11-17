@@ -144,6 +144,12 @@ in
       enable = role.isPrimary;
       extraOptions = [
         "--verbose=5"
+        # Bind to the management address that DHCP advertises as next-server.
+        # atftpd otherwise listens on the wildcard address and its source
+        # address selection picks an unrelated local address, so clients
+        # reject the TFTP replies (PL-135554).
+        "--bind-address"
+        bootServer
       ];
       root = pkgs.runCommand "tftpd-root-for-dhcpd4" { } ''
         mkdir $out

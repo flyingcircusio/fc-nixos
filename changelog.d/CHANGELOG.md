@@ -1,3 +1,124 @@
+# Release 2026_048
+
+## NixOS XX.XX platform
+
+- Adjust where the statshost role fetches relay information from for cross-rg relays (FC-56679)
+
+- `configure-ipmi-controller.service` is retried by systemd with geometric
+  backoff: `Restart=on-failure`, 5s up to 60s delay, at most six attempts, 30
+  seconds timeout per attempt. A late-appearing IPMI device no longer leaves
+  the unit failed until it is restarted manually. (PL-133838)
+
+- router: patch out usb support in ipxe to workaround crashes on newer hardware hosts (PL-135555)
+
+- Enable that grub kernel and initrd are copied to the /boot directory on the disk (PL-135828)
+
+  This resolves some boot issues we have seen.
+
+- Add experimental Wazuh agent role and package at version 4.14.5. (PL-135426)
+
+- cloud-init Ubuntu VMs: We will soon provide images for Ubuntu 26.04 LTS out of the box
+
+
+
+# Release 2026_047
+
+
+# Release 2026_046
+
+## NixOS XX.XX platform
+
+- crowdsec: allow defining custom appsec configs and enabling more appsec configs (PL-135572 / PL-135763)
+
+
+
+# Release 2026_044
+
+## NixOS XX.XX platform
+
+- router: bind `atftpd` to the management address that DHCP advertises as
+  `next-server`, so TFTP replies for PXE booting use the matching source
+  address instead of an unrelated local one (PL-135554)
+
+
+
+# Release 2026_043
+
+## Impact
+
+- Machines will schedule a reboot to activate a changed kernel.
+
+## NixOS XX.XX platform
+
+- Update Linux kernel to fix CVE-2026-99999 (PL-135766)
+
+- Update PHPs to fix CVE-2026-109618, CVE-2026-109619
+
+- Blacklist `emSign ECC Root CA - G3`, `emSign Root CA - C1`, `emSign ECC Root CA - C3`, `Comodo AAA Services root` certificate authorities (CVE-2026-111943, PL-135771)
+
+  Leaked private key of mentioned emSign CAs, cross signed by `Comodo AAA Services root`.
+
+# Release 2026_042
+
+## Impact
+
+
+## NixOS XX.XX platform
+
+- Adjust the Opentelemetry config for alloy to fix a few connectivity bugs. (PL-135750)
+
+- The global Statshost now accepts `nvidia_smi` (Telegraf) metrics, so the Skvaider Inference Host and Gateway Grafana GPU dashboards can be served from the global stats host. (PL-135277)
+
+- Stamina retry logs now selectively redact credential-like values (e.g. S3 secret/access keys), keeping non-sensitive call arguments (e.g. usernames, buckets) for debugging. (PL-135313)
+
+- Reduce output noise for the pending pods monitoring check (FC-53263)
+
+
+
+# Release 2026_041
+
+## Impact
+
+- `pkgs.openssl_3`, pointing to the 3.0.x branch, is now marked as insecure. We recommend updating to `openssl_3_5` (LTS), which is API/ABI-compatible.
+
+
+## NixOS XX.XX platform
+
+- Introduce basic CrowdSec role for NGINX log analysis and WAF. (PL-135572)
+
+- `fc-luks keystore rekey` can now rekey multiple volumes concurrently, defaulting to half the available CPUs and tunable via `-j/--parallel`, with a progress bar and per-volume failure reporting. Each job runs memory-intensive key derivation (~1 GiB). (PL-135511)
+
+- ceph: Provide per-cluster "fcio" orchestration pool (PL-134255)
+
+- The LUKS keystore volume now fits on a small key stick: it is formatted as ext4 and takes the whole volume group instead of a fixed 1g, and the stick is mounted by its `keys` label whichever filesystem it carries. (PL-135638)
+
+- A major rewrite of our AI inference tooling. (PL-134151)
+
+  With the experience we made over almost 9 months we have moved away
+  from AMD and our infrastructure now runs on Nvidia RTX PRO 6000 cards.
+
+  We completely removed AMD (rocm/vulkan) support for now as it introduced
+  major stability issues and we want to drive complexity down and reliability
+  up.
+
+  Also, ollama was a great way to start this journey but hasn't proven
+  a good solution for a service offering. We thus replaced it with vllm
+  and are now coordinating model placement over GPU clusters with our
+  own tooling and can integrate different inference engines for testing
+  and higher flexibility in production environments.
+
+- `fc-luks volume unlock <pattern>` unlocks matching LUKS volumes with the admin key, asking for the passphrase only once. This keeps a machine available when the local key stick fails and cannot be replaced immediately. (PL-135320)
+
+
+
+# Release 2026_040
+
+## NixOS XX.XX platform
+
+- ceph_mon: provide `fc-kvmrescue` helper script to streamline the evacuation of dead KVM hosts (PL-135552)
+
+
+
 # Release 2026_039
 
 ## NixOS XX.XX platform

@@ -45,7 +45,6 @@ let
   inherit (super)
     fetchpatch
     fetchFromGitHub
-    fetchurl
     lib
     ;
   inherit (builtins) hasAttr storePath;
@@ -117,6 +116,34 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 // {
   pythonPackagesExtensions = super.pythonPackagesExtensions ++ [
     (python-self: python-super: {
+      # Required for vllm
+      httpcore2 = python-self.callPackage ./python/httpcore2 { };
+      httpx2 = python-self.callPackage ./python/httpx2 { };
+      prometheus-fastapi-instrumentator =
+        python-super.prometheus-fastapi-instrumentator.overridePythonAttrs
+          (old: {
+            src = fetchFromGitHub {
+              owner = "trallnag";
+              repo = "prometheus-fastapi-instrumentator";
+              tag = "v8.0.2";
+              hash = "sha256-fTJjAM1jUZXfhjLo9xqlu45LaoqZ330ogOA6x7aByqw=";
+            };
+            nativeCheckInputs = with python-self; [
+              devtools
+              fastapi
+              httpx2
+              pytest-asyncio
+              pytestCheckHook
+              requests
+            ];
+            disabledTests = lib.optionals (lib.versionOlder python-self.fastapi.version "0.137") [
+              # Asserts that instrumentation works with fastapi 0.137+,
+              # fails on nixpkgs with fastapi 0.136.
+              "test_mount_inside_included_router_resolves_path"
+            ];
+          });
+
+      # Our own packages / package versions
       pytest_patterns = python-self.callPackage ./python/pytest-patterns { };
       pymongo3 = python-super.pymongo.overridePythonAttrs (old: {
         version = "3.13.0";
@@ -319,8 +346,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   # the whole time. But in the normal case, both kernels point to the same
   # stable kernel packages.
   linuxKernelVerify = self.linux_6_18;
-
-  linuxKernelStable = self.linux_6_12;
+  linuxKernelStable = self.linux_6_18;
+  linuxKernelGPU = self.linux_6_18;
 
   kubernetes-dashboard = super.callPackage ./kubernetes-dashboard.nix { };
   kubernetes-dashboard-metrics-scraper =
@@ -397,6 +424,12 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       graylog = self.graylog-3_3;
     }
   );
+
+  ipxe = super.ipxe.overrideAttrs (oA: {
+    patches = (oA.patches or [ ]) ++ [
+      ./ipxe-usb-patch-PL-135555.patch
+    ];
+  });
 
   # Those are specialised packages for "direct consumption" use in our LAMP roles.
 
@@ -648,6 +681,10 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
         pname = "tcpdump-vxlan";
       });
 
+  # keep an alias because this name has been introduced on the specific server
+  # configs.
+  vllm-cuda = self.vllm;
+
   # XXX: consider upstreaming these
   writers = super.writers // {
     /**
@@ -694,4 +731,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       in
       if dependencies == [ ] then python3Writer else pathWrapper;
   };
+
+  wazuh-agent = self.callPackage ./wazuh/agent { };
 }

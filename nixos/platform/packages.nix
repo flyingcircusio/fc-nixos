@@ -80,6 +80,11 @@
         zip
       ];
 
+    programs.git = {
+      enable = true;
+      lfs.enable = true;
+    };
+
     environment.shellAliases = {
       dstat = "dool";
     };

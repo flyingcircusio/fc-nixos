@@ -18,6 +18,16 @@ let
   ipmi_netmask = fclib.netmaskFromCIDR ipmi_v4_network_cidr;
   ipmi_gw = ipmi_interface.gateways.${ipmi_v4_network_cidr};
 
+  # The IPMI device is not necessarily available yet when this unit runs during
+  # boot (PL-133838), we do a few retries with exponential backoff to give it
+  # time to come up: 5s, 9s, 17s, 32s, 60s between the six attempts.
+  ipmi_configure_attempts = 6;
+  ipmi_configure_retry_delay = 5;
+  ipmi_configure_retry_steps = 4;
+  ipmi_configure_retry_max_delay = 60;
+  ipmi_configure_attempt_timeout = 30;
+  ipmi_configure_retry_window = 360;
+
 in
 {
 
@@ -83,8 +93,18 @@ in
 
     systemd.services.configure-ipmi-controller = {
       description = "Configure IPMI controller";
-      serviceConfig.Type = "oneshot";
-      serviceConfig.RemainAfterExit = true;
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        Restart = "on-failure";
+        RestartSec = ipmi_configure_retry_delay;
+        # Does exponential backoff
+        RestartSteps = ipmi_configure_retry_steps;
+        RestartMaxDelaySec = ipmi_configure_retry_max_delay;
+        TimeoutStartSec = ipmi_configure_attempt_timeout;
+      };
+      startLimitBurst = ipmi_configure_attempts;
+      startLimitIntervalSec = ipmi_configure_retry_window;
       path = [ pkgs.ipmitool ];
       wantedBy = [ "basic.target" ];
       script = ''
