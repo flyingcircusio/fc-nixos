@@ -21,6 +21,8 @@ let
   inherit (pkgs.stdenv.cc) isClang;
 
   inherit (import ./lib.nix { inherit lib; }) appendStrings mergeEnv removeLines;
+
+  pcre2 = if lib.versionAtLeast prev.php.version "7.3" then pkgs.pcre2 else pkgs.pcre;
 in
 {
   buildPecl =
@@ -192,7 +194,7 @@ in
         ];
 
       # Tests fail on Darwin for some reason.
-      doCheck = lib.versionOlder prev.php.version "7.4" -> pkgs.stdenv.isLinux;
+      doCheck = lib.versionOlder prev.php.version "7.4" -> pkgs.stdenv.hostPlatform.isLinux;
 
       postPatch = appendStrings attrs "postPatch" (
         lib.optional (lib.versionAtLeast prev.php.version "7.3" && lib.versionOlder prev.php.version "7.4")
@@ -264,6 +266,17 @@ in
         ''
       );
     });
+
+    # The `postConfigure` in nixpkgs only applies to PHP >= 8.2
+    # https://github.com/NixOS/nixpkgs/commit/7bbcbc9d8cdf74d257354bc3e9511588f2178081
+    filter =
+      if lib.versionAtLeast prev.php.version "8.2" then
+        prev.extensions.filter
+      else
+        prev.mkExtension {
+          name = "filter";
+          buildInputs = [ pcre2 ];
+        };
 
     ffi =
       if lib.versionAtLeast prev.php.version "7.4" then
@@ -370,7 +383,7 @@ in
           (
             lib.versionAtLeast prev.php.version "7.1"
             && lib.versionOlder prev.php.version "8.0"
-            && pkgs.stdenv.isDarwin
+            && pkgs.stdenv.hostPlatform.isDarwin
           )
           ''
             # Disable test failing on Darwin (see 9999a0cb757344974889a6f548727de6f2c3c10d above)
@@ -756,7 +769,7 @@ in
       doCheck = lib.versionAtLeast prev.php.version "7.4";
 
       postPatch = removeLines (lib.optionals
-        (lib.versionOlder prev.php.version "7.2.20" && pkgs.stdenv.isDarwin)
+        (lib.versionOlder prev.php.version "7.2.20" && pkgs.stdenv.hostPlatform.isDarwin)
         [
           "rm ext/opcache/tests/bug78106.phpt"
         ]
@@ -966,7 +979,7 @@ in
         ];
 
       # Tests fail on Darwin for some reason.
-      doCheck = lib.versionOlder prev.php.version "7.4" -> pkgs.stdenv.isLinux;
+      doCheck = lib.versionOlder prev.php.version "7.4" -> pkgs.stdenv.hostPlatform.isLinux;
 
     });
 
@@ -994,7 +1007,9 @@ in
         ];
 
       # Tests fail on Darwin with older PHP versions for some reason.
-      doCheck = attrs.doCheck or true && (lib.versionOlder prev.php.version "7.4" -> pkgs.stdenv.isLinux);
+      doCheck =
+        attrs.doCheck or true
+        && (lib.versionOlder prev.php.version "7.4" -> pkgs.stdenv.hostPlatform.isLinux);
 
       postPatch = appendStrings attrs "postPatch" (
         lib.optional (lib.versionAtLeast prev.php.version "7.1" && lib.versionOlder prev.php.version "7.4")
@@ -1175,7 +1190,8 @@ in
 
       # Test tests/bug71536.phpt fails on Darwin with PHP 7.3 for some reason.
       doCheck =
-        attrs.doCheck or true && (lib.versions.majorMinor prev.php.version == "7.3" -> pkgs.stdenv.isLinux);
+        attrs.doCheck or true
+        && (lib.versions.majorMinor prev.php.version == "7.3" -> pkgs.stdenv.hostPlatform.isLinux);
     });
 
     zip = prev.extensions.zip.overrideAttrs (attrs: {
