@@ -62,7 +62,7 @@ import ../make-test-python.nix (
                 rootAlias = "user2@example.local";
               };
 
-              flyingcircus.roles.postgresql14.enable = true;
+              flyingcircus.roles.postgresql17.enable = true;
 
               mailserver.x509 = {
                 useACMEHost = lib.mkForce null;

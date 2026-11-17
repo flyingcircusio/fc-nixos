@@ -118,7 +118,6 @@ in
   # open-webui = callTest ./open-webui.nix { };
   percona84 = callTest ./mysql.nix { rolename = "percona84"; };
   physical-installer = callTest ./physical-installer.nix { inherit nixpkgs; };
-  postgresql14 = callTest ./postgresql { version = "14"; };
   postgresql15 = callTest ./postgresql { version = "15"; };
   postgresql16 = callTest ./postgresql { version = "16"; };
   postgresql17 = callTest ./postgresql { version = "17"; };

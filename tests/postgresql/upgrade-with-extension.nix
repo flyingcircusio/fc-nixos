@@ -101,23 +101,19 @@ import ../make-test-python.nix (
                 extensions = ps: with ps; [ anonymizer ];
                 settings.shared_preload_libraries = lib.mkForce "auto_explain, pg_stat_statements, anon";
               };
-              flyingcircus.roles.postgresql14.enable = lib.mkDefault true;
+              flyingcircus.roles.postgresql15.enable = lib.mkDefault true;
 
               specialisation = {
-                pg15.configuration = {
-                  flyingcircus.roles.postgresql14.enable = false;
-                  flyingcircus.roles.postgresql15.enable = true;
-                };
                 pg16.configuration = {
-                  flyingcircus.roles.postgresql14.enable = false;
+                  flyingcircus.roles.postgresql15.enable = false;
                   flyingcircus.roles.postgresql16.enable = true;
                 };
                 pg17.configuration = {
-                  flyingcircus.roles.postgresql14.enable = false;
+                  flyingcircus.roles.postgresql15.enable = false;
                   flyingcircus.roles.postgresql17.enable = true;
                 };
                 pg18.configuration = {
-                  flyingcircus.roles.postgresql14.enable = false;
+                  flyingcircus.roles.postgresql15.enable = false;
                   flyingcircus.roles.postgresql18.enable = true;
                 };
               };
@@ -126,12 +122,10 @@ import ../make-test-python.nix (
                 # these attributes are being `nix-build` by `fc-postgresql` at
                 # upgrade time. Ensure these are already present in the nix store
                 # to avoid building them in the sandboxed test.
-                (postgresql_14.withPackages (ps: with ps; [ anonymizer ]))
                 (postgresql_15.withPackages (ps: with ps; [ anonymizer ]))
                 (postgresql_16.withPackages (ps: with ps; [ anonymizer ]))
                 (postgresql_17.withPackages (ps: with ps; [ anonymizer ]))
                 (postgresql_18.withPackages (ps: with ps; [ anonymizer ]))
-                (postgresql_14.withPackages (ps: [ ]))
                 (postgresql_15.withPackages (ps: [ ]))
                 (postgresql_16.withPackages (ps: [ ]))
                 (postgresql_17.withPackages (ps: [ ]))
@@ -151,46 +145,37 @@ import ../make-test-python.nix (
 
           print(machine.succeed("${fc-postgresql} list-versions"))
 
-          with subtest("prepare upgrade 14 -> 15"):
-            machine.fail('${fc-postgresql} upgrade --new-version 15 --expected anonymized')
-            machine.succeed("rm -f /srv/postgresql/14/fcio_stopper && systemctl start postgresql")
-            machine.succeed('${fc-postgresql} upgrade --new-version 15 --expected anonymized --extension-names anonymizer')
-            machine.succeed("stat /srv/postgresql/15/fcio_upgrade_prepared")
+          with subtest("prepare upgrade 15 -> 17"):
+            machine.fail('${fc-postgresql} upgrade --new-version 17 --expected anonymized')
+            machine.succeed("rm -f /srv/postgresql/15/fcio_stopper && systemctl start postgresql")
+            machine.succeed('${fc-postgresql} upgrade --new-version 17 --expected anonymized --extension-names anonymizer')
+            machine.succeed("stat /srv/postgresql/17/fcio_upgrade_prepared")
             # postgresql should still run
             machine.succeed("systemctl status postgresql")
             print(machine.succeed("${fc-postgresql} list-versions"))
 
-          with subtest("upgrade 14 -> 15 from prepared state"):
+          with subtest("upgrade 15 -> 17 from prepared state"):
             machine.succeed("systemctl status postgresql")
-            machine.succeed("rm -f /srv/postgresql/15/pg_upgrade_server.log")
-            print(machine.succeed('${fc-postgresql} upgrade --expected anonymized --new-version 15 --stop --upgrade-now --extension-names anonymizer || cat /srv/postgresql/15/pg_upgrade_server.log'))
-            machine.succeed("stat /srv/postgresql/14/fcio_migrated_to")
-            machine.succeed("stat /srv/postgresql/15/fcio_migrated_from")
+            machine.succeed("rm -f /srv/postgresql/17/pg_upgrade_server.log")
+            print(machine.succeed('${fc-postgresql} upgrade --expected anonymized --new-version 17 --stop --upgrade-now --extension-names anonymizer || cat /srv/postgresql/17/pg_upgrade_server.log'))
+            machine.succeed("stat /srv/postgresql/15/fcio_migrated_to")
+            machine.succeed("stat /srv/postgresql/17/fcio_migrated_from")
             # postgresql should be stopped
             machine.fail("systemctl status postgresql")
             print(machine.succeed("${fc-postgresql} list-versions"))
 
-          # Clean up migration and start postgresql14 again for the next round.
-          machine.execute("rm -rf /srv/postgresql/15")
-          machine.execute("rm -rf /srv/postgresql/14/fcio_migrated_to")
+          # Clean up migration and start postgresql15 again for the next round.
+          machine.execute("rm -rf /srv/postgresql/17")
+          machine.execute("rm -rf /srv/postgresql/15/fcio_migrated_to")
           machine.systemctl("start postgresql")
 
-          with subtest("upgrade 14 -> 16 in one step"):
-            machine.succeed('${fc-postgresql} upgrade --expected anonymized --new-version 16 --stop --upgrade-now --extension-names anonymizer')
-            machine.succeed("stat /srv/postgresql/14/fcio_migrated_to")
-            machine.succeed("stat /srv/postgresql/16/fcio_migrated_from")
+          with subtest("upgrade 15 -> 17 in one step"):
+            machine.succeed('${fc-postgresql} upgrade --expected anonymized --new-version 17 --stop --upgrade-now --extension-names anonymizer')
+            machine.succeed("stat /srv/postgresql/15/fcio_migrated_to")
+            machine.succeed("stat /srv/postgresql/17/fcio_migrated_from")
             # postgresql should be stopped
             machine.fail("systemctl status postgresql")
-            # move to pg16 role and wait for postgresql to start
-            switch_to(machine, "pg16")
-            machine.wait_for_unit("postgresql")
-            print(machine.succeed("${fc-postgresql} list-versions"))
-            check_anonymized_rows(get_player_table_contents())
-
-          with subtest("upgrade 16 -> 17 in one step"):
-            machine.succeed('${fc-postgresql} upgrade --expected anonymized --new-version 17 --stop --upgrade-now --extension-names anonymizer')
-            machine.succeed("stat /srv/postgresql/16/fcio_migrated_to")
-            machine.succeed("stat /srv/postgresql/17/fcio_migrated_from")
+            # move to pg17 role and wait for postgresql to start
             switch_to(machine, "pg17")
             machine.wait_for_unit("postgresql")
             print(machine.succeed("${fc-postgresql} list-versions"))
@@ -216,7 +201,7 @@ import ../make-test-python.nix (
                 (testlib.fcConfig { net.fe = false; })
               ];
 
-              flyingcircus.roles.postgresql14.enable = lib.mkDefault true;
+              flyingcircus.roles.postgresql15.enable = lib.mkDefault true;
               flyingcircus.services.postgresql.autoUpgrade = {
                 enable = true;
                 expectedDatabases = [ "anonymized" ];
@@ -227,25 +212,21 @@ import ../make-test-python.nix (
               };
 
               specialisation = {
-                pg15UnexpectedDb.configuration = {
-                  flyingcircus.roles.postgresql14.enable = false;
-                  flyingcircus.roles.postgresql15.enable = true;
+                pg16UnexpectedDb.configuration = {
+                  flyingcircus.roles.postgresql15.enable = false;
+                  flyingcircus.roles.postgresql16.enable = true;
                   flyingcircus.services.postgresql.autoUpgrade.expectedDatabases = lib.mkForce [ ];
                 };
-                pg15.configuration = {
-                  flyingcircus.roles.postgresql14.enable = false;
-                  flyingcircus.roles.postgresql15.enable = true;
-                };
                 pg16.configuration = {
-                  flyingcircus.roles.postgresql14.enable = false;
+                  flyingcircus.roles.postgresql15.enable = false;
                   flyingcircus.roles.postgresql16.enable = true;
                 };
                 pg17.configuration = {
-                  flyingcircus.roles.postgresql14.enable = false;
+                  flyingcircus.roles.postgresql15.enable = false;
                   flyingcircus.roles.postgresql17.enable = true;
                 };
                 pg18.configuration = {
-                  flyingcircus.roles.postgresql14.enable = false;
+                  flyingcircus.roles.postgresql15.enable = false;
                   flyingcircus.roles.postgresql18.enable = true;
                 };
               };
@@ -254,12 +235,10 @@ import ../make-test-python.nix (
                 # these attributes are being `nix-build` by `fc-postgresql` at
                 # upgrade time. Ensure these are already present in the nix store
                 # to avoid building them in the sandboxed test.
-                (postgresql_14.withPackages (ps: with ps; [ anonymizer ]))
                 (postgresql_15.withPackages (ps: with ps; [ anonymizer ]))
                 (postgresql_16.withPackages (ps: with ps; [ anonymizer ]))
                 (postgresql_17.withPackages (ps: with ps; [ anonymizer ]))
                 (postgresql_18.withPackages (ps: with ps; [ anonymizer ]))
-                (postgresql_14.withPackages (ps: [ ]))
                 (postgresql_15.withPackages (ps: [ ]))
                 (postgresql_16.withPackages (ps: [ ]))
                 (postgresql_17.withPackages (ps: [ ]))
@@ -273,27 +252,12 @@ import ../make-test-python.nix (
           print(machine.succeed("${fc-postgresql} list-versions"))
 
           with subtest("autoupgrade should refuse when unexpected DB is present"):
-            switch_to(machine, "pg15UnexpectedDb", expect="fail")
+            switch_to(machine, "pg16UnexpectedDb", expect="fail")
             machine.fail("systemctl status postgresql")
             print(machine.succeed("${fc-postgresql} list-versions"))
 
           with subtest("prepare autoupgrade should fail when unexpected DB is present"):
-            machine.fail('${fc-postgresql} prepare-autoupgrade --new-version 14')
-            print(machine.succeed("${fc-postgresql} list-versions"))
-
-          with subtest("autoupgrade 14 -> 15"):
-            # move to new role and wait for postgresql to start
-            switch_to(machine, "pg15")
-            machine.wait_for_unit("postgresql")
-            machine.succeed("stat /srv/postgresql/14/fcio_migrated_to")
-            machine.succeed("stat /srv/postgresql/15/fcio_migrated_from")
-            print(machine.succeed("${fc-postgresql} list-versions"))
-
-          with subtest("prepare autoupgrade 15 -> 16"):
-            machine.succeed('${fc-postgresql} prepare-autoupgrade --new-version 16 --extension-names anonymizer')
-            machine.succeed("stat /srv/postgresql/16/fcio_upgrade_prepared")
-            # postgresql should still run
-            machine.succeed("systemctl status postgresql")
+            machine.fail('${fc-postgresql} prepare-autoupgrade --new-version 16')
             print(machine.succeed("${fc-postgresql} list-versions"))
 
           with subtest("autoupgrade 15 -> 16"):
@@ -303,7 +267,13 @@ import ../make-test-python.nix (
             machine.succeed("stat /srv/postgresql/15/fcio_migrated_to")
             machine.succeed("stat /srv/postgresql/16/fcio_migrated_from")
             print(machine.succeed("${fc-postgresql} list-versions"))
-            check_anonymized_rows(get_player_table_contents())
+
+          with subtest("prepare autoupgrade 16 -> 17"):
+            machine.succeed('${fc-postgresql} prepare-autoupgrade --new-version 17 --extension-names anonymizer')
+            machine.succeed("stat /srv/postgresql/17/fcio_upgrade_prepared")
+            # postgresql should still run
+            machine.succeed("systemctl status postgresql")
+            print(machine.succeed("${fc-postgresql} list-versions"))
 
           with subtest("autoupgrade 16 -> 17"):
             # move to new role and wait for postgresql to start

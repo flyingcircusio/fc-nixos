@@ -14,10 +14,10 @@ from fc.util.postgresql import (
 
 @pytest.fixture
 def old_data_dir(log, tmp_path, monkeypatch):
-    data_dir = tmp_path / "postgresql/14"
+    data_dir = tmp_path / "postgresql/15"
     data_dir.mkdir(parents=True)
     (data_dir / "package")
-    (data_dir / "PG_VERSION").write_text("14")
+    (data_dir / "PG_VERSION").write_text("15")
     (data_dir / "fcio_stopper").touch()
     monkeypatch.setattr(
         "fc.util.postgresql.get_current_pgdata_from_service",
@@ -28,7 +28,7 @@ def old_data_dir(log, tmp_path, monkeypatch):
 
 @pytest.mark.needs_nix
 def test_build_pg_bin_dir(logger, tmp_path):
-    new_bin_dir = build_pg_bin_dir(logger, tmp_path, PGVersion.PG15)
+    new_bin_dir = build_pg_bin_dir(logger, tmp_path, PGVersion.PG16)
     assert (new_bin_dir / "pg_upgrade").exists()
 
 
@@ -55,14 +55,14 @@ def patch_prepare(monkeypatch):
 def test_prepare_upgrade(
     logger, old_data_dir, monkeypatch, tmp_path, patch_prepare
 ):
-    new_data_dir = tmp_path / "postgresql/15"
+    new_data_dir = tmp_path / "postgresql/16"
     new_data_dir.mkdir()
     (new_data_dir / "fcio_upgrade_prepared").touch()
     new_bin_dir = new_data_dir
     fc.util.postgresql.prepare_upgrade(
         logger,
         old_data_dir=old_data_dir,
-        new_version=PGVersion.PG15,
+        new_version=PGVersion.PG16,
         new_bin_dir=new_bin_dir,
         new_data_dir=new_data_dir,
         expected_databases=[],
@@ -73,13 +73,13 @@ def test_prepare_upgrade_on_empty_dir(
     logger, old_data_dir, monkeypatch, tmp_path, patch_prepare
 ):
     monkeypatch.setattr("fc.util.postgresql.run_as_postgres", Mock())
-    new_data_dir = tmp_path / "postgresql/15"
+    new_data_dir = tmp_path / "postgresql/16"
     new_data_dir.mkdir()
     new_bin_dir = new_data_dir
     fc.util.postgresql.prepare_upgrade(
         logger,
         old_data_dir=old_data_dir,
-        new_version=PGVersion.PG15,
+        new_version=PGVersion.PG16,
         new_bin_dir=new_bin_dir,
         new_data_dir=new_data_dir,
         expected_databases=[],
@@ -90,7 +90,7 @@ def test_prepare_upgrade_on_empty_dir(
 def test_prepare_upgrade_adjusts_permissions(
     logger, old_data_dir, monkeypatch, tmp_path, patch_prepare
 ):
-    new_data_dir = tmp_path / "postgresql/15"
+    new_data_dir = tmp_path / "postgresql/16"
     new_data_dir.mkdir()
     (new_data_dir / "fcio_upgrade_prepared").touch()
     os.chmod(new_data_dir, 0o777)
@@ -98,7 +98,7 @@ def test_prepare_upgrade_adjusts_permissions(
     fc.util.postgresql.prepare_upgrade(
         logger,
         old_data_dir=old_data_dir,
-        new_version=PGVersion.PG15,
+        new_version=PGVersion.PG16,
         new_bin_dir=new_bin_dir,
         new_data_dir=new_data_dir,
         expected_databases=[],
@@ -271,7 +271,7 @@ def test_run_pg_upgrade(logger, tmp_path, old_data_dir, monkeypatch):
         "fc.util.postgresql.pg_upgrade_clone_available",
         Mock(return_value=True),
     )
-    new_data_dir = tmp_path / "postgresql/15"
+    new_data_dir = tmp_path / "postgresql/16"
     new_data_dir.mkdir()
     new_bin_dir = new_data_dir
     (new_data_dir / "fcio_upgrade_prepared").touch()
