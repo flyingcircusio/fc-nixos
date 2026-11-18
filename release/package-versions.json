@@ -5,9 +5,9 @@
     "version": "1.6.1"
   },
   "apacheHttpd": {
-    "name": "apache-httpd-2.4.69",
+    "name": "apache-httpd-2.4.71",
     "pname": "apache-httpd",
-    "version": "2.4.69"
+    "version": "2.4.71"
   },
   "asterisk": {
     "name": "asterisk-22.12.0",
@@ -256,9 +256,9 @@
     "version": "2.54.0"
   },
   "gitaly": {
-    "name": "gitaly-19.5.4",
+    "name": "gitaly-19.5.5",
     "pname": "gitaly",
-    "version": "19.5.4"
+    "version": "19.5.5"
   },
   "github-runner": {
     "name": "github-runner-2.338.2",
@@ -266,9 +266,9 @@
     "version": "2.338.2"
   },
   "gitlab": {
-    "name": "gitlab-19.5.4",
+    "name": "gitlab-19.5.5",
     "pname": "gitlab",
-    "version": "19.5.4"
+    "version": "19.5.5"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.43.0",
@@ -276,14 +276,14 @@
     "version": "4.43.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-19.5.4",
+    "name": "gitlab-ee-19.5.5",
     "pname": "gitlab-ee",
-    "version": "19.5.4"
+    "version": "19.5.5"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-19.5.4",
+    "name": "gitlab-pages-19.5.5",
     "pname": "gitlab-pages",
-    "version": "19.5.4"
+    "version": "19.5.5"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-19.0.0",
@@ -291,9 +291,9 @@
     "version": "19.0.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-19.5.4",
+    "name": "gitlab-workhorse-19.5.5",
     "pname": "gitlab-workhorse",
-    "version": "19.5.4"
+    "version": "19.5.5"
   },
   "glibc": {
     "name": "glibc-2.42-103",
@@ -540,9 +540,9 @@
     "version": "4.6.11"
   },
   "matomo": {
-    "name": "matomo-5.13.0",
+    "name": "matomo-5.14.2",
     "pname": "matomo",
-    "version": "5.13.0"
+    "version": "5.14.2"
   },
   "matrix-synapse": {
     "name": "matrix-synapse-1.164.2",
