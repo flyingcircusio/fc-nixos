@@ -732,5 +732,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       if dependencies == [ ] then python3Writer else pathWrapper;
   };
 
-  wazuh-agent = self.callPackage ./wazuh/agent { };
+  # FIXME: PL-135859
+  # wazuh-agent = self.callPackage ./wazuh/agent { };
 }

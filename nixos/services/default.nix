@@ -36,7 +36,8 @@ in
     ./solr.nix
     ./telegraf
     ./vinyl-cache
-    ./wazuh
+    # FIXME: PL-135859
+    #./wazuh
 
     (mkRemovedOptionModule [
       "flyingcircus"

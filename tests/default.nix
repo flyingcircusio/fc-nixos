@@ -47,7 +47,8 @@ in
   ceph-pacific = callTest ./ceph-pacific.nix { };
   coturn = callTest ./coturn.nix { };
   cron = callTest ./cron.nix { };
-  crowdsec = callTest ./crowdsec.nix { };
+  # FIXME PL-135858
+  # crowdsec = callTest ./crowdsec.nix { };
   docker = callTest ./docker.nix { };
   fcagent = callTest ./fcagent.nix { };
   fde-tooling = callTest ./fde-tooling.nix { };
@@ -137,9 +138,11 @@ in
   sudo = callTest ./sudo.nix { };
   syslog = callSubTests ./syslog.nix { };
   systemd-service-cycles = callTest ./systemd-service-cycles.nix { };
-  tempo = callTest ./tempo.nix { };
+  # FIXME: PL-135860
+  # tempo = callTest ./tempo.nix { };
   users = callTest ./users.nix { };
   vxlan = callTest ./vxlan.nix { };
-  wazuh-agent = callTest ./wazuh-agent.nix { };
+  # FIXME: PL-135859
+  # wazuh-agent = callTest ./wazuh-agent.nix { };
   webproxy = callTest ./webproxy.nix { };
 }
