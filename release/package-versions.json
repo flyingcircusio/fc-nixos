@@ -5,9 +5,9 @@
     "version": "1.6.1"
   },
   "apacheHttpd": {
-    "name": "apache-httpd-2.4.69",
+    "name": "apache-httpd-2.4.71",
     "pname": "apache-httpd",
-    "version": "2.4.69"
+    "version": "2.4.71"
   },
   "asterisk": {
     "name": "asterisk-22.12.0",
@@ -58,11 +58,6 @@
     "name": "nss-cacert-3.131.1",
     "pname": "nss-cacert",
     "version": "3.131.1"
-  },
-  "calibre": {
-    "name": "calibre-9.17.0",
-    "pname": "calibre",
-    "version": "9.17.0"
   },
   "ceph": {
     "name": "ceph-16.2.15",
@@ -251,9 +246,9 @@
     "version": "2.56.0"
   },
   "gitaly": {
-    "name": "gitaly-19.5.4",
+    "name": "gitaly-19.5.5",
     "pname": "gitaly",
-    "version": "19.5.4"
+    "version": "19.5.5"
   },
   "github-runner": {
     "name": "github-runner-2.338.2",
@@ -261,9 +256,9 @@
     "version": "2.338.2"
   },
   "gitlab": {
-    "name": "gitlab-19.5.4",
+    "name": "gitlab-19.5.5",
     "pname": "gitlab",
-    "version": "19.5.4"
+    "version": "19.5.5"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.43.0",
@@ -271,14 +266,14 @@
     "version": "4.43.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-19.5.4",
+    "name": "gitlab-ee-19.5.5",
     "pname": "gitlab-ee",
-    "version": "19.5.4"
+    "version": "19.5.5"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-19.5.4",
+    "name": "gitlab-pages-19.5.5",
     "pname": "gitlab-pages",
-    "version": "19.5.4"
+    "version": "19.5.5"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-19.5.2",
@@ -286,9 +281,9 @@
     "version": "19.5.2"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-19.5.4",
+    "name": "gitlab-workhorse-19.5.5",
     "pname": "gitlab-workhorse",
-    "version": "19.5.4"
+    "version": "19.5.5"
   },
   "glibc": {
     "name": "glibc-2.44-57",
@@ -311,9 +306,9 @@
     "version": "1.27.3"
   },
   "grafana": {
-    "name": "grafana-13.3.0",
+    "name": "grafana-13.3.1",
     "pname": "grafana",
-    "version": "13.3.0"
+    "version": "13.3.1"
   },
   "grub2": {
     "name": "grub-2.14",
@@ -386,29 +381,29 @@
     "version": "21.0.13.0.2+1"
   },
   "k3s": {
-    "name": "k3s-1.36.5+k3s1",
+    "name": "k3s-1.36.6+k3s1",
     "pname": "k3s",
-    "version": "1.36.5+k3s1"
+    "version": "1.36.6+k3s1"
   },
   "k3s_1_34": {
-    "name": "k3s-1.34.12+k3s1",
+    "name": "k3s-1.34.13+k3s1",
     "pname": "k3s",
-    "version": "1.34.12+k3s1"
+    "version": "1.34.13+k3s1"
   },
   "k3s_1_35": {
-    "name": "k3s-1.35.9+k3s1",
+    "name": "k3s-1.35.10+k3s1",
     "pname": "k3s",
-    "version": "1.35.9+k3s1"
+    "version": "1.35.10+k3s1"
   },
   "k3s_1_36": {
-    "name": "k3s-1.36.5+k3s1",
+    "name": "k3s-1.36.6+k3s1",
     "pname": "k3s",
-    "version": "1.36.5+k3s1"
+    "version": "1.36.6+k3s1"
   },
   "k3s_1_37": {
-    "name": "k3s-1.37.1+k3s1",
+    "name": "k3s-1.37.2+k3s1",
     "pname": "k3s",
-    "version": "1.37.1+k3s1"
+    "version": "1.37.2+k3s1"
   },
   "keycloak": {
     "name": "keycloak-26.8.2",
@@ -416,9 +411,9 @@
     "version": "26.8.2"
   },
   "kubernetes-helm": {
-    "name": "kubernetes-helm-4.3.1",
+    "name": "kubernetes-helm-4.3.2",
     "pname": "kubernetes-helm",
-    "version": "4.3.1"
+    "version": "4.3.2"
   },
   "libcublas": {},
   "libcufft": {},
@@ -535,9 +530,9 @@
     "version": "4.7.5"
   },
   "matomo": {
-    "name": "matomo-5.13.0",
+    "name": "matomo-5.14.2",
     "pname": "matomo",
-    "version": "5.13.0"
+    "version": "5.14.2"
   },
   "matrix-synapse": {
     "name": "matrix-synapse-1.164.2",
@@ -1077,14 +1072,14 @@
     "version": "10.1.61"
   },
   "tomcat9": {
-    "name": "apache-tomcat-9.0.123",
+    "name": "apache-tomcat-9.0.124",
     "pname": "apache-tomcat",
-    "version": "9.0.123"
+    "version": "9.0.124"
   },
   "unifi": {
-    "name": "unifi-controller-10.6.109",
+    "name": "unifi-controller-10.6.111",
     "pname": "unifi-controller",
-    "version": "10.6.109"
+    "version": "10.6.111"
   },
   "unzip": {
     "name": "unzip-6.0",
@@ -1112,14 +1107,14 @@
     "version": "9.2.1252"
   },
   "vinyl-cache": {
-    "name": "vinyl-cache-9.0.2",
+    "name": "vinyl-cache-9.1.0",
     "pname": "vinyl-cache",
-    "version": "9.0.2"
+    "version": "9.1.0"
   },
   "vinyl-cache_9": {
-    "name": "vinyl-cache-9.0.2",
+    "name": "vinyl-cache-9.1.0",
     "pname": "vinyl-cache",
-    "version": "9.0.2"
+    "version": "9.1.0"
   },
   "wget": {
     "name": "wget-1.25.0",
