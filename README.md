@@ -138,7 +138,7 @@ Some tests have arguments with a default value, often a `version` which can be o
 
 Different versions of a test are exposed via separate attributes, you can also invoke them like this:
 
-    nix-build release -A tests.postgresql14
+    nix-build release -A tests.postgresql17
 
 Run the whole test suite (may take a very long time):
 

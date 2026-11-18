@@ -12,7 +12,6 @@ let
   upstreamCfg = config.services.postgresql;
   fclib = config.fclib;
   packages = {
-    "14" = pkgs.postgresql_14;
     "15" = pkgs.postgresql_15;
     "16" = pkgs.postgresql_16;
     "17" = pkgs.postgresql_17;

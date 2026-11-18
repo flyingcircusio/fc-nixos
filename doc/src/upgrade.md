@@ -142,6 +142,13 @@ platform. See the role documentation for {ref}`cluster version updates
 The support for Varnish Cache has been removed.
 Please migrate to Vinyl Cache 9.
 
+(nixos-upgrade-postgresql)=
+
+### PostgreSQL
+
+The `postgresql14` role has been removed, as it's end-of-life. Please update to `postgresql15` or newer.
+
+
 ## Other notable changes
 
 - The `security.dhparams` module has been removed. Remove any uses of DHE and migrate to ECDHE (RFC 8422, 2018) and Hybrid PQ (draft-ietf-tls-ecdhe-mlkem, 2026) key exchange algorithms.

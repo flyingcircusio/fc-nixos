@@ -69,6 +69,12 @@ in
     (mkRemovedOptionModule [
       "flyingcircus"
       "roles"
+      "postgresql14"
+      "enable"
+    ] "PostgreSQL 14 reached its end of life. Update to PostgreSQL 15 or higher")
+    (mkRemovedOptionModule [
+      "flyingcircus"
+      "roles"
       "mysql"
       "rootPassword"
     ] "Change the root password via MySQL and modify secret files.")
