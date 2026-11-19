@@ -585,19 +585,19 @@
     "version": "2.9.1"
   },
   "nginx": {
-    "name": "nginx-1.30.6",
+    "name": "nginx-1.30.7",
     "pname": "nginx",
-    "version": "1.30.6"
+    "version": "1.30.7"
   },
   "nginxMainline": {
-    "name": "nginx-1.31.8",
+    "name": "nginx-1.31.9",
     "pname": "nginx",
-    "version": "1.31.8"
+    "version": "1.31.9"
   },
   "nginxStable": {
-    "name": "nginx-1.30.6",
+    "name": "nginx-1.30.7",
     "pname": "nginx",
-    "version": "1.30.6"
+    "version": "1.30.7"
   },
   "nix": {
     "name": "nix-2.34.9",
