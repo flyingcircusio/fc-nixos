@@ -200,7 +200,6 @@ with lib;
         zagy = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE0IYJ7o5NYii7L8cW+BRwKVzan3W+VJRkAd3gB6uRJG zagy@ndnd emergency key 2025";
         flanitz = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKNqLAOXXo8aSQ2RZg/FartJFW/N4dK+S3ap8oaOQ6uj flanitz@MacBookPro.lan";
         cs = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII1tIRq9ughgKdSl3brTNRyA4ywvNG2mWEqVfToBy3XW cs@CSMBP20";
-        ts = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOpJ59uGzQAB/n9YFQoOPWHiUFaKPGj2OivAxQmTkeyN ts";
         nm = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDFBloz5mf4SxX0/GwvOmTD2itWTRjyrmxh13Nzc2oSP nm";
         os = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJemLKFmr09o6zBscLJSD3KcAs/dnIYBjgxYzJ59VvHx os@Olivers-MBP-3";
         molly = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAmJVyCt6/vSslsEp3dATDD/kk56kaxLggm+3ppwZWbj molly@aqueduct.local";
