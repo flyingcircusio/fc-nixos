@@ -1,3 +1,21 @@
+# Release 2026_049
+
+## Impact
+
+-
+
+
+## NixOS XX.XX platform
+
+- improve customer-facing documentation for the webproxy role (FC-41406)
+
+- `fc-luks keystore rekey` and `fc-luks volume unlock` with `--parallel`:
+  render the progress bar on the same console the messages are printed to, so
+  volume names, `cryptsetup` call echoes and errors no longer interleave into
+  the progress bar rows (PL-135511)
+
+
+
 # Release 2026_048
 
 ## NixOS XX.XX platform
