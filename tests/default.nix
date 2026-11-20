@@ -141,7 +141,6 @@ in
   # tempo = callTest ./tempo.nix { };
   users = callTest ./users.nix { };
   vxlan = callTest ./vxlan.nix { };
-  # FIXME: PL-135859
-  # wazuh-agent = callTest ./wazuh-agent.nix { };
+  wazuh-agent = callTest ./wazuh-agent.nix { };
   webproxy = callTest ./webproxy.nix { };
 }

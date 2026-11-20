@@ -56,8 +56,7 @@ in
     ./webdata_blackbee.nix
     ./webgateway.nix
     ./webproxy.nix
-    # FIXME: PL-135859
-    #./wazuh-agent.nix
+    ./wazuh-agent.nix
 
     # Removed
     (mkRemovedOptionModule [

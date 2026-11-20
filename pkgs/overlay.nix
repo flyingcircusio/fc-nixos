@@ -733,5 +733,5 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   };
 
   # FIXME: PL-135859
-  # wazuh-agent = self.callPackage ./wazuh/agent { };
+  wazuh-agent = self.callPackage ./wazuh/agent { };
 }
