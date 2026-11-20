@@ -32,7 +32,13 @@ class Manager(object):
     def reactivate(self):
         run.systemctl("restart", "fc-ceph-mgr")
 
-    def create(self, size="8g", lvm_vg=None, encrypt: bool = False):
+    def create(
+        self,
+        *,
+        size="8g",
+        lvm_vg=None,
+        encrypt: bool = False,
+    ):
         console.print(f"Creating MGR {self.id}...", style="bold")
 
         if not lvm_vg:
