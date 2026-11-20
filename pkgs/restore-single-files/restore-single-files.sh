@@ -58,7 +58,7 @@ LOOPDEV=$(losetup --show -f -P "$FUSEMNT/$REV")
 echo "$LOOPDEV"
 
 cleanup() {
-	umount "$LOOPMNT"; losetup -d "$LOOPDEV"; sleep 1; fusermount -u "$FUSEMNT"
+	umount "$LOOPMNT"; losetup -d "$LOOPDEV"; sleep 1; fusermount3 -u "$FUSEMNT"
 }
 trap cleanup ERR 1 2 3 15
 LOOPPART="${LOOPDEV}p1"
