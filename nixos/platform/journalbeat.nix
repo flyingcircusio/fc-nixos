@@ -83,7 +83,9 @@ in
             # of /sys/fs/cgroup/system.slice/filebeat-journal-*.service/memory.pressure
             # set by systemd 254 when MemoryPressureWatch is enabled. "skip" restores the
             # old behaviour.
+            # In systemd 261, IOPressureWatch was introduced equivalently.
             MemoryPressureWatch = "skip";
+            IOPressureWatch = "skip";
             Restart = "always";
 
             # Security hardening
