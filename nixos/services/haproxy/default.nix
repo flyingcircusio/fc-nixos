@@ -254,7 +254,6 @@ in
           #!${pkgs.runtimeShell} -e
 
           if [[ -S /run/haproxy/haproxy.sock ]]; then
-            ${pkgs.haproxy}/sbin/haproxy -c -f /etc/haproxy.cfg
             ${pkgs.coreutils}/bin/ln -sf ${pkgs.haproxy}/sbin/haproxy /run/haproxy/haproxy
             ${pkgs.coreutils}/bin/kill -USR2 $MAINPID
           else
