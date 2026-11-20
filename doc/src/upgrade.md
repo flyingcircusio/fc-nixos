@@ -118,6 +118,10 @@ This change affects the configuration options:
 
 PHP 7.2 and 7.3 have been removed as they are end-of-life for a prolonged period of time.
 
+PHP 8.2 also reached its end-of-life. While we still provide it, please upgrade at your earliest convenience.
+
+The new default PHP version for the lamp role is 8.5.
+
 ## GitLab
 
 The database metadata backend for the container registry is now enabled by default on new installations.
