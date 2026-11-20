@@ -47,8 +47,7 @@ in
   ceph-pacific = callTest ./ceph-pacific.nix { };
   coturn = callTest ./coturn.nix { };
   cron = callTest ./cron.nix { };
-  # FIXME PL-135858
-  # crowdsec = callTest ./crowdsec.nix { };
+  crowdsec = callTest ./crowdsec.nix { };
   docker = callTest ./docker.nix { };
   fcagent = callTest ./fcagent.nix { };
   fde-tooling = callTest ./fde-tooling.nix { };

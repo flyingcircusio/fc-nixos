@@ -20,8 +20,6 @@ import ./make-test-python.nix (
 
         specialisation.withWaf.configuration = {
           flyingcircus.roles.crowdsec.waf.enable = true;
-          # Explicitly disable crowdsec-setup, as it needs internet for WAF.
-          systemd.services.crowdsec-setup.enable = false;
         };
 
         flyingcircus.roles.crowdsec = {
@@ -29,13 +27,19 @@ import ./make-test-python.nix (
           enrollKeyFile = "/etc/crowdsec-api-key";
         };
         services.crowdsec.settings = {
+          console.enrollKeyFile = lib.mkForce null;
+          config.api.client.insecure_skip_verify = true;
           config.api.server.online_client.credentials_path = lib.mkForce null;
           config.cscli = {
             hub_branch = "test";
-            __hub_url_template__ = "http://127.0.0.1:49200/%s/%s";
+            __hub_url_template__ = "http://127.0.0.1/%s/%s";
           };
         };
-        services.crowdsec.hub.collections = lib.mkForce [ ];
+        # include from the start because of timing things
+        services.crowdsec.hub.collections = [
+          "crowdsecurity/appsec-generic-rules"
+          "crowdsecurity/appsec-virtual-patching"
+        ];
         environment.etc."crowdsec-api-key".text = "";
 
         # Use a second webserver to reliably serve the hub
@@ -58,16 +62,34 @@ import ./make-test-python.nix (
                 '';
               };
 
+              geoLite = pkgs.stdenv.mkDerivation {
+                name = "geolite-index";
+                dontUnpack = true;
+                dontBuild = true;
+                installPhase = ''
+                  mkdir -p $out
+                  touch $out/GeoLite2-ASN.mmdb
+                  touch $out/GeoLite2-City.mmdb
+                '';
+              };
+
             in
             {
-              "http://127.0.0.1:49200".extraConfig = ''
+              "http://127.0.0.1".extraConfig = ''
                 handle_path /test/* {
                   root ${hub}
                   file_server
                 }
+                handle_path /geolite/* {
+                    root ${geoLite}
+                    file_server
+                  }
               '';
+
             };
         };
+        services.nginx.defaultHTTPListenPort = 8080;
+        services.nginx.defaultSSLListenPort = 8443;
         flyingcircus.services.nginx.enable = true;
         flyingcircus.services.nginx.virtualHosts = {
           machine = {
