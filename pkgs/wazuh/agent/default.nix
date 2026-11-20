@@ -1,6 +1,7 @@
 {
   autoconf,
   automake,
+  attr,
   bpftools,
   clang,
   cmake,
@@ -51,12 +52,13 @@ stdenv.mkDerivation (finalAttrs: {
     "zerocallusedregs"
   ];
 
-  # libdb (src/external/libdb) trips GCC >= 14's default errors for
-  # incompatible-pointer-types and old-style-definition in its generated
-  # configure/Makefile code. The flags only downgrade these two warnings;
-  # injecting them via the cc wrapper works regardless of how libdb's
-  # internal makefiles plumb CFLAGS.
-  env.NIX_CFLAGS_COMPILE = "-Wno-error=incompatible-pointer-types -Wno-error=old-style-definition";
+  # Newer GCC expects better code that currently.
+  # Remove when possible on updates.
+  env.NIX_CFLAGS_COMPILE = toString [
+    "-Wno-error=incompatible-pointer-types"
+    "-Wno-error=old-style-definition"
+    "-Wno-error=discarded-qualifiers"
+  ];
 
   nativeBuildInputs = [
     autoconf
@@ -77,6 +79,7 @@ stdenv.mkDerivation (finalAttrs: {
   ];
 
   buildInputs = [
+    attr
     elfutils
     expat
     libbfd
