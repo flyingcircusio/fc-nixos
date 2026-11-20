@@ -207,14 +207,6 @@ in
         example = "pkgs.redis";
       };
 
-      maxmemory = mkOption {
-        type = types.str;
-        defaultText = "100mb";
-        default = "${toString ((fclib.currentMemory 1024) * cfg.memoryPercentage / 100)}mb";
-        description = "Maximum memory redis is allowed to use for a dataset";
-        example = "100mb";
-      };
-
       maxmemory-policy = mkOption {
         type = types.nullOr types.str;
         default = null;
@@ -237,14 +229,29 @@ in
 
       memoryPercentage = mkOption {
         type = types.int;
-        default = 80 / (length (attrNames enabledServers));
-        defaultText = "80 / len(enabledServers)";
-        description = "Amount of memory in percent to use as maximum for redis";
-        example = "100";
+        default = 100;
+        description = ''
+          Amount of memory in percent to use as maximum for all servers of redis combined.
+          This is calculated based on the available VM memory at the start of the redis systemd service minus the overhead as documented in https://doc.flyingcircus.io/platform/infrastructure/vms/index.html#minimum-memory-requirements-nixos-based-vms-only.
+
+          The default of this option expects that this role is the only service running on the VM.
+        '';
+        example = "50";
       };
     };
 
   };
+  imports = [
+    (lib.mkRemovedOptionModule
+      [
+        "flyingcircus"
+        "services"
+        "redis"
+        "maxmemory"
+      ]
+      "Use flyingcircus.services.redis.memoryPercentage instead. This is calculated as the VM memory minus the overhead of the VM."
+    )
+  ];
 
   config = lib.mkIf cfg.enable {
     warnings = lib.optionals (serversByConnection ? none) [
@@ -340,12 +347,28 @@ in
               chown redis:service /etc/local/redis/password
             '');
           in
-          {
-            ExecStartPre = lib.mkBefore [
-              ("+" + preStart)
-            ];
-            Restart = "always";
-          };
+          lib.mkMerge [
+            {
+              Restart = "always";
+            }
+            {
+              ExecStartPre = lib.mkBefore [
+                ("+" + preStart)
+              ];
+            }
+            {
+              ExecStartPre = lib.mkAfter [
+                (pkgs.writeShellScript "redis-maxmemory" ''
+                  mem_total=$(${lib.getExe pkgs.gawk} '/^MemTotal:/ {print $2}' /proc/meminfo)
+                  mem_to_use_kb=$((($mem_total - ${
+                    toString (config.flyingcircus.vmMemoryOverhead * 1024)
+                  }) * ${toString cfg.memoryPercentage} / 100 / ${toString (length (attrNames enabledServers))}))
+                  mem_to_use_bytes=$(($mem_to_use_kb * 1024))
+                  echo "maxmemory $mem_to_use_bytes" >> /run/redis/nixos.conf
+                '')
+              ];
+            }
+          ];
       }
     ];
 
@@ -358,14 +381,11 @@ in
           bind = concatStringsSep " " cfg.listenAddresses;
           enable = lib.mkDefault true;
           requirePassFile = "/etc/local/redis/password";
-          settings = lib.mkMerge [
-            (lib.mkIf (cfg.maxmemory-policy != null) {
+          settings = (
+            lib.mkIf (cfg.maxmemory-policy != null) {
               inherit (cfg) maxmemory-policy;
-            })
-            ({
-              inherit (cfg) maxmemory;
-            })
-          ];
+            }
+          );
         };
       };
     };

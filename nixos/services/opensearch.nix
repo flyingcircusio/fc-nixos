@@ -22,7 +22,7 @@ let
     else
       "localhost";
 
-  currentMemory = fclib.currentMemory 1024;
+  currentMemory = fclib.currentAvailableMemory 1024;
 
   openSearchHeap = fclib.min [
     (currentMemory * cfg.heapPercentage / 100)

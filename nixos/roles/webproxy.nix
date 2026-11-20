@@ -9,7 +9,7 @@ let
   cfg = config.flyingcircus.roles.webproxy;
   fclib = config.fclib;
 
-  cacheMemory = (fclib.currentMemory 256) / 100 * cfg.mallocMemoryPercentage;
+  cacheMemory = (fclib.currentAvailableMemory 256) / 100 * cfg.mallocMemoryPercentage;
 
   localVinylCfg = fclib.configFromFile /etc/local/vinyl-cache/default.vcl null;
   vinylFallback = config.environment.etc."local/vinyl-cache/default.vcl".text or null;
