@@ -535,9 +535,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.6.11",
+    "name": "mastodon-4.6.12",
     "pname": "mastodon",
-    "version": "4.6.11"
+    "version": "4.6.12"
   },
   "matomo": {
     "name": "matomo-5.14.2",
@@ -1132,9 +1132,9 @@
     "version": "10.1.55"
   },
   "tomcat9": {
-    "name": "apache-tomcat-9.0.120",
+    "name": "apache-tomcat-9.0.123",
     "pname": "apache-tomcat",
-    "version": "9.0.120"
+    "version": "9.0.123"
   },
   "unifi": {
     "name": "unifi-controller-10.2.105",
