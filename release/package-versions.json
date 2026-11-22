@@ -256,9 +256,9 @@
     "version": "2.54.0"
   },
   "gitaly": {
-    "name": "gitaly-19.5.6",
+    "name": "gitaly-19.5.8",
     "pname": "gitaly",
-    "version": "19.5.6"
+    "version": "19.5.8"
   },
   "github-runner": {
     "name": "github-runner-2.338.2",
@@ -266,9 +266,9 @@
     "version": "2.338.2"
   },
   "gitlab": {
-    "name": "gitlab-19.5.6",
+    "name": "gitlab-19.5.8",
     "pname": "gitlab",
-    "version": "19.5.6"
+    "version": "19.5.8"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.43.0",
@@ -276,14 +276,14 @@
     "version": "4.43.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-19.5.6",
+    "name": "gitlab-ee-19.5.8",
     "pname": "gitlab-ee",
-    "version": "19.5.6"
+    "version": "19.5.8"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-19.5.6",
+    "name": "gitlab-pages-19.5.8",
     "pname": "gitlab-pages",
-    "version": "19.5.6"
+    "version": "19.5.8"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-19.5.3",
@@ -291,9 +291,9 @@
     "version": "19.5.3"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-19.5.6",
+    "name": "gitlab-workhorse-19.5.8",
     "pname": "gitlab-workhorse",
-    "version": "19.5.6"
+    "version": "19.5.8"
   },
   "glibc": {
     "name": "glibc-2.42-103",
@@ -535,9 +535,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.6.11",
+    "name": "mastodon-4.6.12",
     "pname": "mastodon",
-    "version": "4.6.11"
+    "version": "4.6.12"
   },
   "matomo": {
     "name": "matomo-5.14.2",
@@ -545,9 +545,9 @@
     "version": "5.14.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-1.164.2",
+    "name": "matrix-synapse-1.165.0",
     "pname": "matrix-synapse",
-    "version": "1.164.2"
+    "version": "1.165.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.3",
@@ -1132,9 +1132,9 @@
     "version": "10.1.55"
   },
   "tomcat9": {
-    "name": "apache-tomcat-9.0.120",
+    "name": "apache-tomcat-9.0.123",
     "pname": "apache-tomcat",
-    "version": "9.0.120"
+    "version": "9.0.123"
   },
   "unifi": {
     "name": "unifi-controller-10.2.105",
