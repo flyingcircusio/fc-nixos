@@ -157,6 +157,10 @@ The `postgresql14` role has been removed, as it's end-of-life. Please update to 
 - The current logrotate config can now be found in `/etc/logrotate.conf` instead of `/etc/current-config/logrotate.conf`.
   With that, the `logrotate-show-config` command has been deprecated and removed.
 - PostgreSQL Anonymizer now only allows applying masking rules by users without the `SUPERUSER` privilege. This can be changed as described in [the upstream documentation](https://postgresql-anonymizer.readthedocs.io/en/stable/configure/)
+- The mailserver role now stores the sieve scripts inside the users mail directory instead of in `/var/sieve`. The migration happens automatically after update.
+- The sieve listener of the mailserver role now listens with TLS only instead of plain text with STARTTLS.
+  STARTTLS may be re-enabled at your own security risk with `mailserver.listeners.manageSieve.ssl`.
+
 
 ## Known issues
 
