@@ -541,18 +541,18 @@ in
       {
         ${pool} = {
           inherit user;
-          phpOptions = ''
-            error_log = 'stderr'
-            log_errors = on
-            memory_limit = ${toString cfg.memoryLimit}M
+          phpOptions = {
+            error_log = "stderr";
+            log_errors = "on";
+            memory_limit = "${toString cfg.memoryLimit}M";
             # Settings to make the SecurityInfo plugin happy.
-            open_basedir = "${dataDir}"
-            upload_tmp_dir = "${tmpDir}"
-            expose_php = off
+            open_basedir = dataDir;
+            upload_tmp_dir = tmpDir;
+            expose_php = "off";
             # This path doesn't exist and is not needed for Matomo but SecurityInfo
             # wants this setting.
-            session.save_path = "${dataDir}/sessions/"
-          '';
+            "session.save_path" = "${dataDir}/sessions/";
+          };
 
           inherit phpPackage;
           settings = mapAttrs (name: mkDefault) {

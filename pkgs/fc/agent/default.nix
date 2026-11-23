@@ -99,7 +99,7 @@ pyPackages.buildPythonPackage rec {
     stamina
     util-linux
   ]
-  ++ lib.optionals stdenv.isLinux [
+  ++ lib.optionals stdenv.hostPlatform.isLinux [
     dmidecode
     gptfdisk
     multipath-tools
