@@ -80,14 +80,14 @@
     "version": "16.2.15"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-157.0.8103.78",
+    "name": "chromedriver-unwrapped-158.0.8127.36",
     "pname": "chromedriver-unwrapped",
-    "version": "157.0.8103.78"
+    "version": "158.0.8127.36"
   },
   "chromium": {
-    "name": "chromium-157.0.8103.78",
+    "name": "chromium-158.0.8127.36",
     "pname": "chromium",
-    "version": "157.0.8103.78"
+    "version": "158.0.8127.36"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.9",
@@ -95,9 +95,9 @@
     "version": "7.9"
   },
   "clamav": {
-    "name": "clamav-1.5.4",
+    "name": "clamav-1.5.5",
     "pname": "clamav",
-    "version": "1.5.4"
+    "version": "1.5.5"
   },
   "cmake": {
     "name": "cmake-4.4.4",
@@ -176,9 +176,9 @@
     "version": "29.9.3"
   },
   "docker-compose": {
-    "name": "docker-compose-5.7.0",
+    "name": "docker-compose-5.7.1",
     "pname": "docker-compose",
-    "version": "5.7.0"
+    "version": "5.7.1"
   },
   "dovecot": {
     "name": "dovecot-2.4.5",
@@ -221,9 +221,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-160.0",
+    "name": "firefox-160.0.1",
     "pname": "firefox",
-    "version": "160.0"
+    "version": "160.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-16.2.0",
@@ -246,9 +246,9 @@
     "version": "2.56.0"
   },
   "gitaly": {
-    "name": "gitaly-19.5.5",
+    "name": "gitaly-19.5.8",
     "pname": "gitaly",
-    "version": "19.5.5"
+    "version": "19.5.8"
   },
   "github-runner": {
     "name": "github-runner-2.338.2",
@@ -256,9 +256,9 @@
     "version": "2.338.2"
   },
   "gitlab": {
-    "name": "gitlab-19.5.5",
+    "name": "gitlab-19.5.8",
     "pname": "gitlab",
-    "version": "19.5.5"
+    "version": "19.5.8"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.43.0",
@@ -266,24 +266,24 @@
     "version": "4.43.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-19.5.5",
+    "name": "gitlab-ee-19.5.8",
     "pname": "gitlab-ee",
-    "version": "19.5.5"
+    "version": "19.5.8"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-19.5.5",
+    "name": "gitlab-pages-19.5.8",
     "pname": "gitlab-pages",
-    "version": "19.5.5"
+    "version": "19.5.8"
   },
   "gitlab-runner": {
-    "name": "gitlab-runner-19.5.2",
+    "name": "gitlab-runner-19.5.3",
     "pname": "gitlab-runner",
-    "version": "19.5.2"
+    "version": "19.5.3"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-19.5.5",
+    "name": "gitlab-workhorse-19.5.8",
     "pname": "gitlab-workhorse",
-    "version": "19.5.5"
+    "version": "19.5.8"
   },
   "glibc": {
     "name": "glibc-2.44-57",
@@ -366,9 +366,9 @@
     "version": "1.0.9365"
   },
   "jitsi-videobridge": {
-    "name": "jitsi-videobridge2-2.3-318-gbf271b11f",
+    "name": "jitsi-videobridge2-2.3-358-gf8efaa72c",
     "pname": "jitsi-videobridge2",
-    "version": "2.3-318-gbf271b11f"
+    "version": "2.3-358-gf8efaa72c"
   },
   "jq": {
     "name": "jq-1.8.2",
@@ -485,19 +485,19 @@
     "version": "0.2.5"
   },
   "linuxKernelGPU": {
-    "name": "linux-6.18.63",
+    "name": "linux-6.18.64",
     "pname": "linux",
-    "version": "6.18.63"
+    "version": "6.18.64"
   },
   "linuxKernelStable": {
-    "name": "linux-6.18.63",
+    "name": "linux-6.18.64",
     "pname": "linux",
-    "version": "6.18.63"
+    "version": "6.18.64"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.18.63",
+    "name": "linux-6.18.64",
     "pname": "linux",
-    "version": "6.18.63"
+    "version": "6.18.64"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -525,9 +525,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.7.5",
+    "name": "mastodon-4.7.6",
     "pname": "mastodon",
-    "version": "4.7.5"
+    "version": "4.7.6"
   },
   "matomo": {
     "name": "matomo-5.14.2",
@@ -535,9 +535,9 @@
     "version": "5.14.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-1.164.2",
+    "name": "matrix-synapse-1.165.0",
     "pname": "matrix-synapse",
-    "version": "1.164.2"
+    "version": "1.165.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.3",
@@ -550,9 +550,9 @@
     "version": "1.6.45"
   },
   "mongodb": {
-    "name": "mongodb-7.0.45",
+    "name": "mongodb-7.0.48",
     "pname": "mongodb",
-    "version": "7.0.45"
+    "version": "7.0.48"
   },
   "monitoring-plugins": {
     "name": "monitoring-plugins-2.4.0",
@@ -570,24 +570,24 @@
     "version": "11.4.13"
   },
   "nfs-utils": {
-    "name": "nfs-utils-3.1.1",
+    "name": "nfs-utils-3.2.1",
     "pname": "nfs-utils",
-    "version": "3.1.1"
+    "version": "3.2.1"
   },
   "nginx": {
-    "name": "nginx-1.30.6",
+    "name": "nginx-1.30.7",
     "pname": "nginx",
-    "version": "1.30.6"
+    "version": "1.30.7"
   },
   "nginxMainline": {
-    "name": "nginx-1.31.8",
+    "name": "nginx-1.31.9",
     "pname": "nginx",
-    "version": "1.31.8"
+    "version": "1.31.9"
   },
   "nginxStable": {
-    "name": "nginx-1.30.6",
+    "name": "nginx-1.30.7",
     "pname": "nginx",
-    "version": "1.30.6"
+    "version": "1.30.7"
   },
   "nix": {
     "name": "nix-2.35.6",
@@ -722,19 +722,19 @@
     "version": "8.1.34"
   },
   "php83": {
-    "name": "php-with-extensions-8.3.36",
+    "name": "php-with-extensions-8.3.37",
     "pname": "php-with-extensions",
-    "version": "8.3.36"
+    "version": "8.3.37"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.27",
+    "name": "php-with-extensions-8.4.28",
     "pname": "php-with-extensions",
-    "version": "8.4.27"
+    "version": "8.4.28"
   },
   "php85": {
-    "name": "php-with-extensions-8.5.12",
+    "name": "php-with-extensions-8.5.13",
     "pname": "php-with-extensions",
-    "version": "8.5.12"
+    "version": "8.5.13"
   },
   "phpPackages.composer": {
     "name": "composer-2.11.2",
@@ -1097,9 +1097,9 @@
     "version": "2.42.4"
   },
   "uv": {
-    "name": "uv-0.13.7",
+    "name": "uv-0.13.9",
     "pname": "uv",
-    "version": "0.13.7"
+    "version": "0.13.9"
   },
   "vim": {
     "name": "vim-9.2.1252",
