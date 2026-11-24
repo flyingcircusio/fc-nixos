@@ -14,7 +14,7 @@ let
 
   inherit (serviceCfg.tools) matomoCheckPermissions matomoConsole;
 
-  currentMemory = fclib.currentMemory 1024;
+  currentMemory = fclib.currentAvailableMemory 1024;
 
   phpFpmMemoryLimit = fclib.min [
     (currentMemory * 25 / 100)

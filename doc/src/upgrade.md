@@ -101,6 +101,38 @@ time-window.
 
 ## Significant breaking changes
 
+### Service memory configuration
+
+We changed how memory configuration works for all roles.
+This affects **elasticsearch, mariadb, matomo, opensearch, percona (mysql), postgresql, redis, webproxy (vinyl cache)**.
+
+Memory percentage NixOS options are now calculated based on the memory of the VM available to services, i.e. the current memory of the VM minus the overhead as defined in https://doc.flyingcircus.io/platform/infrastructure/vms/index.html#minimum-memory-requirements-nixos-based-vms-only.
+
+This affects the following options:
+
+- elasticsearch: `flyingcircus.roles.elasticsearch.heapPercentage`
+- mariadb: `flyingcircus.roles.mariadb.bufferMemoryPercentage`
+- opensearch: `flyingcircus.roles.opensearch.heapPercentage` / `flyingcircus.services.opensearch.heapPercentage`
+- percona: `flyingcircus.roles.mysql.bufferMemoryPercentage`
+- redis: `flyingcircus.services.redis.memoryPercentage`
+- webproxy: `flyingcircus.roles.webproxy.mallocMemoryPercentage`
+
+After upgrading **services will allocate less memory than before!**
+You can change the configuration already before the upgrade. Here is an example how to do this with percona:
+
+```nix
+{ config, lib, ... }: {
+  # If you also want to set a custom value for the system with 26.11
+  flyingcircus.roles.mysql.bufferMemoryPercentage = if (lib.versionAtLeast config.system.nixos.release "26.11") then 80 else 15;
+
+  # If you want to use the default on 26.11
+  flyingcircus.roles.mysql.bufferMemoryPercentage = lib.mkIf (lib.versionOlder config.system.nixos.release "26.11") 15;
+}
+```
+
+Virtual machines with less than 2.5 GiB of memory are not affected by this change.
+As these are below our defined system overhead, we use the old method and don't include the defined overhead in calculations for services.
+
 ### LAMP
 
 Configuration options of PHP-FPM are now correctly escaped.

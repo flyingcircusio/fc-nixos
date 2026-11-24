@@ -22,7 +22,7 @@ import ./make-test-python.nix (
           imports = [
             (testlib.fcConfig { })
           ];
-          virtualisation.memorySize = 2048;
+          virtualisation.memorySize = 3072;
 
           flyingcircus.roles.${rolename}.enable = true;
 
