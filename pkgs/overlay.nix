@@ -82,11 +82,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     php74
     php80
     php81
+    php82
     ;
-  # Import NixOS upstream PHPs.
-  #inherit (super)
-  #  php82
-  #  ;
 
 }
 //
@@ -461,8 +458,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     )
   );
 
-  # PHP versions from nixpkgs
-
   lamp_php81 = self.php81.withExtensions (
     { enabled, all }:
     enabled
@@ -474,16 +469,18 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     ]
   );
 
-  #lamp_php82 = self.php82.withExtensions (
-  #  { enabled, all }:
-  #  enabled
-  #  ++ [
-  #    all.bcmath
-  #    all.imagick
-  #    all.memcached
-  #    all.redis
-  #  ]
-  #);
+  lamp_php82 = self.php82.withExtensions (
+    { enabled, all }:
+    enabled
+    ++ [
+      all.bcmath
+      all.imagick
+      all.memcached
+      all.redis
+    ]
+  );
+
+  # PHP versions from nixpkgs
 
   lamp_php83 = self.php83.withExtensions (
     { enabled, all }:
