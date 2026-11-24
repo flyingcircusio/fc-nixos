@@ -195,6 +195,10 @@ consult [its release notes](https://github.com/SchedMD/slurm/blob/slurm-26-05-6-
 
 The `postgresql14` role has been removed, as it's end-of-life. Please update to `postgresql15` or newer.
 
+### Tempo
+
+Tempo was updated from 2.10 to 3.1. Our role has updated its config, however custom configuration needs to be adjusted.
+Read the section for monolithic deployments in the [migration notes](https://grafana.com/docs/tempo/latest/set-up-for-tracing/setup-tempo/migrate-to-3/), the [upgrade notes](https://grafana.com/docs/tempo/latest/set-up-for-tracing/setup-tempo/upgrade/) and [release notes](https://grafana.com/docs/tempo/latest/release-notes/v3-0/) of Tempo.
 
 ## Other notable changes
 
