@@ -174,6 +174,17 @@ platform. See the role documentation for {ref}`cluster version updates
 The support for Varnish Cache has been removed.
 Please migrate to Vinyl Cache 9.
 
+(nixos-upgrade-slurm)=
+
+### Slurm
+
+This release contains a major version upgrade of Slurm from 25.11.x.x (NixOS 26.05) to 26.11.x.x. Nodes of a cluster
+need to be upgraded in a particular order, please consult the [upgrade instructions of the role](#nixos-slurm-upgrade)
+for details.
+
+Regarding new features or changes in Slurm itself,
+consult [its release notes](https://github.com/SchedMD/slurm/blob/slurm-26-05-6-1/RELEASE_NOTES.md).
+
 (nixos-upgrade-postgresql)=
 
 ### PostgreSQL
