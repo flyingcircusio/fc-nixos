@@ -120,7 +120,11 @@ import ./make-test-python.nix (
           serviceConfig = {
             Type = "simple";
             Restart = "always";
-            ExecStart = "${pkgs.python3}/bin/python ${./fakedirectory.py}";
+            ExecStart =
+              let
+                fakedirectory = "${testPackage.testdata}/fakedirectory.py";
+              in
+              "${pkgs.python3}/bin/python ${fakedirectory}";
           };
         };
 
