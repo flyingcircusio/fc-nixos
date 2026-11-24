@@ -794,15 +794,15 @@ class BlueStoreOSD(GenericOSD):
         """
         target_osd_type = target_objectstore_type or self.OBJECTSTORE_TYPE
 
-        print(
-            f"Rebuilding OSD {self.id} from scratch "
-            f"({'un' if not encrypt else ''}encrypted)"
-        )
-
         oldosd_properties = self._collect_rebuild_information()
 
         if encrypt is not None:
             oldosd_properties["encrypt"] = encrypt
+
+        print(
+            f"Rebuilding OSD {self.id} from scratch "
+            f"({'un' if not oldosd_properties['encrypt'] else ''}encrypted)"
+        )
 
         journal = self.wal_volume.location
         print(f"--journal={journal}")
