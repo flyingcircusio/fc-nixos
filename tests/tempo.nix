@@ -123,6 +123,7 @@ import ./make-test-python.nix (
     };
 
     testScript = ''
+      import datetime
       machine.wait_for_unit("tempo.service")
       machine.wait_for_unit("alloy.service")
       machine.wait_for_unit("loki.service")
@@ -130,8 +131,7 @@ import ./make-test-python.nix (
       machine.wait_for_open_port(port=4320, addr="${v4}")
 
       machine.succeed("trace-generator")
-      machine.sleep(10)
-      machine.succeed("test $(curl -G -s http://localhost:3200/api/search --data-urlencode 'q={ resource.service.name = \"test-service\" }' | jq '.traces | length') -gt 0")
+      machine.wait_until_succeeds("test $(curl -G -s http://localhost:3200/api/search --data-urlencode 'q={ resource.service.name = \"test-service\" }' | jq '.traces | length') -gt 0", timeout=datetime.timedelta(seconds=90))
     '';
   }
 )

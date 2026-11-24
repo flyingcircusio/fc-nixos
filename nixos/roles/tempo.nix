@@ -56,10 +56,6 @@ in
           settings = {
             stream_over_http_enabled = true;
             server.grpc_listen_port = 9096;
-            ingester = {
-              lifecycler.ring.replication_factor = 1;
-              trace_idle_period = "10s";
-            };
             query_frontend = { };
             querier = { };
             metrics_generator = {
@@ -75,13 +71,6 @@ in
                     send_exemplars = true;
                   }
                 ];
-              };
-              traces_storage.path = "/var/tempo/generator/traces";
-              processor = {
-                local_blocks = {
-                  filter_server_spans = false;
-                  flush_to_storage = true;
-                };
               };
             };
             distributor.receivers.otlp = {

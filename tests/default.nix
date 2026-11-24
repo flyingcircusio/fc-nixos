@@ -135,8 +135,7 @@ in
   sudo = callTest ./sudo.nix { };
   syslog = callSubTests ./syslog.nix { };
   systemd-service-cycles = callTest ./systemd-service-cycles.nix { };
-  # FIXME: PL-135860
-  # tempo = callTest ./tempo.nix { };
+  tempo = callTest ./tempo.nix { };
   users = callTest ./users.nix { };
   vxlan = callTest ./vxlan.nix { };
   wazuh-agent = callTest ./wazuh-agent.nix { };
