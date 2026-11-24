@@ -51,10 +51,10 @@ import ../make-test-python.nix (
               # XXX test-i-am-the-custom-apache-conf
             '';
 
-            php_ini = ''
-              ; Make sure references to derivations are allowed: ${pkgs.hello}
-              # XXX test-i-a-m-the-custom-php-ini
-            '';
+            php_ini = {
+              # A random widely used setting
+              upload_max_filesize = "200M";
+            };
 
           };
 

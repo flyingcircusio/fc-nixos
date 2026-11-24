@@ -135,6 +135,8 @@ As these are below our defined system overhead, we use the old method and don't 
 
 ### LAMP
 
+#### Correct escaping of PHP-FPM options
+
 Configuration options of PHP-FPM are now correctly escaped.
 This leads to a change that booleans written as a string, e.g. "true" and "false" are now also written as `"true"` and `"false"` instead of `true` and `false` in the PHP-FPM INI config file. Integers written as a string before in the Nix config, e.g. `"8"`, are now also written as `"8"` instead of `8` in the INI configuration file. Please migrate to the correct types in the NixOS configuration.
 This change affects the configuration options:
@@ -147,6 +149,41 @@ This change affects the configuration options:
 - `services.phpfpm.pools.<...>.settings`
 - `services.phpfpm.extraConfig`
 - `services.phpfpm.settings`
+
+#### Structured php.ini config
+
+Using a string for specifying `php.ini` settings is deprecated and will be removed with fc-nixos 27.05.
+This release still supports the configuration using strings and will output a warning for a simple migration.
+This affects the configuration options
+
+- `flyingcircus.roles.lamp.php_ini`
+- `flyingcircus.roles.lamp.vhosts.<...>.pool.phpOptions`
+- `services.phpfpm.pools.<...>.phpOptions`
+- `services.phpfpm.phpOptions`
+
+For example the previous configuration
+
+```nix
+flyingcircus.roles.lamp.php_ini = ''
+  upload_max_filesize = 200M
+  post_max_size = 200M
+  date.timezone = Europe/Berlin
+'';
+```
+
+should now be written as
+
+```nix
+flyingcircus.roles.lamp.php_ini = {
+  "upload_max_filesize" = "200M";
+  "post_max_size" = "200M";
+  "date.timezone" = "Europe/Berlin";
+};
+```
+
+This change also allows easier overriding of the `php.ini` settings per pool.
+
+#### Version changes
 
 PHP 7.2 and 7.3 have been removed as they are end-of-life for a prolonged period of time.
 

@@ -9,6 +9,84 @@ let
   role = config.flyingcircus.roles.lamp;
   fclib = config.fclib;
 
+  # To support both string-based and structured php.ini definitions, we have our defaults in both ways.
+  phpOptionsString = ''
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ; General settings
+
+    output_buffering = On
+    short_open_tag = On
+    curl.cainfo = /etc/ssl/certs/ca-certificates.crt
+    sendmail_path = /run/wrappers/bin/sendmail -t -i
+
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ; opcache
+    opcache.enable = 1
+    opcache.enable_cli = 0
+    opcache.interned_strings_buffer = 8
+    opcache.max_accelerated_files = 40000
+    opcache.memory_consumption = 512
+    opcache.validate_timestamps = 0
+
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ; logging and errors
+
+    error_log = syslog
+    display_errors = Off
+    log_errors = On
+
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ; memory and execution limits
+
+    memory_limit = 1024m
+    max_execution_time = 800
+
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ; session management
+
+    session.auto_start = Off
+
+    ; Custom PHP ini
+    ${role.php_ini}
+  '';
+  phpOptionsStructured = lib.recursiveUpdate {
+    # General settings
+    "output_buffering" = "On";
+    "short_open_tag" = "On";
+    "curl.cainfo" = "/etc/ssl/certs/ca-certificates.crt";
+    "sendmail_path" = "/run/wrappers/bin/sendmail -t -i";
+
+    # opcache
+    "opcache.enable" = 1;
+    "opcache.enable_cli" = 0;
+    "opcache.interned_strings_buffer" = 8;
+    "opcache.max_accelerated_files" = 40000;
+    "opcache.memory_consumption" = 512;
+    "opcache.validate_timestamps" = 0;
+
+    # logging and errors
+
+    "error_log" = "syslog";
+    "display_errors" = "Off";
+    "log_errors" = "On";
+
+    # memory and execution limits
+
+    "memory_limit" = "1024m";
+    "max_execution_time" = 800;
+
+    # session management
+    "session.auto_start" = "Off";
+  } role.php_ini;
+
+  toKeyValue = lib.generators.toKeyValue {
+    mkKeyValue = lib.generators.mkKeyValueDefault { } " = ";
+  };
+
+  phpOptions = if lib.isAttrs role.php_ini then phpOptionsStructured else phpOptionsString;
+
+  toPhpIni = v: if lib.isString v then v else toKeyValue (lib.filterAttrs (_: v: v != null) v);
+
   phpWrappers = map (
     { name, ... }:
     let
@@ -25,7 +103,7 @@ let
         ''
           mkdir -p $out/bin
           makeWrapper ${phpPackage}/bin/php $out/bin/php-${name} \
-            --add-flags "-c ${pkgs.writeText "php-${name}.ini" phpOptions}"
+            --add-flags "-c ${pkgs.writeText "php-${name}.ini" (toPhpIni phpOptions)}"
 
           ln -sfv ${phpPackage.packages.composer}/bin/composer $out/bin/composer-${name}
         ''
@@ -50,8 +128,19 @@ in
       };
 
       php_ini = mkOption {
-        type = types.lines;
-        default = "";
+        type =
+          with types;
+          either lines (
+            attrsOf (
+              nullOr (oneOf [
+                bool
+                int
+                float
+                str
+              ])
+            )
+          );
+        default = { };
       };
 
       php = mkOption {
@@ -99,191 +188,149 @@ in
     };
   };
 
-  config =
-    let
+  config = lib.mkIf role.enable {
+    warnings = lib.optionals (lib.isString role.php_ini) [
+      "Using a string for specifing flyincircus.roles.lamp.php_ini is deprecated and will be removed with fc-nixos 27.05. Please migrate to a structured config using the same NixOS option. See the fc-nixos 26.11 upgrade notes for details."
+    ];
+    services.httpd.enable = true;
+    services.httpd.adminAddr = "admin@flyingcircus.io";
+    services.httpd.mpm = "event";
+    services.httpd.package = fclib.mkPlatform pkgs.apacheHttpdLegacyCrypt;
 
-      phpOptions = ''
-        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-        ; General settings
+    # We always provide the PHP cli environment but we need to ensure
+    # to choose the right one in case someone uses the LAMP role.
+    environment.systemPackages = [
+      role.php
+      role.php.packages.composer
+    ]
+    ++ phpWrappers;
 
-        output_buffering = On
-        short_open_tag = On
-        curl.cainfo = /etc/ssl/certs/ca-certificates.crt
-        sendmail_path = /run/wrappers/bin/sendmail -t -i
+    # Provide a similar PHP config for the PHP CLI as for Apache (httpd).
+    # The file referenced by PHPRC is loaded together with the php.ini
+    # from the global PHP package which only specifies the extensions.
+    environment.variables.PHPRC = "${pkgs.writeText "php.ini" (toPhpIni phpOptions)}";
+    services.httpd.logPerVirtualHost = true;
+    services.httpd.group = "service";
+    services.httpd.user = "nobody";
+    services.httpd.extraModules = [
+      "rewrite"
+      "version"
+      "status"
+      "proxy_fcgi"
+    ];
+    services.httpd.extraConfig = ''
+      # Those options are chosen for prefork
+      # StartServers 2 (default)
+      # MinSpareServers 5 (default)
+      # MaxSpareServers 10 (Default)
 
-        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-        ; opcache
-        opcache.enable = 1
-        opcache.enable_cli = 0
-        opcache.interned_strings_buffer = 8
-        opcache.max_accelerated_files = 40000
-        opcache.memory_consumption = 512
-        opcache.validate_timestamps = 0
+      # MaxRequestWorkers default: 256, limit to lower number
+      # to avoid starvation/thrashing
+      MaxRequestWorkers 150
 
-        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-        ; logging and errors
+      # Determine lifetime of processes
+      # MaxConnectionsPerChild default: 0, set limit to
+      # avoid potential memory leaks
+      MaxConnectionsPerChild     10000
 
-        error_log = syslog
-        display_errors = Off
-        log_errors = On
+      Listen localhost:7999
+      <VirtualHost localhost:7999>
+      <Location "/server-status">
+          SetHandler server-status
+      </Location>
+      </VirtualHost>
 
-        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-        ; memory and execution limits
+      # reuse _must_ be disable or apache will confuse different
+      # FPM pools and also screw up with keepalives consuming backend
+      # connections.
+      <Proxy "fcgi://localhost/" enablereuse=off>
+      </Proxy>
 
-        memory_limit = 1024m
-        max_execution_time = 800
+    ''
+    +
+      # * vhost configs
+      (lib.concatMapStrings (
+        vhost:
+        let
+          port = toString vhost.port;
+        in
+        ''
 
-        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-        ; session management
+          Listen *:${port}
+          <VirtualHost *:${port}>
+              ServerName "${config.networking.hostName}"
+              DocumentRoot "${vhost.docroot}"
+              <Directory "${vhost.docroot}">
+                  AllowOverride all
+                  Require all granted
+                  Options FollowSymlinks
+                  DirectoryIndex index.html index.php
+              </Directory>
+              <FilesMatch "\.php$">
+                  SetHandler "proxy:unix:${
+                    config.services.phpfpm.pools."${vhost.name}".socket
+                  }|fcgi://localhost/"
+              </FilesMatch>
+              ${vhost.apacheExtraConfig}
+          </VirtualHost>
+        ''
+      ) role.vhosts)
+    + role.apache_conf;
 
-        session.auto_start = Off
+    # The upstream module has a default that makes Apache listen on port 80
+    # which conflicts with our webgateway role.
+    services.httpd.virtualHosts = { };
 
-        ; Custom PHP ini
-        ${role.php_ini}
-      '';
-      phpMajorMinor = lib.concatStringsSep "." (lib.take 2 (builtins.splitVersion role.php.version));
-      phpMajor = builtins.head (builtins.splitVersion role.php.version);
-    in
-    lib.mkIf role.enable {
-      services.httpd.enable = true;
-      services.httpd.adminAddr = "admin@flyingcircus.io";
-      services.httpd.mpm = "event";
-      services.httpd.package = fclib.mkPlatform pkgs.apacheHttpdLegacyCrypt;
+    services.phpfpm.phpPackage = role.php;
 
-      # We always provide the PHP cli environment but we need to ensure
-      # to choose the right one in case someone uses the LAMP role.
-      environment.systemPackages = [
-        role.php
-        role.php.packages.composer
-      ]
-      ++ phpWrappers;
+    services.phpfpm.pools = builtins.listToAttrs (
+      map (vhost: {
+        inherit (vhost) name;
+        value = lib.attrsets.recursiveUpdate {
+          user = config.services.httpd.user;
+          group = config.services.httpd.group;
+          phpOptions = phpOptions;
+          settings = (
+            builtins.mapAttrs (_: fclib.mkPlatform) {
+              "listen.owner" = config.services.httpd.user;
+              "listen.group" = config.services.httpd.group;
+              "pm" = "dynamic";
+              "pm.max_children" = role.fpmMaxChildren;
+              "pm.start_servers" = 5;
+              "pm.min_spare_servers" = 5;
+              "pm.max_spare_servers" = 10;
+              "slowlog" = "/var/log/httpd/${vhost.name}-slow.log";
+              "request_slowlog_timeout" = "6s";
+              "request_slowlog_trace_depth" = 100;
+              "catch_workers_output" = true;
+            }
+          );
+        } vhost.pool; # only contains override values
+      }) role.vhosts
+    );
 
-      # Provide a similar PHP config for the PHP CLI as for Apache (httpd).
-      # The file referenced by PHPRC is loaded together with the php.ini
-      # from the global PHP package which only specifies the extensions.
-      environment.variables.PHPRC = "${pkgs.writeText "php.ini" phpOptions}";
-      services.httpd.logPerVirtualHost = true;
-      services.httpd.group = "service";
-      services.httpd.user = "nobody";
-      services.httpd.extraModules = [
-        "rewrite"
-        "version"
-        "status"
-        "proxy_fcgi"
-      ];
-      services.httpd.extraConfig = ''
-        # Those options are chosen for prefork
-        # StartServers 2 (default)
-        # MinSpareServers 5 (default)
-        # MaxSpareServers 10 (Default)
-
-        # MaxRequestWorkers default: 256, limit to lower number
-        # to avoid starvation/thrashing
-        MaxRequestWorkers 150
-
-        # Determine lifetime of processes
-        # MaxConnectionsPerChild default: 0, set limit to
-        # avoid potential memory leaks
-        MaxConnectionsPerChild     10000
-
-        Listen localhost:7999
-        <VirtualHost localhost:7999>
-        <Location "/server-status">
-            SetHandler server-status
-        </Location>
-        </VirtualHost>
-
-        # reuse _must_ be disable or apache will confuse different
-        # FPM pools and also screw up with keepalives consuming backend
-        # connections.
-        <Proxy "fcgi://localhost/" enablereuse=off>
-        </Proxy>
-
-      ''
-      +
-        # * vhost configs
-        (lib.concatMapStrings (
-          vhost:
-          let
-            port = toString vhost.port;
-          in
-          ''
-
-            Listen *:${port}
-            <VirtualHost *:${port}>
-                ServerName "${config.networking.hostName}"
-                DocumentRoot "${vhost.docroot}"
-                <Directory "${vhost.docroot}">
-                    AllowOverride all
-                    Require all granted
-                    Options FollowSymlinks
-                    DirectoryIndex index.html index.php
-                </Directory>
-                <FilesMatch "\.php$">
-                    SetHandler "proxy:unix:${
-                      config.services.phpfpm.pools."${vhost.name}".socket
-                    }|fcgi://localhost/"
-                </FilesMatch>
-                ${vhost.apacheExtraConfig}
-            </VirtualHost>
-          ''
-        ) role.vhosts)
-      + role.apache_conf;
-
-      # The upstream module has a default that makes Apache listen on port 80
-      # which conflicts with our webgateway role.
-      services.httpd.virtualHosts = { };
-
-      services.phpfpm.phpPackage = role.php;
-
-      services.phpfpm.pools = builtins.listToAttrs (
-        map (vhost: {
-          inherit (vhost) name;
-          value = lib.attrsets.recursiveUpdate {
-            user = config.services.httpd.user;
-            group = config.services.httpd.group;
-            phpOptions = phpOptions;
-            settings = (
-              builtins.mapAttrs (_: fclib.mkPlatform) {
-                "listen.owner" = config.services.httpd.user;
-                "listen.group" = config.services.httpd.group;
-                "pm" = "dynamic";
-                "pm.max_children" = role.fpmMaxChildren;
-                "pm.start_servers" = 5;
-                "pm.min_spare_servers" = 5;
-                "pm.max_spare_servers" = 10;
-                "slowlog" = "/var/log/httpd/${vhost.name}-slow.log";
-                "request_slowlog_timeout" = "6s";
-                "request_slowlog_trace_depth" = 100;
-                "catch_workers_output" = true;
-              }
-            );
-          } vhost.pool; # only contains override values
-        }) role.vhosts
-      );
-
-      flyingcircus.services.sensu-client.checks = {
-        httpd_status = {
-          notification = "Apache status page";
-          command = "check_http -H localhost -p 7999 -u /server-status?auto -v";
-          timeout = 30;
-        };
+    flyingcircus.services.sensu-client.checks = {
+      httpd_status = {
+        notification = "Apache status page";
+        command = "check_http -H localhost -p 7999 -u /server-status?auto -v";
+        timeout = 30;
       };
-
-      flyingcircus.services.telegraf.inputs = {
-        apache = [
-          {
-            urls = [ "http://localhost:7999/server-status?auto" ];
-          }
-        ];
-      };
-
-      systemd.tmpfiles.rules = [
-        "d /var/log/httpd 2750 root service"
-        "a+ /var/log/httpd - - - - default:group::r-X,default:group:sudo-srv:r-X,default:group:service:r-X,default:mask::r-X"
-        # recursive is required as well to adjust permissions of existing files
-        "A+ /var/log/httpd - - - - group:sudo-srv:r-X,group:service:r-X,group::r-X,mask::r-X"
-      ];
-
     };
+
+    flyingcircus.services.telegraf.inputs = {
+      apache = [
+        {
+          urls = [ "http://localhost:7999/server-status?auto" ];
+        }
+      ];
+    };
+
+    systemd.tmpfiles.rules = [
+      "d /var/log/httpd 2750 root service"
+      "a+ /var/log/httpd - - - - default:group::r-X,default:group:sudo-srv:r-X,default:group:service:r-X,default:mask::r-X"
+      # recursive is required as well to adjust permissions of existing files
+      "A+ /var/log/httpd - - - - group:sudo-srv:r-X,group:service:r-X,group::r-X,mask::r-X"
+    ];
+
+  };
 }
