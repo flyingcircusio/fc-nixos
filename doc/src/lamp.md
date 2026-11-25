@@ -58,18 +58,16 @@ A complete configuration might looks something like this:
 
     fpmMaxChildren = 100;
 
-    php_ini = ''
-      ; max filesize
-      upload_max_filesize = 200M
-      post_max_size = 200M
+    php_ini = {
+      # max filesize
+      "upload_max_filesize" = "200M";
+      "post_max_size" = "200M";
 
+      "date.timezone" = "Europe/Berlin";
 
-      date.timezone = Europe/Berlin
-
-      session.save_handler = redis
-      session.save_path = "tcp://myservice01:6379?auth=<secret>"
-    '';
-
+      "session.save_handler" = "redis";
+      "session.save_path" = "tcp://myservice01:6379?auth=<secret>";
+    };
   };
 }
 ```
@@ -246,10 +244,11 @@ For more information about PHP packaging on Nix, refer to the
 We deliver a production-tested PHP configuration that you can extend by placing
 additional configuration instructions in this option:
 
-```INI
-; max filesize
-upload_max_filesize = 200M
-post_max_size = 200M
+```nix
+flyingcircus.roles.lamp.php_ini = {
+  "upload_max_filesize" = "200M";
+  "post_max_size" = "200M";
+};
 ```
 
 Similar to the `flyingcircus.roles.lamp.apache_conf` option this will
