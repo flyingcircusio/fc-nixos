@@ -116,6 +116,10 @@ import ../make-test-python.nix (
                   flyingcircus.roles.postgresql15.enable = false;
                   flyingcircus.roles.postgresql18.enable = true;
                 };
+                pg19.configuration = {
+                  flyingcircus.roles.postgresql15.enable = false;
+                  flyingcircus.roles.postgresql19.enable = true;
+                };
               };
 
               system.extraDependencies = with pkgs; [
@@ -126,10 +130,12 @@ import ../make-test-python.nix (
                 (postgresql_16.withPackages (ps: with ps; [ anonymizer ]))
                 (postgresql_17.withPackages (ps: with ps; [ anonymizer ]))
                 (postgresql_18.withPackages (ps: with ps; [ anonymizer ]))
+                (postgresql_19.withPackages (ps: with ps; [ anonymizer ]))
                 (postgresql_15.withPackages (ps: [ ]))
                 (postgresql_16.withPackages (ps: [ ]))
                 (postgresql_17.withPackages (ps: [ ]))
                 (postgresql_18.withPackages (ps: [ ]))
+                (postgresql_19.withPackages (ps: [ ]))
               ];
             };
         };
@@ -189,6 +195,15 @@ import ../make-test-python.nix (
             machine.wait_for_unit("postgresql")
             print(machine.succeed("${fc-postgresql} list-versions"))
             check_anonymized_rows(get_player_table_contents())
+
+          with subtest("upgrade 18 -> 19 in one step"):
+            machine.succeed('${fc-postgresql} upgrade --expected anonymized --new-version 19 --stop --upgrade-now --extension-names anonymizer')
+            machine.succeed("stat /srv/postgresql/18/fcio_migrated_to")
+            machine.succeed("stat /srv/postgresql/19/fcio_migrated_from")
+            switch_to(machine, "pg19")
+            machine.wait_for_unit("postgresql")
+            print(machine.succeed("${fc-postgresql} list-versions"))
+            check_anonymized_rows(get_player_table_contents())
         '';
       };
       automatic = {
@@ -229,6 +244,10 @@ import ../make-test-python.nix (
                   flyingcircus.roles.postgresql15.enable = false;
                   flyingcircus.roles.postgresql18.enable = true;
                 };
+                pg19.configuration = {
+                  flyingcircus.roles.postgresql15.enable = false;
+                  flyingcircus.roles.postgresql19.enable = true;
+                };
               };
 
               system.extraDependencies = with pkgs; [
@@ -239,10 +258,11 @@ import ../make-test-python.nix (
                 (postgresql_16.withPackages (ps: with ps; [ anonymizer ]))
                 (postgresql_17.withPackages (ps: with ps; [ anonymizer ]))
                 (postgresql_18.withPackages (ps: with ps; [ anonymizer ]))
+                (postgresql_19.withPackages (ps: with ps; [ anonymizer ]))
                 (postgresql_15.withPackages (ps: [ ]))
                 (postgresql_16.withPackages (ps: [ ]))
                 (postgresql_17.withPackages (ps: [ ]))
-                (postgresql_18.withPackages (ps: [ ]))
+                (postgresql_19.withPackages (ps: [ ]))
               ];
             };
         };
@@ -290,6 +310,15 @@ import ../make-test-python.nix (
             machine.wait_for_unit("postgresql")
             machine.succeed("stat /srv/postgresql/17/fcio_migrated_to")
             machine.succeed("stat /srv/postgresql/18/fcio_migrated_from")
+            print(machine.succeed("${fc-postgresql} list-versions"))
+            check_anonymized_rows(get_player_table_contents())
+
+          with subtest("autoupgrade 18 -> 19"):
+            # move to new role and wait for postgresql to start
+            switch_to(machine, "pg19")
+            machine.wait_for_unit("postgresql")
+            machine.succeed("stat /srv/postgresql/18/fcio_migrated_to")
+            machine.succeed("stat /srv/postgresql/19/fcio_migrated_from")
             print(machine.succeed("${fc-postgresql} list-versions"))
             check_anonymized_rows(get_player_table_contents())
         '';

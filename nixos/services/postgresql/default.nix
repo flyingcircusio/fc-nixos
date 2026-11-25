@@ -16,6 +16,7 @@ let
     "16" = pkgs.postgresql_16;
     "17" = pkgs.postgresql_17;
     "18" = pkgs.postgresql_18;
+    "19" = pkgs.postgresql_19;
   };
 
   listenAddresses = fclib.network.lo.dualstack.addresses ++ fclib.network.srv.dualstack.addresses;
@@ -54,23 +55,6 @@ let
       rbdPool = lib.attrByPath [ "parameters" "rbd_pool" ] null config.flyingcircus.enc;
     in
     if rbdPool == "rbd.ssd" then 1 else 4;
-
-  # using this ugly expression is the only way to get a dynamic path into the
-  # Nix store
-  localConfigPath = /etc/local/postgresql + "/${cfg.majorVersion}";
-
-  legacyConfigFiles =
-    if pathExists localConfigPath then
-      filter (lib.hasSuffix ".conf") (fclib.files localConfigPath)
-    else
-      [ ];
-
-  legacyConfigWarning = ''
-    Plain PostgreSQL configuration found in ${toString localConfigPath}.
-        This does not work properly anymore and must be migrated to NixOS configuration.
-        See ${fclib.roleDocUrl "postgresql"} for details.'';
-
-  localConfig = if legacyConfigFiles != [ ] then { include_dir = "${localConfigPath}"; } else { };
 
   collationVerifierScript = pkgs.writers.writePython3Bin "verify-collations" { } (
     builtins.readFile ./verify-collations.py
@@ -154,9 +138,6 @@ in
 
       in
       {
-
-        warnings = if legacyConfigFiles != [ ] then [ legacyConfigWarning ] else [ ];
-
         systemd.services.postgresql.unitConfig = {
           ConditionPathExists = [
             # There is an upgrade running currently, postgresql must not start now.
@@ -208,37 +189,6 @@ in
           home = lib.mkForce "/srv/postgresql";
         };
 
-        environment.etc."local/postgresql/${cfg.majorVersion}/README.md".text = ''
-          __WARNING__: Putting plain configuration here doesn’t work properly
-          and must not be used anymore. Some options set here will be
-          ignored silently if they are already defined by our platform
-          code.
-        '';
-
-        environment.etc."local/postgresql/README.md".text = ''
-          ${if legacyConfigFiles != [ ] then "**WARNING: " + legacyConfigWarning + "**\n" else ""}
-          PostgreSQL ${cfg.majorVersion} is running on this system.
-
-          You can override platform and PostgreSQL defaults by using the
-          `services.postgresql.settings` option in a custom NixOS module. Place
-          it in `/etc/local/nixos/postgresql.nix`, for example:
-
-          ```nix
-          { config, lib, ... }:
-          {
-            services.postgresql.settings = {
-                log_connections = true;
-                huge_pages = "try";
-                max_connections = lib.mkForce 1000;
-            }
-          }
-          ```
-
-          See the platform documentation for more details:
-
-          ${fclib.roleDocUrl "postgresql"}
-        '';
-
         flyingcircus.infrastructure.preferNoneSchedulerOnSsd = true;
 
         flyingcircus.activationScripts = {
@@ -250,11 +200,6 @@ in
             # keep around required postgres packages for upgrading
             install -d -o postgres /nix/var/nix/gcroots/per-user/postgres
           '';
-        };
-
-        flyingcircus.localConfigDirs.postgresql = {
-          dir = (toString localConfigPath);
-          user = "postgres";
         };
 
         flyingcircus.passwordlessSudoRules = [
@@ -381,8 +326,7 @@ in
             lc_monetary = "en_US.utf8";
             lc_numeric = "en_US.utf8";
             lc_time = "en_US.utf8";
-          }
-          // localConfig;
+          };
 
         };
 

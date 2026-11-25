@@ -191,6 +191,7 @@
   "postgresql_16",
   "postgresql_17",
   "postgresql_18",
+  "postgresql_19",
   "proftpd",
   "prometheus",
   "prosody",

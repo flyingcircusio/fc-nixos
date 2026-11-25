@@ -232,6 +232,12 @@ consult [its release notes](https://github.com/SchedMD/slurm/blob/slurm-26-05-6-
 
 The `postgresql14` role has been removed, as it's end-of-life. Please update to `postgresql15` or newer.
 
+`postgresql19` is now available. Please read the [upstream release notes](https://www.postgresql.org/docs/release/19.0/) for more information.
+
+The option to PostgreSQL via local plain config in `/etc/local/postgresql/<version>/*.conf` has been removed.
+This has been deprecated since fc-nixos 20.09.
+Please use Nix-based structured config using the `services.postgresql.settings` option.
+
 ### Tempo
 
 Tempo was updated from 2.10 to 3.1. Our role has updated its config, however custom configuration needs to be adjusted.
