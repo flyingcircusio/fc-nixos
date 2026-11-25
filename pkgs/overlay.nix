@@ -113,33 +113,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 // {
   pythonPackagesExtensions = super.pythonPackagesExtensions ++ [
     (python-self: python-super: {
-      # Required for vllm
-      httpcore2 = python-self.callPackage ./python/httpcore2 { };
-      httpx2 = python-self.callPackage ./python/httpx2 { };
-      prometheus-fastapi-instrumentator =
-        python-super.prometheus-fastapi-instrumentator.overridePythonAttrs
-          (old: {
-            src = fetchFromGitHub {
-              owner = "trallnag";
-              repo = "prometheus-fastapi-instrumentator";
-              tag = "v8.0.2";
-              hash = "sha256-fTJjAM1jUZXfhjLo9xqlu45LaoqZ330ogOA6x7aByqw=";
-            };
-            nativeCheckInputs = with python-self; [
-              devtools
-              fastapi
-              httpx2
-              pytest-asyncio
-              pytestCheckHook
-              requests
-            ];
-            disabledTests = lib.optionals (lib.versionOlder python-self.fastapi.version "0.137") [
-              # Asserts that instrumentation works with fastapi 0.137+,
-              # fails on nixpkgs with fastapi 0.136.
-              "test_mount_inside_included_router_resolves_path"
-            ];
-          });
-
       # Our own packages / package versions
       pytest_patterns = python-self.callPackage ./python/pytest-patterns { };
       pymongo3 = python-super.pymongo.overridePythonAttrs (old: {
