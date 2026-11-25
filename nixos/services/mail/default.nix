@@ -157,6 +157,12 @@ in
                 Change webmailHost or remove imprint
               '';
             }
+            {
+              assertion = config.mailserver.stateVersion >= 3;
+              message = ''
+                The state version of the mailserver role must be at least 3. When this is not the case, you missed a NixOS version in the upgrade path.
+              '';
+            }
           ];
 
           environment = {
@@ -245,18 +251,22 @@ in
               if pathExists svc.stateVersionFile then
                 lib.toInt (lib.fileContents svc.stateVersionFile)
               else
-                (if lib.versionOlder config.system.stateVersion "25.11" then 1 else 3);
+                (
+                  if lib.versionOlder config.system.stateVersion "25.11" then
+                    1
+                  else
+                    (if lib.versionOlder config.system.stateVersion "26.11" then 3 else 5)
+                );
             inherit domains;
             fqdn = role.mailHost;
             accounts = fclib.jsonFromFile "/etc/local/mail/users.json" "{}";
             aliases = fclib.jsonFromFile "/etc/local/mail/local_valiases.json" "{}";
             x509.useACMEHost = role.mailHost;
-            enableImapSsl = true;
-            enableManageSieve = true;
-            enableSubmission = true;
-            # FC-38677 - we have a properly configured local resolver in our
-            # platform, so a bland unconfigured kresd is counterproductive.
-            localDnsResolver = false;
+            listeners = {
+              imaps.enable = true;
+              submission.enable = true;
+              manageSieve.enable = true;
+            };
             lmtpSaveToDetailMailbox = "no";
             mailboxes = {
               "Trash" = {
@@ -289,10 +299,6 @@ in
           };
 
           flyingcircus.agent.userscan-ignore-users = [ "vmail" ];
-
-          # See https://gitlab.com/simple-nixos-mailserver/nixos-mailserver/-/issues/289
-          systemd.services.postfix.restartTriggers = [ config.mailserver.localDnsResolver ];
-          systemd.services.rspamd.restartTriggers = [ config.mailserver.localDnsResolver ];
 
           services.dovecot2.settings = {
             "passdb imperative" = [
@@ -454,25 +460,28 @@ in
             "f /etc/local/mail/users.json 0664 postfix service - {}"
           ];
 
-          systemd.services.mailserver-update-stateversion = lib.mkIf (config.mailserver.stateVersion < 3) {
-            before = [ "dovecot.service" ];
-            requiredBy = [ "dovecot.service" ];
-            wantedBy = [ "dovecot.service" ];
+          systemd.services.mailserver-update-stateversion = lib.mkIf (config.mailserver.stateVersion < 5) {
+            after = [ "dovecot.service" ];
+            wants = [ "dovecot.service" ];
             path = with pkgs; [
               fc.agent
               python3
               sudo
+              dovecot
             ];
-            enableStrictShellChecks = true;
-            script = ''
-              sudo -u vmail python ${./update-mailserver-to-stateversion-3.py} --layout ${
-                if config.mailserver.useFsLayout then "folder" else "default"
-              } ${config.mailserver.mailDirectory}
-              echo 3 > ${svc.stateVersionFile}
-            '';
             serviceConfig = {
               Type = "oneshot";
               RemainAfterExit = true;
+              ExecStart = lib.getExe (
+                pkgs.writeShellApplication {
+                  name = "mailserver-update-stateversion";
+                  text = lib.optionalString (config.mailserver.stateVersion < 5) ''
+                    sudo -u vmail python ${./update-mailserver-to-stateversion-5.py} /var/sieve
+                    echo 5 > ${svc.stateVersionFile}
+                    systemctl restart dovecot
+                  '';
+                }
+              );
             };
           };
         }

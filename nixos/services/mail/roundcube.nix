@@ -54,6 +54,8 @@ lib.mkMerge [
       enable = true;
       extraConfig = ''
         $config['archive_type'] = 'year';
+        $config['managesieve_host'] = 'ssl://${role.mailHost}:4190';
+        $config['managesieve_usetls'] = false;
         $config['managesieve_vacation'] = 1;
         $config['mime_types'] = '${pkgs.mailcap}/etc/mime.types';
         $config['password_chpasswd_cmd'] = '/run/wrappers/bin/sudo -u dovecot2 ${chpasswdPkg}/bin/roundcube-chpasswd --passwd-file ${role.passwdFile}';

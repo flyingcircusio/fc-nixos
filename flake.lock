@@ -74,45 +74,22 @@
           "nixos-mailserver",
           "flake-compat"
         ],
-        "gitignore": "gitignore",
         "nixpkgs": [
           "nixos-mailserver",
           "nixpkgs"
         ]
       },
       "locked": {
-        "lastModified": 1775585728,
-        "narHash": "sha256-8Psjt+TWvE4thRKktJsXfR6PA/fWWsZ04DVaY6PUhr4=",
+        "lastModified": 1787424939,
+        "narHash": "sha256-O2tBn84NNuHrnqNVxx/XqsXwfYvS1YwBh+7CBnbCYsk=",
         "owner": "cachix",
         "repo": "git-hooks.nix",
-        "rev": "580633fa3fe5fc0379905986543fd7495481913d",
+        "rev": "809414f0cdadf82cf11b06c2b29ba9b3168b3297",
         "type": "github"
       },
       "original": {
         "owner": "cachix",
         "repo": "git-hooks.nix",
-        "type": "github"
-      }
-    },
-    "gitignore": {
-      "inputs": {
-        "nixpkgs": [
-          "nixos-mailserver",
-          "git-hooks",
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1709087332,
-        "narHash": "sha256-HG2cCnktfHsKV0s4XW83gU3F57gaTljL9KNSuG6bnQs=",
-        "owner": "hercules-ci",
-        "repo": "gitignore.nix",
-        "rev": "637db329424fd7e46cf4185293b9cc8c88c95394",
-        "type": "github"
-      },
-      "original": {
-        "owner": "hercules-ci",
-        "repo": "gitignore.nix",
         "type": "github"
       }
     },
@@ -148,17 +125,17 @@
       },
       "locked": {
         "host": "gitlab.flyingcircus.io",
-        "lastModified": 1777372307,
-        "narHash": "sha256-sod7JTzpLPEcfHEyBT+r2PKh2Uvw0Zc0d1s5RFUw+cU=",
+        "lastModified": 1795520217,
+        "narHash": "sha256-d4Gx8KwDi9toYH49R1rCxMdWZbFxVRv7cJee3GDu+6k=",
         "owner": "flyingcircus",
         "repo": "nixos-mailserver",
-        "rev": "07bac55316468a372e120bedae9a38c5f8715dd8",
+        "rev": "1111320e6cd372dff70893611c28e4701932044b",
         "type": "gitlab"
       },
       "original": {
         "host": "gitlab.flyingcircus.io",
         "owner": "flyingcircus",
-        "ref": "nixos-26.05",
+        "ref": "nixos-26.11",
         "repo": "nixos-mailserver",
         "type": "gitlab"
       }

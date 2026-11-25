@@ -69,7 +69,7 @@ import ../make-test-python.nix (
                 certificateFile = "/var/keys/certs/mail-cert.pem";
                 privateKeyFile = "/var/keys/certs/mail-key.pem";
               };
-              mailserver.loginAccounts = lib.mkForce {
+              mailserver.accounts = lib.mkForce {
                 "user1@example.local" = {
                   # User1User1
                   hashedPassword = "$5$ld7g3N1MtrZl$PisX9yQsemPEwVNUqQVToe07MaP9qDesXMh5mAwWTR6";
