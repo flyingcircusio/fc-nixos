@@ -91,9 +91,6 @@ import ../make-test-python.nix (
         with subtest("user sensuclient should be able to connect to monitoring DB via socket"):
           machine.succeed("sudo -u sensuclient psql -U fcio_monitoring fcio_monitoring -l")
 
-        with subtest("service user should be able to write to local config dir"):
-          machine.succeed('sudo -u postgres touch /etc/local/postgresql/${version}/test')
-
         with subtest("creating supported extensions should work"):
           machine.succeed('${psql} employees -c "CREATE EXTENSION pg_stat_statements;"')
           machine.succeed('${psql} employees -c "CREATE EXTENSION rum;"')

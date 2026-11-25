@@ -37,13 +37,6 @@ in the PostgreSQL documentation for more information.
 Managed PostgreSQL instances already have a production-grade configuration with
 reasonable sized memory parameters, for example, `shared_buffers` and `work_mem`.
 
-:::{warning}
-Putting custom configuration in {file}`/etc/local/postgresql/{VERSION}/*.conf`
-doesn't work properly starting with NixOS 20.09 and should not be used anymore.
-Some options from there will be ignored silently if they are already defined
-by our platform code. Use NixOS-based custom config as described below instead.
-:::
-
 You can override platform and PostgreSQL defaults by using the
 {code}`services.postgresql.settings` option in a custom NixOS module.
 Place it in {file}`/etc/local/nixos/postgresql.nix`, for example:
