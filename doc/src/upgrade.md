@@ -16,9 +16,20 @@ Contact our [support](/platform/index.html#support) for upgrade assistance.
 ## Overview
 
 - New roles:
+  - `postgresql19`
 - Removed roles:
-- Roles affected by significant breaking changes:
+  - {ref}`postgresql14 <nixos-upgrade-postgresql>`
 - Removed significant packages:
+  - `awscli`
+  - `calibre`
+  - `k3s_1_33`
+  - `openssl_1_1`
+  - `openssl_3_6`
+  - `openssl_4_0`
+  - `php72`
+  - `php73`
+  - `postgresql_14`
+  - `varnish`
 
 ## Why upgrade? Security
 
@@ -200,12 +211,11 @@ and uses it only when the whole filesystem metadata storage was migrated to the 
 New installations also use the `gitlab-container-registry` system user for the GitLab container registry
 instead of the `docker-registry` user. This behavior can be modified with the `services.gitlab.registry.user` option.
 
-
 (nixos-upgrade-k3s)=
 
 ### k3s
 
-The default `k3s` package has also been bumped to 1.34. Existing clusters may
+The default `k3s` package has been bumped to 1.34. Existing clusters may
 need to be updated to this version before upgrading cluster VM's to the 26.11
 platform. See the role documentation for {ref}`cluster version updates
 <nixos-k3s-update-versions>`.
@@ -214,6 +224,9 @@ platform. See the role documentation for {ref}`cluster version updates
 
 The support for Varnish Cache has been removed.
 Please migrate to Vinyl Cache 9.
+Configuring Vinyl Cache 9 via `/etc/local/varnish/default.vcl` is still supported throughout this release.
+
+Vinyl Cache has been updated to 9.1. This includes some rare breaking changes, see the [upstream upgrade guide](https://vinyl-cache.org/docs/9.1/whats-new/upgrading-9.1.html) for more information.
 
 (nixos-upgrade-slurm)=
 
@@ -258,6 +271,120 @@ Read the section for monolithic deployments in the [migration notes](https://gra
 
 ## Known issues
 
-None.
+- The `ai-model-server` role currently doesn't work, as VLLM with CUDA support is currently broken in Nixpkgs
 
 ## Significant package updates
+
+* `automake`: 1.18.1 -> 1.19
+* `awscli` removed, use `awscli2`
+* `awscli2`: 2.34.24 -> 2.36.31
+* `bash`: 5.3p9 -> 5.3p20
+* `bind`: 9.20.30 -> 9.20.31
+* `calibre` removed
+* `ceph`: 14.2.22 -> 16.2.15
+* `chromedriver`: 158.0.8127.36 -> 158.0.8127.88
+* `chromium`: 158.0.8127.36 -> 158.0.8127.88
+* `cifs-utils`: 7.5 -> 7.9
+* `clamav`: 1.4.6 -> 1.5.5
+* `cmake`: 4.1.6 -> 4.5.0
+* `containerd`: 2.3.3 -> 2.4.1
+* `coreutils`: 9.11 -> 9.12
+* `coturn`: 4.16.0 -> 4.17.2
+* `crowdsec`: 1.8.1 -> 1.8.2
+* `discourse`: 2026.9.2 -> 2026.10.2
+* `docker-compose`: 5.6.1 -> 5.7.1
+* `erlang`: 28.5.0.8 -> 28.5.0.9
+* `fetchmail`: 6.6.3 -> 6.6.7
+* `ffmpeg`: 8.1.3 -> 9.0.2
+* `file`: 5.47 -> 5.48
+* `firefox`: 160.0.1 -> 161.0
+* `gcc`: 15.3.0 -> 16.2.0
+* `git`: 2.54.0 -> 2.56.1
+* `glibc`: 2.42 -> 2.44
+* `go`: 1.26.10 -> 1.27.4
+* `grafana`: 13.0.13 -> 13.3.1
+* `grub2`: 2.12.1 -> 2.14
+* `haproxy`: 3.3.17 -> 3.4.8
+* `imagemagick`: 7.1.2-35 -> 7.1.2-36
+* `iperf3`: 3.20 -> 3.21
+* `jetbrains.jdk`: 25.0.2-b329.72 -> 25.0.5.1-b635.102
+* `jetty`: 12.1.10 -> 12.1.14
+* `jicofo`: 1.0-1153 -> 1.0-1205
+* `jitsi-meet`: 1.0.8792 -> 1.0.9365
+* `jitsi-videobridge`: 2.3-249-g9a2123ad4 -> 2.3-358-gf8efaa72c
+* `k3s_1_33` removed
+* `k3s_1_37`: initialized at 1.37.2+k3s1 (new)
+* `k3s`: 1.35.10+k3s1 -> 1.36.6+k3s1
+* `kubernetes-helm`: 3.20.2 -> 4.3.2
+* `libjpeg`: 3.1.4 -> 3.2.1
+* `libmodsecurity`: 3.0.14 -> 3.0.17
+* `libressl`: 4.2.3 -> 4.4.1
+* `linuxKernelGPU`: 6.18.64 -> 6.18.65
+* `linuxKernelStable`: 6.18.64 -> 6.18.65
+* `linuxKernelVerify`: 6.18.64 -> 6.18.65
+* `mastodon`: 4.6.12 -> 4.7.6
+* `mstflint`: 4.36.0-1 -> 4.37.0-1
+* `nfs-utils`: 2.9.1 -> 3.2.1
+* `nginx`: 1.30.7 -> 1.30.8
+* `nginxMainline`: 1.31.9 -> 1.31.10
+* `nginxStable`: 1.30.7 -> 1.30.8
+* `nix`: 2.34.9 -> 2.35.6
+* `openssl_1_1` removed
+* `openssl_3_6` removed
+* `openssl_4_0` removed
+* `openssl_4_1`: initialized at 4.1.0 (new)
+* `openssl_legacy` removed
+* `openssl`: 3.6.5 -> 3.5.9
+* `pcre` removed
+* `pdns`: 5.0.8 -> 5.1.5
+* `percona-server_8_4`: 8.4.10-10 -> 8.4.11-11
+* `percona-server`: 8.4.10-10 -> 8.4.11-11
+* `percona-xtrabackup_8_4`: 8.4.0-4 -> 8.4.0-7
+* `php72` removed
+* `php73` removed
+* `phpPackages.composer`: 2.10.3 -> 2.11.3
+* `podman`: 5.8.9 -> 6.1.4
+* `poetry`: 2.4.1 -> 2.5.2
+* `polkit`: 127 -> 128
+* `postfix`: 3.11.7 -> 3.11.8
+* `postgresql_14` removed
+* `postgresql_19`: initialized at 19.0 (new)
+* `postgresql`: 17.12 -> 18.7
+* `postgresql14Packages.postgis` removed
+* `postgresql14Packages.temporal_tables` removed
+* `prometheus`: 3.12.0 -> 3.16.0
+* `prosody`: 13.0.6 -> 13.0.7
+* `python3`: 3.13.18 -> 3.14.10
+* `python3Packages.boto3`: 1.42.31 -> 1.43.79
+* `python3Packages.click`: 8.3.1 -> 8.5.1
+* `python3Packages.lxml`: 6.0.2 -> 6.1.3
+* `python3Packages.pip`: 25.3 -> 26.2.2
+* `python3Packages.requests`: 2.33.1 -> 2.34.2
+* `python3Packages.rich-rst`: 1.3.2 -> 2.1.0
+* `python3Packages.rich`: 14.3.3 -> 15.0.0
+* `python3Packages.structlog`: 25.5.0 -> 26.1.0
+* `qemu-ceph-nautilus` removed
+* `qemu-ceph-pacific`: 10.2.4 -> 11.1.2
+* `rabbitmq-server`: 4.2.9 -> 4.3.1
+* `re2c`: 4.5.1 -> 4.6
+* `redis`: 8.8.4 -> 8.10.3
+* `roundcube`: 1.7.6 -> 1.7.7
+* `ruby`: 3.4.12 -> 3.4.13
+* `runc`: 1.4.3 -> 1.5.3
+* `screen`: 5.0.1 -> 5.0.2
+* `slurm`: 25-11-8-1 -> 26-05-6-1
+* `sysstat`: 12.7.7 -> 12.8.1
+* `systemd`: 260.5 -> 262.2
+* `tcpdump`: 4.99.6 -> 4.99.7
+* `telegraf`: 1.38.4 -> 1.40.4
+* `tmux`: 3.7b -> 3.8
+* `tomcat10`: 10.1.55 -> 10.1.61
+* `tomcat9`: 9.0.123 -> 9.0.124
+* `unifi`: 10.2.105 -> 10.6.111
+* `uv`: 0.11.21 -> 0.13.9
+* `varnish` removed
+* `vinyl-cache_9`: 9.0.2 -> 9.1.0
+* `vinyl-cache`: 9.0.2 -> 9.1.0
+* `xfsprogs`: 6.19.0 -> 7.2.1
+* `zlib`: 1.3.2 -> 1.4
+* `zsh`: 5.9.1 -> 5.9.2
