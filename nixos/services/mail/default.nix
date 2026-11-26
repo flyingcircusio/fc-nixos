@@ -208,7 +208,7 @@ in
                 command = "${plug}/check_smtp -H ${role.mailHost} -s -F ${fqdn} " + "-w 5 -c 30";
               };
               postfix_submission = {
-                enable = config.mailserver.enableSubmission;
+                enable = config.mailserver.listeners.submission.enable;
                 notification = "Postfix listening on submission port 587";
                 command = "${plug}/check_smtp -H ${role.mailHost} -p 587 -S " + "-F ${fqdn} -w 5 -c 30";
               };
