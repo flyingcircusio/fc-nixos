@@ -191,9 +191,9 @@
     "version": "1.12.33"
   },
   "erlang": {
-    "name": "erlang-28.5.0.8",
+    "name": "erlang-28.5.0.9",
     "pname": "erlang",
-    "version": "28.5.0.8"
+    "version": "28.5.0.9"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -346,9 +346,9 @@
     "version": "21.0.13.1+2"
   },
   "jetbrains.jdk": {
-    "name": "jetbrains-jdk-jcef-25.0.3-b508.4",
+    "name": "jetbrains-jdk-jcef-25.0.5.1-b635.102",
     "pname": "jetbrains-jdk-jcef",
-    "version": "25.0.3-b508.4"
+    "version": "25.0.5.1-b635.102"
   },
   "jetty": {
     "name": "jetty-12.1.14",
@@ -737,9 +737,9 @@
     "version": "8.5.13"
   },
   "phpPackages.composer": {
-    "name": "composer-2.11.2",
+    "name": "composer-2.11.3",
     "pname": "composer",
-    "version": "2.11.2"
+    "version": "2.11.3"
   },
   "pkg-config": {
     "name": "pkg-config-wrapper-0.29.2",
