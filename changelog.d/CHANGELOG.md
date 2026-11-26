@@ -1,3 +1,11 @@
+# Release 2026_050
+
+## NixOS XX.XX platform
+
+- Upgrade skvaider with a wide number of stability and monitoring fixes. (PL-135551)
+
+
+
 # Release 2026_049
 
 ## Impact
