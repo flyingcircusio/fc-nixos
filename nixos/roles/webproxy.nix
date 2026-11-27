@@ -11,8 +11,19 @@ let
 
   cacheMemory = (fclib.currentAvailableMemory 256) / 100 * cfg.mallocMemoryPercentage;
 
+  # Configuring Varnish/Vinyl follows multiple steps where the first non-null result will be used:
+  # 1. structured config via the module system (see service definition)
+  # 2. use the config from /etc/local/vinyl-cache/default.vcl
+  # 3. use the contents NixOS configuration environments.etc."local/vinyl-cache/default.vcl"
+  #    This is required in tests, as the file hasn't been written during evaluation
+  # There is a fallback vinyl-cache -> varnish in paths for the migration path.
+  # Also if the package is still varnish, /etc/local/varnish instead of /etc/local/vinyl-cached gets used.
+  localVarnishCfg = fclib.configFromFile /etc/local/varnish/default.vcl null;
+  varnishFallback = config.environment.etc."local/varnish/default.vcl".text or null;
+  resolvedVarnish = if localVarnishCfg != null then localVarnishCfg else varnishFallback;
+
   localVinylCfg = fclib.configFromFile /etc/local/vinyl-cache/default.vcl null;
-  vinylFallback = config.environment.etc."local/vinyl-cache/default.vcl".text or null;
+  vinylFallback = config.environment.etc."local/vinyl-cache/default.vcl".text or resolvedVarnish;
   resolvedVinyl = if localVinylCfg != null then localVinylCfg else vinylFallback;
 
   fallbackCfg = resolvedVinyl;
@@ -41,6 +52,13 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    warnings =
+      lib.optionals (localVarnishCfg != null && localVinylCfg == null) [
+        "Vinyl Cache is still configured using /etc/local/varnish/default.vcl. Please migrate this files' contents to /etc/local/vinyl-cache/default.vcl"
+      ]
+      ++ lib.optionals (localVarnishCfg != null && localVinylCfg != null) [
+        "Conflicting configuration files detected. Inactive file /etc/local/varnish/default.vcl is superseded by /etc/local/vinyl-cache/default.vcl. Please remove the inactive file."
+      ];
     environment.etc = {
       "local/vinyl-cache/README.txt".text =
         let
@@ -91,6 +109,7 @@ in
     };
 
     systemd.tmpfiles.rules = [
+      "d /etc/local/varnish 2775 vinyl-cache service"
       "d /etc/local/vinyl-cache 2775 vinyl-cache service"
     ];
 
