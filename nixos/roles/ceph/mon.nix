@@ -138,6 +138,11 @@ in
             <FCIO Cluster #sha512_of_location/rg>
           '';
         };
+        deviceMonitoring = lib.mkOption {
+          description = "Enable device-health data scraping.";
+          type = lib.types.bool;
+          default = true;
+        };
       };
     };
   };
@@ -365,6 +370,16 @@ in
               else
                 ''
                   ${cephPkgs.ceph}/bin/ceph telemetry off
+                ''
+            )
+            + (
+              if role.mgr.deviceMonitoring then
+                ''
+                  ${cephPkgs.ceph}/bin/ceph device monitoring on
+                ''
+              else
+                ''
+                  ${cephPkgs.ceph}/bin/ceph device monitoring off
                 ''
             );
 

@@ -523,7 +523,8 @@ import ./make-test-python.nix (
           host1.sleep(5)
           assert_clean_cluster(host2, 3, (4, 3), 3, 449)
           # then rebuild
-          host1.succeed('echo -e "adminphrase\n" | setsid -w fc-ceph osd rebuild --no-encrypt --strict-safety-check 3 > /dev/stderr')
+          host1.succeed('echo -e "adminphrase\n" | setsid -w fc-ceph osd rebuild --discard --no-encrypt --strict-safety-check 3 | tee rebuildlog > /dev/stderr')
+          host1.succeed('grep blkdiscard ./rebuildlog')
           # and set the osds in again
           host1.execute('ceph osd in $(ceph osd ls-tree host1)')
           show(host1, "lsblk")

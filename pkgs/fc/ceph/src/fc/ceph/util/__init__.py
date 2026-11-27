@@ -6,7 +6,7 @@ import os
 import shlex
 import subprocess
 import time
-from subprocess import PIPE
+from subprocess import PIPE, CalledProcessError
 from typing import Optional
 
 from rich.console import Console
@@ -128,6 +128,19 @@ class Runner(object):
                     raise
 
         return callable
+
+    # tool-specific overrides providing special error handling
+
+    def blkdiscard(self, *args, **kw):
+        try:
+            self.__getattr__("blkdiscard")(*args, **kw)
+        except CalledProcessError as e:
+            if "ioctl failed: " in e.stderr.decode("ascii"):
+                print(
+                    "blkdiscard failed with Remote I/O error. Assuming disk (firmware) oddities, continuing."
+                )
+            else:
+                raise
 
 
 class AsyncRunner(object):

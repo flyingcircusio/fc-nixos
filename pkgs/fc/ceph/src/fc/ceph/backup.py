@@ -49,7 +49,12 @@ class BackyVolume(AutomountActivationMixin):
     ):
         # underlay Mdraid hopefully always self-assembles, no need to keep an
         # instance-wide reference after successful creation
-        raid = MdraidDevice.create(self.name, blockdevices)
+        raid = MdraidDevice.create(
+            self.name,
+            blockdevices,
+            # discarding initially is not needed when running a discard-aware file system on top
+            discard=False,
+        )
         self.lv = GenericLogicalVolume.create(
             self.name, vgname, raid, encrypt, size="100%vg"
         )
