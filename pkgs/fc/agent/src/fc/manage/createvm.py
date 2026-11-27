@@ -105,37 +105,6 @@ class Disk(object):
         self.size = size
         self.nodename = self.node.name
         self.ceph_id = socket.gethostname()
-        self.rootvol = "{}/{}.root".format(self.pool, self.nodename)
-        self.device = "/dev/rbd/{}".format(self.rootvol)
-        self.rootpart = "/dev/rbd/{}-part1".format(self.rootvol)
-
-    def partition(self):
-        cmd(
-            "sgdisk {} -o".format(self.device),
-            ignore_error=lambda e: "completed successfully" in e.output,
-        )
-        cmd(
-            "sgdisk {} -a 8192 -n 1:8192:0 -c 1:root -t 1:8300".format(
-                self.device
-            )
-        )
-        cmd(
-            "sgdisk {} -n 2:2048:+1M -c 2:gptbios -t 2:EF02".format(self.device)
-        )
-
-    def apply(self):
-        def format(s):
-            return s.format(**self.__dict__)
-
-        cmd(format('rbd --id "{ceph_id}" --size {size} create "{rootvol}"'))
-        cmd(format('rbd-locktool -l "{rootvol}"'))
-        cmd(format('rbd --id "{ceph_id}" map "{rootvol}"'))
-        self.partition()
-        while not os.path.exists(self.rootpart):
-            time.sleep(1)
-        cmd(format("mkfs -q -m 1 -t ext4 -L root {rootpart}"))
-        cmd(format("tune2fs -e remount-ro {rootpart}"))
-        cmd(format('rbd unmap "/dev/rbd/{rootvol}"'))
 
 
 def main():

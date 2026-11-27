@@ -26,11 +26,13 @@ def fake_directory():
 
 
 @pytest.fixture
-def mock_rbd(monkeypatch):
-    mock_rbd = mock.MagicMock()
-    monkeypatch.setattr("fc.ceph.api.cluster.run.json.rbd", mock_rbd)
-    monkeypatch.setattr("fc.ceph.api.cluster.run.rbd", mock_rbd)
-    return mock_rbd
+def mock_run(monkeypatch):
+    mock_run = mock.MagicMock()
+    monkeypatch.setattr("fc.ceph.api.cluster.run.json.rbd", mock_run)
+    monkeypatch.setattr("fc.ceph.api.cluster.run.rbd", mock_run)
+    monkeypatch.setattr("fc.ceph.api.cluster.run.json.rados", mock_run)
+    monkeypatch.setattr("fc.ceph.api.cluster.run.rados", mock_run)
+    return mock_run
 
 
 @pytest.fixture
@@ -43,7 +45,7 @@ def pools(cluster, monkeypatch):
     monkeypatch.setattr(
         fc.ceph.api.pools.Pools,
         "names",
-        lambda self: set(["rbd.hdd", "rbd.ssd"]),
+        lambda self: set(["rbd.hdd", "rbd.ssd", "fcio"]),
     )
     images_hdd = {}
     images_ssd = {}
@@ -56,21 +58,31 @@ def pools(cluster, monkeypatch):
         )
         images["{}.swap".format(name)] = RBDImage("{}.swap".format(name), 100)
         images["{}.tmp".format(name)] = RBDImage("{}.tmp".format(name), 100)
+        images["{}.cidata".format(name)] = RBDImage(
+            "{}.cidata".format(name), 100
+        )
     monkeypatch.setattr(
         fc.ceph.api.pools.Pool,
         "load",
-        lambda self: images_hdd if self.name == "rbd.hdd" else images_ssd,
+        lambda self: ({"rbd.hdd": images_hdd, "rbd.ssd": images_ssd}).get(
+            self.name, {}
+        ),
+    )
+    monkeypatch.setattr(
+        fc.ceph.api.pools.RadosObjectPool,
+        "object_list",
+        lambda self, _namespace: [f"node0{i}" for i in range(5)],
     )
     return fc.ceph.api.pools.Pools(cluster)
 
 
 def test_node_deletion(
-    fake_directory, cluster, pools, maintenance_manager, mock_rbd
+    fake_directory, cluster, pools, maintenance_manager, mock_run
 ):
     v = maintenance_manager.VolumeDeletions(fake_directory, cluster)
     v.ensure()
 
-    assert mock_rbd.call_args_list == [
+    assert mock_run.call_args_list == [
         # hard
         mock.call(
             "-c",
@@ -82,6 +94,17 @@ def test_node_deletion(
         mock.call("-c", "/etc/ceph/ceph.conf", "rm", "rbd.hdd/node03.root"),
         mock.call("-c", "/etc/ceph/ceph.conf", "rm", "rbd.hdd/node03.swap"),
         mock.call("-c", "/etc/ceph/ceph.conf", "rm", "rbd.hdd/node03.tmp"),
+        mock.call("-c", "/etc/ceph/ceph.conf", "rm", "rbd.hdd/node03.cidata"),
+        mock.call(
+            "-c",
+            "/etc/ceph/ceph.conf",
+            "rm",
+            "-p",
+            "fcio",
+            "-N",
+            "node",
+            "node03",
+        ),
         # purge
         mock.call(
             "-c",
@@ -93,4 +116,15 @@ def test_node_deletion(
         mock.call("-c", "/etc/ceph/ceph.conf", "rm", "rbd.ssd/node04.root"),
         mock.call("-c", "/etc/ceph/ceph.conf", "rm", "rbd.ssd/node04.swap"),
         mock.call("-c", "/etc/ceph/ceph.conf", "rm", "rbd.ssd/node04.tmp"),
+        mock.call("-c", "/etc/ceph/ceph.conf", "rm", "rbd.ssd/node04.cidata"),
+        mock.call(
+            "-c",
+            "/etc/ceph/ceph.conf",
+            "rm",
+            "-p",
+            "fcio",
+            "-N",
+            "node",
+            "node04",
+        ),
     ]

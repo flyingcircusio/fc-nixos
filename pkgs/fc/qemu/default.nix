@@ -167,6 +167,7 @@ py.buildPythonPackage (finalAttrs: {
     cp -Pr $src/share $out/share
     mkdir $testdata
     cp -r $src/tests/testdata/. $testdata || true  # fallback for previous revisions not providing testdata
+    cp -r $src/batou/components/tests/fakedirectory.py $testdata || true  # fallback for previous revisions not providing testdata
   '';
 
   nativeCheckInputs = finalAttrs.passthru.nativeCheckInputs;
