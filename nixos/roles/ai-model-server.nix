@@ -11,6 +11,16 @@ let
   fclib = config.fclib;
   cfg = config.flyingcircus.roles.ai-model-server;
 
+  # The maintenance hooks run on the machine itself, so a wildcard bind
+  # address has to be replaced by the loopback address (PL-135777).
+  skvaiderInferenceHost = cfg.skvaider-inference.settings.server.host;
+  skvaiderMaintenanceHost =
+    if skvaiderInferenceHost == "0.0.0.0" || skvaiderInferenceHost == "::" then
+      "127.0.0.1"
+    else
+      skvaiderInferenceHost;
+  skvaiderMaintenanceUrl = "http://${skvaiderMaintenanceHost}:${toString cfg.skvaider-inference.settings.server.port}";
+
 in
 {
   options = {
@@ -319,6 +329,21 @@ in
           copytruncate = true;
         };
 
+      }
+
+      {
+        # Move the models away before the machine reboots or updates and let
+        # the proxy place them here again afterwards (PL-135777). The client
+        # waits for the drain and only then lets the maintenance continue; if
+        # the models cannot be moved (not enough capacity elsewhere), it
+        # exits with EXIT_TEMPFAIL and the agent retries later. The client
+        # comes from pkgs.fc.skvaider, so client and server stay in sync.
+        flyingcircus.agent.maintenance = lib.mkIf cfg.skvaider-inference.enable {
+          skvaider-model-drain = {
+            enter = "${lib.getExe' pkgs.fc.skvaider "skvaider-maintenance"} enter --url ${skvaiderMaintenanceUrl} --wait ${toString config.flyingcircus.agent.maintenancePreparationSeconds}";
+            leave = "${lib.getExe' pkgs.fc.skvaider "skvaider-maintenance"} leave --url ${skvaiderMaintenanceUrl}";
+          };
+        };
       }
     ]
   );
