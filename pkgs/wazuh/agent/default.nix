@@ -34,7 +34,7 @@
 }:
 stdenv.mkDerivation (finalAttrs: {
   pname = "wazuh-agent";
-  version = "4.14.5";
+  version = "4.14.10";
 
   enableParallelBuilding = true;
 
@@ -42,7 +42,7 @@ stdenv.mkDerivation (finalAttrs: {
     owner = "wazuh";
     repo = "wazuh";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-Vtld3DCp3OEFcevydZC6gZkL2ngbPsasBiyzBc5VRDY=";
+    hash = "sha256-ACilbpsT4TTT0qm2HQ07Ww2FT7pV39Wh7gZkQIaTQh4=";
   };
 
   dontConfigure = true;
@@ -99,9 +99,8 @@ stdenv.mkDerivation (finalAttrs: {
     ./02-libbpf-bootstrap.patch
     ./03-cstdint-include.patch
     ./04-snap-onerror-signature.patch
-    ./05-bpf-helpers-libbpf-1_7.patch
-    ./06-privsep-systemd-user.patch
-    ./07-wazuh-home-env.patch
+    ./05-privsep-systemd-user.patch
+    ./06-wazuh-home-env.patch
   ];
 
   postUnpack =
@@ -203,7 +202,7 @@ stdenv.mkDerivation (finalAttrs: {
   '';
 
   passthru = {
-    dependencyVersion = "51";
+    dependencyVersion = "55";
 
     externalDependencies = map (
       dep:
