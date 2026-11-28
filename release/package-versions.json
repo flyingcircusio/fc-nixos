@@ -40,9 +40,9 @@
     "version": "5.3p9"
   },
   "bind": {
-    "name": "bind-9.20.30",
+    "name": "bind-9.20.31",
     "pname": "bind",
-    "version": "9.20.30"
+    "version": "9.20.31"
   },
   "binutils": {
     "name": "binutils-wrapper-2.46",
@@ -70,9 +70,9 @@
     "version": "9.14.0"
   },
   "ceph": {
-    "name": "ceph-14.2.22",
+    "name": "ceph-16.2.15",
     "pname": "ceph",
-    "version": "14.2.22"
+    "version": "16.2.15"
   },
   "ceph-pacific.ceph": {
     "name": "ceph-16.2.15",
@@ -171,9 +171,9 @@
     "version": "5.3.28"
   },
   "discourse": {
-    "name": "discourse-2026.9.2",
+    "name": "discourse-2026.10.2",
     "pname": "discourse",
-    "version": "2026.9.2"
+    "version": "2026.10.2"
   },
   "dnsmasq": {
     "name": "dnsmasq-2.93",
@@ -495,19 +495,19 @@
     "version": "0.2.5"
   },
   "linuxKernelGPU": {
-    "name": "linux-6.18.64",
+    "name": "linux-6.18.65",
     "pname": "linux",
-    "version": "6.18.64"
+    "version": "6.18.65"
   },
   "linuxKernelStable": {
-    "name": "linux-6.18.64",
+    "name": "linux-6.18.65",
     "pname": "linux",
-    "version": "6.18.64"
+    "version": "6.18.65"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.18.64",
+    "name": "linux-6.18.65",
     "pname": "linux",
-    "version": "6.18.64"
+    "version": "6.18.65"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -585,19 +585,19 @@
     "version": "2.9.1"
   },
   "nginx": {
-    "name": "nginx-1.30.7",
+    "name": "nginx-1.30.8",
     "pname": "nginx",
-    "version": "1.30.7"
+    "version": "1.30.8"
   },
   "nginxMainline": {
-    "name": "nginx-1.31.9",
+    "name": "nginx-1.31.10",
     "pname": "nginx",
-    "version": "1.31.9"
+    "version": "1.31.10"
   },
   "nginxStable": {
-    "name": "nginx-1.30.7",
+    "name": "nginx-1.30.8",
     "pname": "nginx",
-    "version": "1.30.7"
+    "version": "1.30.8"
   },
   "nix": {
     "name": "nix-2.34.9",
@@ -802,9 +802,9 @@
     "version": "127"
   },
   "postfix": {
-    "name": "postfix-3.11.7",
+    "name": "postfix-3.11.8",
     "pname": "postfix",
-    "version": "3.11.7"
+    "version": "3.11.8"
   },
   "postgresql": {
     "name": "postgresql-17.12",
@@ -995,11 +995,6 @@
     "name": "python3.13-urllib3-2.7.0",
     "pname": "urllib3",
     "version": "2.7.0"
-  },
-  "qemu-ceph-nautilus": {
-    "name": "qemu-6.0.0",
-    "pname": "qemu",
-    "version": "6.0.0"
   },
   "qemu-ceph-pacific": {
     "name": "qemu-10.2.4",
