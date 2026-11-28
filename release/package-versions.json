@@ -246,9 +246,9 @@
     "version": "2.56.1"
   },
   "gitaly": {
-    "name": "gitaly-19.5.8",
+    "name": "gitaly-19.5.9",
     "pname": "gitaly",
-    "version": "19.5.8"
+    "version": "19.5.9"
   },
   "github-runner": {
     "name": "github-runner-2.338.2",
@@ -256,9 +256,9 @@
     "version": "2.338.2"
   },
   "gitlab": {
-    "name": "gitlab-19.5.8",
+    "name": "gitlab-19.5.9",
     "pname": "gitlab",
-    "version": "19.5.8"
+    "version": "19.5.9"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.43.0",
@@ -266,14 +266,14 @@
     "version": "4.43.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-19.5.8",
+    "name": "gitlab-ee-19.5.9",
     "pname": "gitlab-ee",
-    "version": "19.5.8"
+    "version": "19.5.9"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-19.5.8",
+    "name": "gitlab-pages-19.5.9",
     "pname": "gitlab-pages",
-    "version": "19.5.8"
+    "version": "19.5.9"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-19.5.3",
@@ -281,9 +281,9 @@
     "version": "19.5.3"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-19.5.8",
+    "name": "gitlab-workhorse-19.5.9",
     "pname": "gitlab-workhorse",
-    "version": "19.5.8"
+    "version": "19.5.9"
   },
   "glibc": {
     "name": "glibc-2.44-57",
@@ -857,9 +857,9 @@
     "version": "3.16.0"
   },
   "prosody": {
-    "name": "prosody-13.0.7",
+    "name": "prosody-13.0.8",
     "pname": "prosody",
-    "version": "13.0.7"
+    "version": "13.0.8"
   },
   "python3": {
     "name": "python3-3.14.10",
